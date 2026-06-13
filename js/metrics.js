@@ -32,3 +32,21 @@ export function formatDtr(dtr) {
     if (dtr == null || isNaN(dtr)) return '--';
     return `${(dtr * 100).toFixed(1)}%`;
 }
+
+// Rate of Rise between consecutive manual temperature readings.
+// temps: [{ t (ms from start), temp }] -> [{ t, temp, ror (deg/min) }]
+export function computeRoRPoints(temps) {
+    if (!temps || temps.length < 2) return [];
+    const pts = [];
+    for (let i = 1; i < temps.length; i++) {
+        const dtMin = (temps[i].t - temps[i - 1].t) / 60000;
+        const ror = dtMin > 0 ? (temps[i].temp - temps[i - 1].temp) / dtMin : 0;
+        pts.push({ t: temps[i].t, temp: temps[i].temp, ror });
+    }
+    return pts;
+}
+
+export function formatRoR(ror) {
+    if (ror == null || isNaN(ror)) return '--';
+    return `${ror.toFixed(1)}°/min`;
+}

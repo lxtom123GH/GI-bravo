@@ -1,7 +1,7 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
-import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -206,6 +206,12 @@ function renderHistoryList() {
             timelineHtml += `<li><strong>Development Time:</strong> ${formatMs(m.developmentTimeMs)}</li>`;
             timelineHtml += `<li><strong>Development Ratio (DTR):</strong> ${formatDtr(m.dtr)}</li>`;
         }
+        const temps = roast.timeline.temps || [];
+        if (temps.length > 0) {
+            const rorPts = computeRoRPoints(temps);
+            const lastRor = rorPts.length ? formatRoR(rorPts[rorPts.length - 1].ror) : '--';
+            timelineHtml += `<li><strong>Temp readings:</strong> ${temps.length} (last RoR ${lastRor})</li>`;
+        }
         timelineHtml += '</ul>';
 
         const logsHtml = roast.timeline.logs.map(l => `<div><small>${l}</small></div>`).join('');
@@ -380,18 +386,24 @@ function exportRoastCsv(id) {
     const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
     const start = roast.timeline.startTime;
 
-    // Build a time-sorted table of curve samples and crack/end events.
+    // Build a time-sorted table of curve samples, temperature readings, and crack/end events.
     const rows = [];
-    (roast.timeline.curve || []).forEach(p => rows.push({ t: p.t / 1000, rms: p.rms, event: '' }));
-    if (roast.timeline.firstCrackTime) rows.push({ t: (roast.timeline.firstCrackTime - start) / 1000, rms: '', event: 'First Crack' });
-    if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', event: 'Second Crack' });
-    if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', event: 'End' });
+    (roast.timeline.curve || []).forEach(p => rows.push({ t: p.t / 1000, rms: p.rms, temp: '', ror: '', event: '' }));
+    // computeRoRPoints starts at the second reading; the first is added below.
+    computeRoRPoints(roast.timeline.temps || []).forEach(p => {
+        rows.push({ t: p.t / 1000, rms: '', temp: p.temp, ror: p.ror, event: '' });
+    });
+    (roast.timeline.temps || []).slice(0, 1).forEach(p => rows.push({ t: p.t / 1000, rms: '', temp: p.temp, ror: '', event: '' }));
+    if (roast.timeline.firstCrackTime) rows.push({ t: (roast.timeline.firstCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'First Crack' });
+    if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'Second Crack' });
+    if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', temp: '', ror: '', event: 'End' });
     rows.sort((a, b) => a.t - b.t);
 
-    let csv = 'time_s,energy_rms,event\n';
+    let csv = 'time_s,energy_rms,temp,ror_per_min,event\n';
     rows.forEach(r => {
         const rms = r.rms === '' ? '' : Number(r.rms).toFixed(4);
-        csv += `${r.t.toFixed(1)},${rms},${r.event}\n`;
+        const ror = r.ror === '' ? '' : Number(r.ror).toFixed(1);
+        csv += `${r.t.toFixed(1)},${rms},${r.temp},${ror},${r.event}\n`;
     });
 
     const safeName = bean.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();

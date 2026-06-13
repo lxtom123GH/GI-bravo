@@ -1,6 +1,6 @@
 import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
-import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
 
 let audioContext;
 let microphone;
@@ -19,12 +19,15 @@ const logArea = document.getElementById('logArea');
 const statusDiv = document.getElementById('status');
 const liveTimerDiv = document.getElementById('liveTimer');
 const liveDtrDiv = document.getElementById('liveDtr');
+const liveRorDiv = document.getElementById('liveRor');
 
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const calibrateBtn = document.getElementById('calibrateBtn');
 const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
+const logTempBtn = document.getElementById('logTempBtn');
+const tempInput = document.getElementById('tempInput');
 
 // State for Roast and Detection
 let roastState = {
@@ -34,7 +37,8 @@ let roastState = {
     endTime: null,
     phase: 'Ready',
     logs: [],
-    curve: []
+    curve: [],
+    temps: []
 };
 
 // Roast-curve sampling
@@ -111,6 +115,9 @@ export function initAudioSystem() {
 
     markFirstCrackBtn.addEventListener('click', () => markPhase('First Crack (Manual)', 'firstCrackTime'));
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
+
+    if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
+    if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
 
     // Attach actions from roast dashboard to the timeline
     document.querySelectorAll('.behmor-action, .kkto-action').forEach(btn => {
@@ -349,6 +356,23 @@ function markPhase(phaseName, stateKey) {
     notifyUser(`${phaseName} recorded!`);
 }
 
+// Record a manual bean-temperature reading and update the live Rate of Rise.
+function logTemperature() {
+    if (!isRecording || !roastState.startTime) return;
+    const temp = parseFloat(tempInput && tempInput.value);
+    if (isNaN(temp)) return;
+
+    roastState.temps.push({ t: Date.now() - roastState.startTime, temp });
+
+    const points = computeRoRPoints(roastState.temps);
+    const last = points[points.length - 1];
+    const rorText = last ? ` (RoR ${formatRoR(last.ror)})` : '';
+    logMessage(`Temp: ${temp}°${rorText}`);
+    if (liveRorDiv) liveRorDiv.textContent = `${temp}° | RoR ${last ? formatRoR(last.ror) : '--'}`;
+
+    if (tempInput) tempInput.value = '';
+}
+
 // Alert the roaster with a desktop notification and an audible beep.
 // The beep briefly suspends detection so it isn't mistaken for a crack.
 function notifyUser(message) {
@@ -456,7 +480,8 @@ async function startRoast() {
         endTime: null,
         phase: 'Heating',
         logs: [],
-        curve: []
+        curve: [],
+        temps: []
     };
     recentRMSHistory = [];
     transientClusterCount = 0;
@@ -475,6 +500,8 @@ async function startRoast() {
     stopBtn.disabled = false;
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
+    if (logTempBtn) logTempBtn.disabled = false;
+    if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
 
     updateStatus('Listening - Phase: Heating');
 
@@ -517,6 +544,7 @@ function stopRoast() {
     stopBtn.disabled = true;
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
+    if (logTempBtn) logTempBtn.disabled = true;
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);

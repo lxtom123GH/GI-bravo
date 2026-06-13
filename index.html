@@ -111,6 +111,12 @@
                     <button id="markSecondCrackBtn" style="flex: 1; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
                 </div>
 
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                    <input type="number" id="tempInput" placeholder="Bean temp°" step="1" style="flex: 1; margin-bottom: 0;">
+                    <button id="logTempBtn" disabled>Log Temp</button>
+                    <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
+                </div>
+
                 <div style="margin-bottom: 15px;">
                     <label for="referenceSelect"><strong>Follow reference roast</strong></label>
                     <select id="referenceSelect"><option value="">None</option></select>
