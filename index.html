@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Roasting Audio Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+            width: 100%;
+            max-width: 500px;
+            height: 150px;
+            margin: 10px 0;
+        }
+        #logArea {
+            text-align: left;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+            background-color: #eee;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Coffee Roasting Analyzer</h1>
+    <p>Detect 'First Crack' and 'Second Crack' using audio analysis.</p>
+
+    <div>
+        <button id="startBtn">Start Listening</button>
+        <button id="stopBtn" disabled>Stop Listening</button>
+    </div>
+
+    <div>
+        <canvas id="oscilloscope"></canvas>
+    </div>
+
+    <div id="status">Status: Inactive</div>
+
+    <h3>Detection Logs</h3>
+    <div id="logArea"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
