@@ -47,13 +47,28 @@ let isCalibrating = false;
 let calibrationSamples = [];
 
 // Transient Detection settings
-// We look for sudden high-frequency spikes that exceed the baseline
+// We look for sudden broadband spikes that exceed the baseline.
 let recentRMSHistory = [];
 const HISTORY_LENGTH = 10; // About 160ms of history at 60fps requestAnimationFrame
 let transientClusterCount = 0;
 let lastTransientTime = 0;
 const TRANSIENT_COOLDOWN_MS = 100; // time between individual snaps
 const CLUSTER_WINDOW_MS = 5000; // Require X snaps within 5 seconds to declare a crack phase
+
+// Frequency-based crack classification.
+// First crack is louder and lower-pitched; second crack is quieter, higher-pitched
+// and faster. We compare energy in a low band vs a high band to tell them apart.
+// The high-pass cutoff is kept low enough to preserve first crack's low-frequency
+// signature (a 3000 Hz cut previously removed it) while still rejecting deep
+// rumble and mains hum.
+const HIGHPASS_HZ = 500;
+const LOW_BAND = [800, 3000];     // first-crack-dominant band (Hz)
+const HIGH_BAND = [3000, 8000];   // second-crack-dominant band (Hz)
+const RATIO_WINDOW = 8;           // number of recent snaps averaged for the signature
+const SECOND_CRACK_HIGH_RATIO = 0.5;   // high-band share above which cracking reads as 2C
+const SECOND_CRACK_MIN_GAP_MS = 20000; // earliest 2C can follow 1C
+let freqArray;
+let recentRatios = [];            // high-band share of recent snaps
 
 // User-tunable detection settings (persisted), loaded on init.
 let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
@@ -357,10 +372,11 @@ async function setupAudio() {
         analyser = audioContext.createAnalyser();
         microphone = audioContext.createMediaStreamSource(stream);
 
-        // Create High-Pass Filter to remove talking, low hums, birds, dogs (e.g. cut below 3000 Hz)
+        // High-pass to remove deep rumble and mains hum, while preserving the
+        // low-frequency energy that distinguishes first crack from second crack.
         highPassFilter = audioContext.createBiquadFilter();
         highPassFilter.type = 'highpass';
-        highPassFilter.frequency.value = 3000;
+        highPassFilter.frequency.value = HIGHPASS_HZ;
 
         microphone.connect(highPassFilter);
         highPassFilter.connect(analyser);
@@ -368,6 +384,7 @@ async function setupAudio() {
         analyser.fftSize = 2048;
         const bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
+        freqArray = new Uint8Array(bufferLength);
 
         return true;
     } catch (err) {
@@ -428,6 +445,7 @@ async function startRoast() {
     recentRMSHistory = [];
     transientClusterCount = 0;
     lastTransientTime = 0;
+    recentRatios = [];
     lastCurveSampleTime = 0;
     alarmFired = { total: false, dtr: false };
     refAnnounced = { fc: false, sc: false };
@@ -544,44 +562,71 @@ function calculateRMS(dataArray) {
     return Math.sqrt(sum / dataArray.length);
 }
 
+// Fraction of crack energy in the high band (0..1). Higher = more 2C-like.
+function spectralHighRatio() {
+    if (!freqArray || !analyser) return 0;
+    analyser.getByteFrequencyData(freqArray);
+    const binHz = audioContext.sampleRate / analyser.fftSize;
+
+    let low = 0, high = 0;
+    for (let i = 0; i < freqArray.length; i++) {
+        const hz = i * binHz;
+        const v = freqArray[i];
+        if (hz >= LOW_BAND[0] && hz < LOW_BAND[1]) low += v;
+        else if (hz >= HIGH_BAND[0] && hz < HIGH_BAND[1]) high += v;
+    }
+    const total = low + high;
+    return total > 0 ? high / total : 0;
+}
+
+function avgRatio() {
+    if (recentRatios.length === 0) return 0;
+    return recentRatios.reduce((a, b) => a + b, 0) / recentRatios.length;
+}
+
 function detectTransient(rms) {
     const now = Date.now();
 
-    // Add to history
     recentRMSHistory.push(rms);
-    if (recentRMSHistory.length > HISTORY_LENGTH) {
-        recentRMSHistory.shift();
-    }
+    if (recentRMSHistory.length > HISTORY_LENGTH) recentRMSHistory.shift();
 
-    // A transient is a sudden spike significantly higher than the baseline AND recent history
-    // Since we applied a high-pass filter, low hums are already removed.
-    // We are looking for sharp high-frequency energy.
+    // A transient is a sudden spike well above the baseline and recent history.
     const recentAvg = recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length;
     const spikeThreshold = Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, recentAvg * 2, 0.05);
 
-    if (rms > spikeThreshold && (now - lastTransientTime > TRANSIENT_COOLDOWN_MS)) {
-        lastTransientTime = now;
-        transientClusterCount++;
+    if (rms <= spikeThreshold || (now - lastTransientTime <= TRANSIENT_COOLDOWN_MS)) return;
 
-        // Reset cluster count if it's been too long since the first snap in the cluster
-        // Actually, let's just reset if it's been a long time since the LAST snap
-        setTimeout(() => {
-            if (Date.now() - lastTransientTime >= CLUSTER_WINDOW_MS) {
-                transientClusterCount = 0;
-            }
-        }, CLUSTER_WINDOW_MS);
+    lastTransientTime = now;
+    transientClusterCount++;
 
-        if (transientClusterCount === 1) {
-             // Initial snap, wait for cluster
-        } else if (transientClusterCount === detectionSettings.cracksRequired) {
-            // We got a cluster! Decide if it's first or second crack.
-            if (!roastState.firstCrackTime) {
-                markPhase('First Crack (Auto)', 'firstCrackTime');
-            } else if (!roastState.secondCrackTime && (now - roastState.firstCrackTime > 30000)) {
-                // Must be at least 30s after first crack to be second crack
-                markPhase('Second Crack (Auto)', 'secondCrackTime');
-            }
+    // Capture the spectral signature of this snap.
+    recentRatios.push(spectralHighRatio());
+    if (recentRatios.length > RATIO_WINDOW) recentRatios.shift();
+
+    // Reset the cluster (and signature window) after a quiet gap.
+    setTimeout(() => {
+        if (Date.now() - lastTransientTime >= CLUSTER_WINDOW_MS) {
+            transientClusterCount = 0;
+            recentRatios = [];
         }
+    }, CLUSTER_WINDOW_MS);
+
+    const ratio = avgRatio();
+
+    if (!roastState.firstCrackTime) {
+        // The first sustained burst of cracking is first crack.
+        if (transientClusterCount >= detectionSettings.cracksRequired) {
+            markPhase('First Crack (Auto)', 'firstCrackTime');
+            const pitch = ratio >= SECOND_CRACK_HIGH_RATIO ? 'higher-pitched' : 'lower-pitched';
+            logMessage(`Auto-detected ${pitch} cracking (high-band ${(ratio * 100).toFixed(0)}%).`);
+        }
+    } else if (!roastState.secondCrackTime &&
+               now - roastState.firstCrackTime > SECOND_CRACK_MIN_GAP_MS &&
+               recentRatios.length >= detectionSettings.cracksRequired &&
+               ratio >= SECOND_CRACK_HIGH_RATIO) {
+        // Faster, higher-pitched cracking after first crack reads as second crack.
+        markPhase('Second Crack (Auto)', 'secondCrackTime');
+        logMessage(`Higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%).`);
     }
 }
 
