@@ -4,7 +4,13 @@ This document outlines high-value features to be implemented in the Coffee Roast
 
 ## Overarching Architecture: Complexity Tiers (Easy / Moderate / Expert)
 
-To cater to a wide range of users, from casual hobbyists to advanced roasters and Q Graders, new and existing features should be governed by "Complexity Tiers." A global user setting should allow toggling the app's complexity level, progressively revealing more advanced data inputs and metrics.
+To cater to a wide range of users, from casual hobbyists to advanced roasters and Q Graders, new and existing features should be governed by "Complexity Tiers."
+
+### Configuration Hierarchy:
+To provide maximum flexibility, the complexity tiers should be managed through a cascading configuration system:
+1.  **Global Default:** A master setting in the app's preferences (e.g., User is set to "Moderate" globally).
+2.  **Per-Feature Default:** The ability to override the global setting for specific features (e.g., User is globally "Moderate", but sets Cupping/Tasting to "Expert").
+3.  **One-off Override:** A toggle directly on the UI when performing an action to temporarily switch tiers (e.g., A user generally does "Easy" 3-emoji cuppings, but wants to do a one-off "Expert" 100-point cupping for a specific competition roast).
 
 ### Tier Guidelines:
 *   **Easy:** Minimal friction. Focuses on the basics (e.g., Bean, total time, and simple emoji ratings like 🙁/😐/😀 instead of complex flavor wheels).
