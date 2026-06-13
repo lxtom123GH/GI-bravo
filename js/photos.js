@@ -60,6 +60,17 @@ export async function deletePhotosForRoast(roastId) {
     await Promise.all(photos.map(p => deletePhoto(p.id)));
 }
 
+// Representative roast-colour index for a roast: brightness of its most recent
+// colour-corrected photo (lower = darker roast). Returns null if none.
+export async function getRoastColorIndex(roastId) {
+    const photos = await getPhotos(roastId);
+    const calibrated = photos
+        .filter(p => p.meta && p.meta.type === 'calibrated' && p.meta.brightness != null)
+        .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+    if (calibrated.length === 0) return null;
+    return { brightness: calibrated[0].meta.brightness, color: calibrated[0].meta.color, count: calibrated.length };
+}
+
 // --- Colour correction (reference-card white balance) ---
 
 function loadImageFromFile(file) {

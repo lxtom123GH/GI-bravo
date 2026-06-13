@@ -2,7 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -73,10 +73,17 @@ function renderComparison() {
     const series = [toSeries(roastA, COMPARE_COLOR_A), toSeries(roastB, COMPARE_COLOR_B)].filter(Boolean);
     drawRoastCurves(canvas, series);
 
-    if (metricsDiv) metricsDiv.innerHTML = buildComparisonTable(roastA, roastB, pantry);
+    if (!metricsDiv) return;
+    // Roast-colour indices live in IndexedDB; fetch then render the table.
+    Promise.all([
+        roastA ? getRoastColorIndex(roastA.id) : null,
+        roastB ? getRoastColorIndex(roastB.id) : null
+    ]).then(([idxA, idxB]) => {
+        metricsDiv.innerHTML = buildComparisonTable(roastA, roastB, pantry, idxA, idxB);
+    });
 }
 
-function buildComparisonTable(roastA, roastB, pantry) {
+function buildComparisonTable(roastA, roastB, pantry, idxA, idxB) {
     if (!roastA && !roastB) return '';
 
     const col = (roast, color) => {
@@ -110,6 +117,7 @@ function buildComparisonTable(roastA, roastB, pantry) {
                 ${row('Development', formatMs(a.m.developmentTimeMs), formatMs(b.m.developmentTimeMs))}
                 ${row('DTR', formatDtr(a.m.dtr), formatDtr(b.m.dtr))}
                 ${row('Green Weight', a.green, b.green)}
+                ${row('Roast colour', idxA ? idxA.brightness : '--', idxB ? idxB.brightness : '--')}
             </tbody>
         </table>
     `;
@@ -252,7 +260,7 @@ function renderHistoryList() {
                 </div>
             </details>
             <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
-                <h4>Photos</h4>
+                <h4>Photos <span class="roast-color-index" data-id="${roast.id}" style="font-weight: normal; font-size: 0.8rem; color: var(--text-muted);"></span></h4>
                 <div class="roast-photos" data-id="${roast.id}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
                 <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
                 <button class="add-calibrated-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
@@ -278,6 +286,12 @@ function renderHistoryList() {
         });
 
         renderPhotos(roast.id, card.querySelector('.roast-photos'));
+
+        // Fill the roast-colour index (from IndexedDB) once available.
+        getRoastColorIndex(roast.id).then(idx => {
+            const el = card.querySelector('.roast-color-index');
+            if (el && idx) el.textContent = `— roast colour ${idx.brightness} (lower = darker)`;
+        }).catch(() => {});
     });
 
     document.querySelectorAll('.add-photo-btn').forEach(btn => {
