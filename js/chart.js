@@ -57,6 +57,81 @@ export function drawRoastCurve(canvas, curve, markers = {}) {
     drawMarker(ctx, xOf(markers.secondCrackMs), pad, plotH, '#9c27b0', '2C', markers.secondCrackMs);
 }
 
+// Overlay several roast curves on one canvas, time-aligned, with a legend.
+// series: array of { curve, color, label, firstCrackMs, secondCrackMs }
+export function drawRoastCurves(canvas, series = []) {
+    if (!canvas) return;
+
+    const width = canvas.width = canvas.clientWidth || canvas.width || 500;
+    const height = canvas.height = canvas.clientHeight || canvas.height || 180;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, width, height);
+
+    const pad = { left: 8, right: 8, top: 12, bottom: 18 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+
+    const valid = series.filter(s => s.curve && s.curve.length >= 2);
+    if (valid.length === 0) {
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Select two roasts with curve data to compare', width / 2, height / 2);
+        return;
+    }
+
+    // Shared scales across all series so curves are directly comparable.
+    const totalMs = Math.max(...valid.map(s => s.curve[s.curve.length - 1].t)) || 1;
+    const maxRms = Math.max(0.1, ...valid.flatMap(s => s.curve.map(p => p.rms)));
+
+    const xOf = t => pad.left + (t / totalMs) * plotW;
+    const yOf = rms => pad.top + plotH - (rms / maxRms) * plotH;
+
+    ctx.strokeStyle = '#404040';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top + plotH);
+    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+    ctx.stroke();
+
+    valid.forEach(s => {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        s.curve.forEach((p, i) => {
+            const x = xOf(p.t), y = yOf(p.rms);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // First-crack marker in the series colour (skip 2C to reduce clutter).
+        if (s.firstCrackMs != null) {
+            ctx.save();
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(xOf(s.firstCrackMs), pad.top);
+            ctx.lineTo(xOf(s.firstCrackMs), pad.top + plotH);
+            ctx.stroke();
+            ctx.restore();
+        }
+    });
+
+    // Legend
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    valid.forEach((s, i) => {
+        const ly = pad.top + 4 + i * 16;
+        ctx.fillStyle = s.color;
+        ctx.fillRect(pad.left + 4, ly, 10, 10);
+        ctx.fillText(s.label || `Roast ${i + 1}`, pad.left + 18, ly + 9);
+    });
+}
+
 function drawMarker(ctx, x, pad, plotH, color, label, value) {
     if (value == null) return;
     ctx.save();

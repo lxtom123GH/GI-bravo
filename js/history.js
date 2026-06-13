@@ -1,13 +1,117 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData } from './storage.js';
 import { flavorWheel } from './flavors.js';
-import { drawRoastCurve } from './chart.js';
+import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
+
+const COMPARE_COLOR_A = '#ff9800';
+const COMPARE_COLOR_B = '#2196f3';
 
 export function initHistory() {
     renderHistoryList();
     window.addEventListener('pantryUpdated', renderHistoryList);
     document.querySelector('[data-target="history"]').addEventListener('click', renderHistoryList);
     initBackup();
+    initCompare();
+}
+
+function initCompare() {
+    const selectA = document.getElementById('compareSelectA');
+    const selectB = document.getElementById('compareSelectB');
+    if (!selectA || !selectB) return;
+    selectA.addEventListener('change', renderComparison);
+    selectB.addEventListener('change', renderComparison);
+    populateCompareSelects();
+}
+
+function populateCompareSelects() {
+    const selectA = document.getElementById('compareSelectA');
+    const selectB = document.getElementById('compareSelectB');
+    if (!selectA || !selectB) return;
+
+    const history = getRoastHistory().sort((a, b) => new Date(b.date) - new Date(a.date));
+    const pantry = getPantry();
+
+    [selectA, selectB].forEach(sel => {
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">Select a roast...</option>';
+        history.forEach(roast => {
+            const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+            const opt = document.createElement('option');
+            opt.value = roast.id;
+            opt.textContent = `${bean.name} — ${new Date(roast.date).toLocaleDateString()}`;
+            sel.appendChild(opt);
+        });
+        if (prev && history.find(r => r.id === prev)) sel.value = prev;
+    });
+}
+
+function renderComparison() {
+    const canvas = document.getElementById('compareCanvas');
+    const metricsDiv = document.getElementById('compareMetrics');
+    const idA = document.getElementById('compareSelectA').value;
+    const idB = document.getElementById('compareSelectB').value;
+    if (!canvas) return;
+
+    const history = getRoastHistory();
+    const pantry = getPantry();
+    const roastA = history.find(r => r.id === idA);
+    const roastB = history.find(r => r.id === idB);
+
+    const toSeries = (roast, color) => {
+        if (!roast) return null;
+        const start = roast.timeline.startTime;
+        return {
+            curve: roast.timeline.curve,
+            color,
+            label: (pantry.find(b => b.id === roast.beanId) || { name: 'Unknown' }).name,
+            firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
+            secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null
+        };
+    };
+
+    const series = [toSeries(roastA, COMPARE_COLOR_A), toSeries(roastB, COMPARE_COLOR_B)].filter(Boolean);
+    drawRoastCurves(canvas, series);
+
+    if (metricsDiv) metricsDiv.innerHTML = buildComparisonTable(roastA, roastB, pantry);
+}
+
+function buildComparisonTable(roastA, roastB, pantry) {
+    if (!roastA && !roastB) return '';
+
+    const col = (roast, color) => {
+        if (!roast) return { name: '—', m: {}, green: '--' };
+        return {
+            name: (pantry.find(b => b.id === roast.beanId) || { name: 'Unknown' }).name,
+            m: computeRoastMetrics(roast.timeline),
+            green: roast.greenWeightG ? `${roast.greenWeightG} g` : '--',
+            color
+        };
+    };
+
+    const a = col(roastA, COMPARE_COLOR_A);
+    const b = col(roastB, COMPARE_COLOR_B);
+
+    const row = (label, va, vb) =>
+        `<tr><td style="padding:4px 8px;color:var(--text-muted);">${label}</td>
+         <td style="padding:4px 8px;text-align:right;">${va}</td>
+         <td style="padding:4px 8px;text-align:right;">${vb}</td></tr>`;
+
+    return `
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-top:10px;">
+            <thead><tr>
+                <th style="text-align:left;padding:4px 8px;">Metric</th>
+                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_A};">${a.name}</th>
+                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_B};">${b.name}</th>
+            </tr></thead>
+            <tbody>
+                ${row('Total Time', formatMs(a.m.totalMs), formatMs(b.m.totalMs))}
+                ${row('First Crack', formatMs(a.m.timeToFirstCrackMs), formatMs(b.m.timeToFirstCrackMs))}
+                ${row('Development', formatMs(a.m.developmentTimeMs), formatMs(b.m.developmentTimeMs))}
+                ${row('DTR', formatDtr(a.m.dtr), formatDtr(b.m.dtr))}
+                ${row('Green Weight', a.green, b.green)}
+            </tbody>
+        </table>
+    `;
 }
 
 function initBackup() {
@@ -59,6 +163,10 @@ function renderHistoryList() {
     const pantry = getPantry();
 
     historyContainer.innerHTML = '';
+
+    // Keep the comparison dropdowns in sync with the current history.
+    populateCompareSelects();
+    renderComparison();
 
     if (history.length === 0) {
         historyContainer.innerHTML = '<p>No roasts recorded yet.</p>';

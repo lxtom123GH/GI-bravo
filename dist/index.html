@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-Cab1O6U8.js"></script>
+  <script type="module" crossorigin src="/assets/index-rA_t_Ynl.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CK-C1R8b.css">
 </head>
 <body>
@@ -205,6 +205,23 @@
                     <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
                 </div>
             </div>
+
+            <div class="card" id="compareCard">
+                <h3>Compare Roasts</h3>
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label for="compareSelectA"><strong style="color: #ff9800;">Roast A</strong></label>
+                        <select id="compareSelectA"><option value="">Select a roast...</option></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="compareSelectB"><strong style="color: #2196f3;">Roast B</strong></label>
+                        <select id="compareSelectB"><option value="">Select a roast...</option></select>
+                    </div>
+                </div>
+                <canvas id="compareCanvas" style="height: 180px;"></canvas>
+                <div id="compareMetrics"></div>
+            </div>
+
             <div id="historyContainer">
                 <!-- History cards will go here -->
             </div>
