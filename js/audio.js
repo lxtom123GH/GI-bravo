@@ -1,4 +1,4 @@
-import { saveRoastToHistory, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS } from './storage.js';
+import { saveRoastToHistory, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
 import { drawRoastCurve } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
@@ -58,6 +58,10 @@ const CLUSTER_WINDOW_MS = 5000; // Require X snaps within 5 seconds to declare a
 // User-tunable detection settings (persisted), loaded on init.
 let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
 
+// Roast target alarms (persisted), loaded on init.
+let roastTargets = { ...DEFAULT_ROAST_TARGETS };
+let alarmFired = { total: false, dtr: false };
+
 export function initAudioSystem() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
@@ -68,6 +72,9 @@ export function initAudioSystem() {
 
     detectionSettings = getDetectionSettings();
     initDetectionSettingsUI();
+
+    roastTargets = getRoastTargets();
+    initTargetsUI();
 
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
@@ -124,6 +131,44 @@ function initDetectionSettingsUI() {
     }
 
     render();
+}
+
+// Fire a one-shot alarm when the roast reaches a configured total time or DTR.
+function checkTargetAlarms(elapsedSeconds, metrics) {
+    if (roastTargets.totalMinutes > 0 && !alarmFired.total &&
+        elapsedSeconds >= roastTargets.totalMinutes * 60) {
+        alarmFired.total = true;
+        logMessage(`>>> <b>TARGET TIME ${roastTargets.totalMinutes} min REACHED</b> <<<`);
+        notifyUser(`Target time of ${roastTargets.totalMinutes} min reached!`);
+    }
+
+    if (roastTargets.dtrPercent > 0 && !alarmFired.dtr && roastState.firstCrackTime &&
+        metrics.dtr != null && metrics.dtr * 100 >= roastTargets.dtrPercent) {
+        alarmFired.dtr = true;
+        logMessage(`>>> <b>TARGET DTR ${roastTargets.dtrPercent}% REACHED</b> <<<`);
+        notifyUser(`Target DTR of ${roastTargets.dtrPercent}% reached!`);
+    }
+}
+
+function initTargetsUI() {
+    const totalInput = document.getElementById('targetTotalSetting');
+    const dtrInput = document.getElementById('targetDtrSetting');
+    if (!totalInput || !dtrInput) return;
+
+    totalInput.value = roastTargets.totalMinutes || '';
+    dtrInput.value = roastTargets.dtrPercent || '';
+
+    const persist = () => saveRoastTargets(roastTargets);
+
+    totalInput.addEventListener('input', () => {
+        roastTargets.totalMinutes = parseFloat(totalInput.value) || 0;
+        persist();
+    });
+
+    dtrInput.addEventListener('input', () => {
+        roastTargets.dtrPercent = parseFloat(dtrInput.value) || 0;
+        persist();
+    });
 }
 
 function logMessage(message) {
@@ -268,6 +313,7 @@ async function startRoast() {
     transientClusterCount = 0;
     lastTransientTime = 0;
     lastCurveSampleTime = 0;
+    alarmFired = { total: false, dtr: false };
 
     logArea.innerHTML = '';
     logMessage('Roast Started.');
@@ -291,15 +337,18 @@ async function startRoast() {
         const s = (elapsed % 60).toString().padStart(2, '0');
         if (liveTimerDiv) liveTimerDiv.textContent = `${m}:${s}`;
 
+        const metrics = computeRoastMetrics(roastState);
+
         // Live development time / DTR once first crack is recorded.
         if (liveDtrDiv) {
             if (roastState.firstCrackTime) {
-                const metrics = computeRoastMetrics(roastState);
                 liveDtrDiv.textContent = `Dev ${formatMs(metrics.developmentTimeMs)} | DTR ${formatDtr(metrics.dtr)}`;
             } else {
                 liveDtrDiv.textContent = 'DTR --';
             }
         }
+
+        checkTargetAlarms(elapsed, metrics);
     }, 1000);
 }
 

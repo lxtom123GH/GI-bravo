@@ -68,6 +68,24 @@ export function saveDetectionSettings(settings) {
     localStorage.setItem('detectionSettings', JSON.stringify(settings));
 }
 
+// --- Roast Targets (alarms) ---
+
+export const DEFAULT_ROAST_TARGETS = {
+    totalMinutes: 0, // 0 = disabled
+    dtrPercent: 0    // 0 = disabled
+};
+
+export function getRoastTargets() {
+    const stored = localStorage.getItem('roastTargets');
+    return stored
+        ? { ...DEFAULT_ROAST_TARGETS, ...JSON.parse(stored) }
+        : { ...DEFAULT_ROAST_TARGETS };
+}
+
+export function saveRoastTargets(targets) {
+    localStorage.setItem('roastTargets', JSON.stringify(targets));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {

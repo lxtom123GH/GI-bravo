@@ -122,6 +122,25 @@
                     </div>
                 </details>
 
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Roast Targets (alarms)</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+                            Get a beep + notification when the roast reaches a target. Leave blank or 0 to disable.
+                        </p>
+                        <div class="setup-row" style="display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label for="targetTotalSetting"><strong>Target total time (min)</strong></label>
+                                <input type="number" id="targetTotalSetting" min="0" step="0.5" placeholder="e.g. 12">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="targetDtrSetting"><strong>Target DTR (%)</strong></label>
+                                <input type="number" id="targetDtrSetting" min="0" max="50" step="0.5" placeholder="e.g. 20">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
                 <canvas id="oscilloscope"></canvas>
 
                 <h4 style="margin-top: 10px;">Roast Curve (audio energy over time)</h4>
