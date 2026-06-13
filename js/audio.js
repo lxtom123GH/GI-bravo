@@ -5,6 +5,7 @@ let microphone;
 let analyser;
 let dataArray;
 let isRecording = false;
+let isNotifying = false;
 let animationId;
 let highPassFilter;
 let timerInterval;
@@ -97,6 +98,36 @@ function markPhase(phaseName, stateKey) {
     roastState[stateKey] = Date.now();
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
+    notifyUser(`${phaseName} recorded!`);
+}
+
+// Alert the roaster with a desktop notification and an audible beep.
+// The beep briefly suspends detection so it isn't mistaken for a crack.
+function notifyUser(message) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Roast Tracker', { body: message });
+    }
+
+    if (!audioContext) return;
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+    gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    isNotifying = true;
+    oscillator.start();
+    setTimeout(() => {
+        oscillator.stop();
+        oscillator.disconnect();
+        gain.disconnect();
+        // Allow the beep to fully decay before resuming detection
+        setTimeout(() => { isNotifying = false; }, 200);
+    }, 600);
 }
 
 async function setupAudio() {
@@ -162,6 +193,10 @@ async function startCalibration() {
 async function startRoast() {
     const ready = await setupAudio();
     if (!ready) return;
+
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
 
     // Reset State
     roastState = {
@@ -310,7 +345,7 @@ function drawAndAnalyze() {
 
     if (isCalibrating) {
         calibrationSamples.push(rms);
-    } else {
+    } else if (!isNotifying) {
         detectTransient(rms);
     }
 
