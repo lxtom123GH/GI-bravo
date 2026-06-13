@@ -141,6 +141,17 @@
         <!-- Roast History -->
         <div id="history" class="tab-pane">
             <h1>Roast History</h1>
+            <div class="card">
+                <h3>Data Backup</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    All beans and roasts are stored only in this browser. Export a backup to keep them safe.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="exportBackupBtn">Export Backup (JSON)</button>
+                    <button id="importBackupBtn">Import Backup</button>
+                    <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
+                </div>
+            </div>
             <div id="historyContainer">
                 <!-- History cards will go here -->
             </div>

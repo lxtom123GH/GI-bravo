@@ -29,6 +29,7 @@ export function initPantry() {
     }
 
     renderPantryList();
+    window.addEventListener('pantryUpdated', renderPantryList);
 }
 
 export function renderPantryList() {

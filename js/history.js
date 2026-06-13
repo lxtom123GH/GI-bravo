@@ -1,4 +1,4 @@
-import { getRoastHistory, getPantry } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
@@ -7,6 +7,48 @@ export function initHistory() {
     renderHistoryList();
     window.addEventListener('pantryUpdated', renderHistoryList);
     document.querySelector('[data-target="history"]').addEventListener('click', renderHistoryList);
+    initBackup();
+}
+
+function initBackup() {
+    const exportBtn = document.getElementById('exportBackupBtn');
+    const importBtn = document.getElementById('importBackupBtn');
+    const importInput = document.getElementById('importBackupInput');
+    if (!exportBtn || !importBtn || !importInput) return;
+
+    exportBtn.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `roast-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener('click', () => importInput.click());
+
+    importInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!confirm('Importing will REPLACE your current beans and roasts. Continue?')) {
+            importInput.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const result = importAllData(JSON.parse(reader.result));
+                renderHistoryList();
+                window.dispatchEvent(new Event('pantryUpdated'));
+                alert(`Imported ${result.pantry} bean(s) and ${result.roasts} roast(s).`);
+            } catch (err) {
+                alert(`Import failed: ${err.message}`);
+            }
+            importInput.value = '';
+        };
+        reader.readAsText(file);
+    });
 }
 
 function renderHistoryList() {
@@ -92,6 +134,7 @@ function renderHistoryList() {
             </details>
             <div style="display: flex; gap: 10px;">
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
+                <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
             </div>
         `;
 
@@ -113,6 +156,17 @@ function renderHistoryList() {
 
     document.querySelectorAll('.edit-notes-btn').forEach(btn => {
         btn.addEventListener('click', (e) => openTastingModal(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.delete-roast-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const roast = history.find(r => r.id === e.target.dataset.id);
+            const bean = pantry.find(b => b.id === roast?.beanId) || { name: 'this roast' };
+            if (confirm(`Delete the roast of ${bean.name}? This cannot be undone.`)) {
+                deleteRoastFromHistory(e.target.dataset.id);
+                renderHistoryList();
+            }
+        });
     });
 }
 
@@ -193,9 +247,7 @@ function openTastingModal(id) {
             flavors: selectedFlavors,
             text: document.getElementById('modalNotesText').value
         };
-        // Save back to history array
-        const updatedHistory = history.map(r => r.id === roast.id ? roast : r);
-        localStorage.setItem('roastHistory', JSON.stringify(updatedHistory));
+        updateRoastInHistory(roast);
         document.body.removeChild(modalBg);
         renderHistoryList();
     });
