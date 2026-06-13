@@ -217,8 +217,9 @@ function renderHistoryList() {
         }
         const temps = roast.timeline.temps || [];
         if (temps.length > 0) {
+            const unit = roast.timeline.tempUnit || 'C';
             const rorPts = computeRoRPoints(temps);
-            const lastRor = rorPts.length ? formatRoR(rorPts[rorPts.length - 1].ror) : '--';
+            const lastRor = rorPts.length ? formatRoR(rorPts[rorPts.length - 1].ror).replace('°', `°${unit}`) : '--';
             timelineHtml += `<li><strong>Temp readings:</strong> ${temps.length} (last RoR ${lastRor})</li>`;
         }
         timelineHtml += '</ul>';
@@ -601,7 +602,8 @@ function exportRoastCsv(id) {
     if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', temp: '', ror: '', event: 'End' });
     rows.sort((a, b) => a.t - b.t);
 
-    let csv = 'time_s,energy_rms,temp,ror_per_min,event\n';
+    const unit = roast.timeline.tempUnit || 'C';
+    let csv = `time_s,energy_rms,temp_${unit},ror_${unit}_per_min,event\n`;
     rows.forEach(r => {
         const rms = r.rms === '' ? '' : Number(r.rms).toFixed(4);
         const ror = r.ror === '' ? '' : Number(r.ror).toFixed(1);

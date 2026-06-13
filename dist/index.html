@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-CaJ5d8xY.js"></script>
+  <script type="module" crossorigin src="/assets/index-BpoqJzqZ.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CK-C1R8b.css">
 </head>
 <body>
@@ -113,7 +113,11 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                    <input type="number" id="tempInput" placeholder="Bean temp°" step="1" style="flex: 1; margin-bottom: 0;">
+                    <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;">
+                    <select id="tempUnit" style="width: auto; margin-bottom: 0;">
+                        <option value="C">°C</option>
+                        <option value="F">°F</option>
+                    </select>
                     <button id="logTempBtn" disabled>Log Temp</button>
                     <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
                 </div>
