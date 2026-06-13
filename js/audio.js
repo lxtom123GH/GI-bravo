@@ -1,4 +1,4 @@
-import { saveRoastToHistory } from './storage.js';
+import { saveRoastToHistory, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS } from './storage.js';
 import { drawRoastCurve } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
@@ -54,7 +54,9 @@ let transientClusterCount = 0;
 let lastTransientTime = 0;
 const TRANSIENT_COOLDOWN_MS = 100; // time between individual snaps
 const CLUSTER_WINDOW_MS = 5000; // Require X snaps within 5 seconds to declare a crack phase
-const CRACKS_REQUIRED_FOR_PHASE = 3;
+
+// User-tunable detection settings (persisted), loaded on init.
+let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
 
 export function initAudioSystem() {
     canvas.width = canvas.clientWidth;
@@ -63,6 +65,9 @@ export function initAudioSystem() {
     canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawRoastCurve(curveCanvas, [], {});
+
+    detectionSettings = getDetectionSettings();
+    initDetectionSettingsUI();
 
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
@@ -79,6 +84,46 @@ export function initAudioSystem() {
             }
         });
     });
+}
+
+function initDetectionSettingsUI() {
+    const threshInput = document.getElementById('thresholdSetting');
+    const cracksInput = document.getElementById('cracksSetting');
+    const threshVal = document.getElementById('thresholdValue');
+    const cracksVal = document.getElementById('cracksValue');
+    const resetBtn = document.getElementById('resetDetectionBtn');
+    if (!threshInput || !cracksInput) return;
+
+    const render = () => {
+        threshInput.value = detectionSettings.thresholdMultiplier;
+        cracksInput.value = detectionSettings.cracksRequired;
+        if (threshVal) threshVal.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
+        if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
+    };
+
+    const persist = () => saveDetectionSettings(detectionSettings);
+
+    threshInput.addEventListener('input', () => {
+        detectionSettings.thresholdMultiplier = parseFloat(threshInput.value);
+        if (threshVal) threshVal.textContent = detectionSettings.thresholdMultiplier.toFixed(1) + '×';
+        persist();
+    });
+
+    cracksInput.addEventListener('input', () => {
+        detectionSettings.cracksRequired = parseInt(cracksInput.value, 10);
+        if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
+        persist();
+    });
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+            persist();
+            render();
+        });
+    }
+
+    render();
 }
 
 function logMessage(message) {
@@ -336,7 +381,7 @@ function detectTransient(rms) {
     // Since we applied a high-pass filter, low hums are already removed.
     // We are looking for sharp high-frequency energy.
     const recentAvg = recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length;
-    const spikeThreshold = Math.max(baselineNoiseRMS * 1.5, recentAvg * 2, 0.05);
+    const spikeThreshold = Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, recentAvg * 2, 0.05);
 
     if (rms > spikeThreshold && (now - lastTransientTime > TRANSIENT_COOLDOWN_MS)) {
         lastTransientTime = now;
@@ -352,7 +397,7 @@ function detectTransient(rms) {
 
         if (transientClusterCount === 1) {
              // Initial snap, wait for cluster
-        } else if (transientClusterCount === CRACKS_REQUIRED_FOR_PHASE) {
+        } else if (transientClusterCount === detectionSettings.cracksRequired) {
             // We got a cluster! Decide if it's first or second crack.
             if (!roastState.firstCrackTime) {
                 markPhase('First Crack (Auto)', 'firstCrackTime');
@@ -408,7 +453,7 @@ function drawAndAnalyze() {
 
     canvasCtx.lineWidth = 2;
     // Turn stroke red if a transient spike is happening right now for visual feedback
-    const isSpiking = (rms > Math.max(baselineNoiseRMS * 1.5, 0.05));
+    const isSpiking = (rms > Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, 0.05));
     canvasCtx.strokeStyle = isSpiking ? '#f44336' : '#ff9800';
 
     canvasCtx.beginPath();

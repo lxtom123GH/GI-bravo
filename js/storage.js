@@ -50,6 +50,24 @@ export function deleteRoastFromHistory(id) {
     saveRoastHistory(history);
 }
 
+// --- Detection Settings ---
+
+export const DEFAULT_DETECTION_SETTINGS = {
+    thresholdMultiplier: 1.5, // spike must exceed baseline noise by this factor (lower = more sensitive)
+    cracksRequired: 3         // snaps within the cluster window needed to confirm a crack phase
+};
+
+export function getDetectionSettings() {
+    const stored = localStorage.getItem('detectionSettings');
+    return stored
+        ? { ...DEFAULT_DETECTION_SETTINGS, ...JSON.parse(stored) }
+        : { ...DEFAULT_DETECTION_SETTINGS };
+}
+
+export function saveDetectionSettings(settings) {
+    localStorage.setItem('detectionSettings', JSON.stringify(settings));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {

@@ -101,6 +101,27 @@
                     <button id="markSecondCrackBtn" style="flex: 1; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
                 </div>
 
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Detection Settings</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="thresholdSetting">
+                                <strong>Sensitivity threshold:</strong> <span id="thresholdValue">1.5×</span>
+                            </label>
+                            <input type="range" id="thresholdSetting" min="1.1" max="3" step="0.1" value="1.5">
+                            <small style="color: var(--text-muted);">Lower = more sensitive (detects quieter snaps); higher = ignores faint noise.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="cracksSetting">
+                                <strong>Snaps to confirm a crack:</strong> <span id="cracksValue">3</span>
+                            </label>
+                            <input type="range" id="cracksSetting" min="1" max="6" step="1" value="3">
+                            <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared.</small>
+                        </div>
+                        <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
+                    </div>
+                </details>
+
                 <canvas id="oscilloscope"></canvas>
 
                 <h4 style="margin-top: 10px;">Roast Curve (audio energy over time)</h4>
