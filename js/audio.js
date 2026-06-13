@@ -1,5 +1,6 @@
-import { saveRoastToHistory } from './storage.js';
-import { drawRoastCurve } from './chart.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit } from './storage.js';
+import { drawRoastCurve, drawRoastCurves } from './chart.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
 
 let audioContext;
 let microphone;
@@ -17,12 +18,17 @@ const curveCanvas = document.getElementById('roastCurve');
 const logArea = document.getElementById('logArea');
 const statusDiv = document.getElementById('status');
 const liveTimerDiv = document.getElementById('liveTimer');
+const liveDtrDiv = document.getElementById('liveDtr');
+const liveRorDiv = document.getElementById('liveRor');
 
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const calibrateBtn = document.getElementById('calibrateBtn');
 const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
+const logTempBtn = document.getElementById('logTempBtn');
+const tempInput = document.getElementById('tempInput');
+const tempUnitSelect = document.getElementById('tempUnit');
 
 // State for Roast and Detection
 let roastState = {
@@ -32,7 +38,8 @@ let roastState = {
     endTime: null,
     phase: 'Ready',
     logs: [],
-    curve: []
+    curve: [],
+    temps: []
 };
 
 // Roast-curve sampling
@@ -45,14 +52,41 @@ let isCalibrating = false;
 let calibrationSamples = [];
 
 // Transient Detection settings
-// We look for sudden high-frequency spikes that exceed the baseline
+// We look for sudden broadband spikes that exceed the baseline.
 let recentRMSHistory = [];
 const HISTORY_LENGTH = 10; // About 160ms of history at 60fps requestAnimationFrame
 let transientClusterCount = 0;
 let lastTransientTime = 0;
 const TRANSIENT_COOLDOWN_MS = 100; // time between individual snaps
 const CLUSTER_WINDOW_MS = 5000; // Require X snaps within 5 seconds to declare a crack phase
-const CRACKS_REQUIRED_FOR_PHASE = 3;
+
+// Frequency-based crack classification.
+// First crack is louder and lower-pitched; second crack is quieter, higher-pitched
+// and faster. We compare energy in a low band vs a high band to tell them apart.
+// The high-pass cutoff is kept low enough to preserve first crack's low-frequency
+// signature (a 3000 Hz cut previously removed it) while still rejecting deep
+// rumble and mains hum.
+const HIGHPASS_HZ = 500;
+const LOW_BAND = [800, 3000];     // first-crack-dominant band (Hz)
+const HIGH_BAND = [3000, 8000];   // second-crack-dominant band (Hz)
+const RATIO_WINDOW = 8;           // number of recent snaps averaged for the signature
+const SECOND_CRACK_MIN_GAP_MS = 20000; // earliest 2C can follow 1C
+let freqArray;
+let recentRatios = [];            // high-band share of recent snaps
+
+// User-tunable detection settings (persisted), loaded on init.
+let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+
+// Roast target alarms (persisted), loaded on init.
+let roastTargets = { ...DEFAULT_ROAST_TARGETS };
+let alarmFired = { total: false, dtr: false };
+
+// Reference roast to follow (background profile). Null when not following.
+let referenceCurve = null;     // [{ t, rms }]
+let referenceMarkers = {};     // { firstCrackMs, secondCrackMs }
+let refAnnounced = { fc: false, sc: false };
+const REF_LEAD_MS = 10000;     // announce an upcoming crack this far ahead
+const REF_COLOR = '#888';      // faint background colour for the reference curve
 
 export function initAudioSystem() {
     canvas.width = canvas.clientWidth;
@@ -62,12 +96,33 @@ export function initAudioSystem() {
 
     drawRoastCurve(curveCanvas, [], {});
 
+    detectionSettings = getDetectionSettings();
+    initDetectionSettingsUI();
+
+    roastTargets = getRoastTargets();
+    initTargetsUI();
+
+    // Re-sync settings inputs when a backup is imported.
+    window.addEventListener('settingsImported', syncSettingsInputs);
+
+    initReferenceUI();
+    // Refresh the reference list when history changes (new roast / import / delete).
+    window.addEventListener('historyUpdated', populateReferenceSelect);
+    window.addEventListener('pantryUpdated', populateReferenceSelect);
+
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
     stopBtn.addEventListener('click', stopRoast);
 
     markFirstCrackBtn.addEventListener('click', () => markPhase('First Crack (Manual)', 'firstCrackTime'));
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
+
+    if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
+    if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
+    if (tempUnitSelect) {
+        tempUnitSelect.value = getTempUnit();
+        tempUnitSelect.addEventListener('change', () => saveTempUnit(tempUnitSelect.value));
+    }
 
     // Attach actions from roast dashboard to the timeline
     document.querySelectorAll('.behmor-action, .kkto-action').forEach(btn => {
@@ -76,6 +131,202 @@ export function initAudioSystem() {
                 logMessage(`Action: ${e.target.dataset.action}`);
             }
         });
+    });
+}
+
+function initDetectionSettingsUI() {
+    const threshInput = document.getElementById('thresholdSetting');
+    const cracksInput = document.getElementById('cracksSetting');
+    const pitchInput = document.getElementById('pitchSetting');
+    const threshVal = document.getElementById('thresholdValue');
+    const cracksVal = document.getElementById('cracksValue');
+    const pitchVal = document.getElementById('pitchValue');
+    const resetBtn = document.getElementById('resetDetectionBtn');
+    if (!threshInput || !cracksInput) return;
+
+    const render = () => {
+        threshInput.value = detectionSettings.thresholdMultiplier;
+        cracksInput.value = detectionSettings.cracksRequired;
+        if (pitchInput) pitchInput.value = detectionSettings.secondCrackPitch;
+        if (threshVal) threshVal.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
+        if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
+        if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+    };
+
+    const persist = () => saveDetectionSettings(detectionSettings);
+
+    threshInput.addEventListener('input', () => {
+        detectionSettings.thresholdMultiplier = parseFloat(threshInput.value);
+        if (threshVal) threshVal.textContent = detectionSettings.thresholdMultiplier.toFixed(1) + '×';
+        persist();
+    });
+
+    cracksInput.addEventListener('input', () => {
+        detectionSettings.cracksRequired = parseInt(cracksInput.value, 10);
+        if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
+        persist();
+    });
+
+    if (pitchInput) {
+        pitchInput.addEventListener('input', () => {
+            detectionSettings.secondCrackPitch = parseFloat(pitchInput.value);
+            if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+            persist();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+            persist();
+            render();
+        });
+    }
+
+    render();
+}
+
+// Fire a one-shot alarm when the roast reaches a configured total time or DTR.
+function checkTargetAlarms(elapsedSeconds, metrics) {
+    if (roastTargets.totalMinutes > 0 && !alarmFired.total &&
+        elapsedSeconds >= roastTargets.totalMinutes * 60) {
+        alarmFired.total = true;
+        logMessage(`>>> <b>TARGET TIME ${roastTargets.totalMinutes} min REACHED</b> <<<`);
+        notifyUser(`Target time of ${roastTargets.totalMinutes} min reached!`);
+    }
+
+    if (roastTargets.dtrPercent > 0 && !alarmFired.dtr && roastState.firstCrackTime &&
+        metrics.dtr != null && metrics.dtr * 100 >= roastTargets.dtrPercent) {
+        alarmFired.dtr = true;
+        logMessage(`>>> <b>TARGET DTR ${roastTargets.dtrPercent}% REACHED</b> <<<`);
+        notifyUser(`Target DTR of ${roastTargets.dtrPercent}% reached!`);
+    }
+}
+
+function initReferenceUI() {
+    const select = document.getElementById('referenceSelect');
+    if (!select) return;
+    populateReferenceSelect();
+    select.addEventListener('change', () => loadReference(select.value));
+}
+
+function populateReferenceSelect() {
+    const select = document.getElementById('referenceSelect');
+    if (!select) return;
+
+    const prev = select.value;
+    const history = getRoastHistory()
+        .filter(r => r.timeline && r.timeline.curve && r.timeline.curve.length >= 2)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    const pantry = getPantry();
+
+    select.innerHTML = '<option value="">None</option>';
+    history.forEach(roast => {
+        const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+        const opt = document.createElement('option');
+        opt.value = roast.id;
+        opt.textContent = `${bean.name} — ${new Date(roast.date).toLocaleDateString()}`;
+        select.appendChild(opt);
+    });
+
+    if (prev && history.find(r => r.id === prev)) select.value = prev;
+    else loadReference(''); // selection no longer valid
+}
+
+function loadReference(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast) {
+        referenceCurve = null;
+        referenceMarkers = {};
+        if (!isRecording) drawRoastCurve(curveCanvas, [], {});
+        return;
+    }
+
+    const start = roast.timeline.startTime;
+    referenceCurve = roast.timeline.curve;
+    referenceMarkers = {
+        firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
+        secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null,
+        totalMs: roast.timeline.endTime - start
+    };
+    refAnnounced = { fc: false, sc: false };
+
+    // Preview the reference when idle.
+    if (!isRecording) {
+        drawRoastCurves(curveCanvas, [{
+            curve: referenceCurve,
+            color: REF_COLOR,
+            label: 'Reference',
+            firstCrackMs: referenceMarkers.firstCrackMs,
+            secondCrackMs: referenceMarkers.secondCrackMs
+        }]);
+    }
+}
+
+// Warn ahead of the reference roast's crack events that haven't happened yet live.
+function checkReferenceCues(elapsedMs) {
+    if (!referenceCurve) return;
+
+    if (referenceMarkers.firstCrackMs != null && !refAnnounced.fc && !roastState.firstCrackTime &&
+        elapsedMs >= referenceMarkers.firstCrackMs - REF_LEAD_MS) {
+        refAnnounced.fc = true;
+        logMessage('>>> <b>Reference: first crack coming up (~10s)</b>');
+        notifyUser('Reference: first crack in ~10s');
+    }
+
+    if (referenceMarkers.secondCrackMs != null && !refAnnounced.sc && !roastState.secondCrackTime &&
+        elapsedMs >= referenceMarkers.secondCrackMs - REF_LEAD_MS) {
+        refAnnounced.sc = true;
+        logMessage('>>> <b>Reference: second crack coming up (~10s)</b>');
+        notifyUser('Reference: second crack in ~10s');
+    }
+}
+
+// Reload persisted settings into module state and update the inputs in place
+// (without rebinding their change listeners) after a backup import.
+function syncSettingsInputs() {
+    detectionSettings = getDetectionSettings();
+    roastTargets = getRoastTargets();
+
+    const t = document.getElementById('thresholdSetting');
+    const tv = document.getElementById('thresholdValue');
+    if (t) t.value = detectionSettings.thresholdMultiplier;
+    if (tv) tv.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
+
+    const c = document.getElementById('cracksSetting');
+    const cv = document.getElementById('cracksValue');
+    if (c) c.value = detectionSettings.cracksRequired;
+    if (cv) cv.textContent = detectionSettings.cracksRequired;
+
+    const p = document.getElementById('pitchSetting');
+    const pv = document.getElementById('pitchValue');
+    if (p) p.value = detectionSettings.secondCrackPitch;
+    if (pv) pv.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+
+    const tt = document.getElementById('targetTotalSetting');
+    if (tt) tt.value = roastTargets.totalMinutes || '';
+    const td = document.getElementById('targetDtrSetting');
+    if (td) td.value = roastTargets.dtrPercent || '';
+}
+
+function initTargetsUI() {
+    const totalInput = document.getElementById('targetTotalSetting');
+    const dtrInput = document.getElementById('targetDtrSetting');
+    if (!totalInput || !dtrInput) return;
+
+    totalInput.value = roastTargets.totalMinutes || '';
+    dtrInput.value = roastTargets.dtrPercent || '';
+
+    const persist = () => saveRoastTargets(roastTargets);
+
+    totalInput.addEventListener('input', () => {
+        roastTargets.totalMinutes = parseFloat(totalInput.value) || 0;
+        persist();
+    });
+
+    dtrInput.addEventListener('input', () => {
+        roastTargets.dtrPercent = parseFloat(dtrInput.value) || 0;
+        persist();
     });
 }
 
@@ -108,6 +359,24 @@ function markPhase(phaseName, stateKey) {
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
     notifyUser(`${phaseName} recorded!`);
+}
+
+// Record a manual bean-temperature reading and update the live Rate of Rise.
+function logTemperature() {
+    if (!isRecording || !roastState.startTime) return;
+    const temp = parseFloat(tempInput && tempInput.value);
+    if (isNaN(temp)) return;
+
+    roastState.temps.push({ t: Date.now() - roastState.startTime, temp });
+
+    const unit = roastState.tempUnit || 'C';
+    const points = computeRoRPoints(roastState.temps);
+    const last = points[points.length - 1];
+    const rorText = last ? ` (RoR ${formatRoR(last.ror)})` : '';
+    logMessage(`Temp: ${temp}°${unit}${rorText}`);
+    if (liveRorDiv) liveRorDiv.textContent = `${temp}°${unit} | RoR ${last ? formatRoR(last.ror) : '--'}`;
+
+    if (tempInput) tempInput.value = '';
 }
 
 // Alert the roaster with a desktop notification and an audible beep.
@@ -149,10 +418,11 @@ async function setupAudio() {
         analyser = audioContext.createAnalyser();
         microphone = audioContext.createMediaStreamSource(stream);
 
-        // Create High-Pass Filter to remove talking, low hums, birds, dogs (e.g. cut below 3000 Hz)
+        // High-pass to remove deep rumble and mains hum, while preserving the
+        // low-frequency energy that distinguishes first crack from second crack.
         highPassFilter = audioContext.createBiquadFilter();
         highPassFilter.type = 'highpass';
-        highPassFilter.frequency.value = 3000;
+        highPassFilter.frequency.value = HIGHPASS_HZ;
 
         microphone.connect(highPassFilter);
         highPassFilter.connect(analyser);
@@ -160,6 +430,7 @@ async function setupAudio() {
         analyser.fftSize = 2048;
         const bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
+        freqArray = new Uint8Array(bufferLength);
 
         return true;
     } catch (err) {
@@ -215,12 +486,17 @@ async function startRoast() {
         endTime: null,
         phase: 'Heating',
         logs: [],
-        curve: []
+        curve: [],
+        temps: [],
+        tempUnit: getTempUnit()
     };
     recentRMSHistory = [];
     transientClusterCount = 0;
     lastTransientTime = 0;
+    recentRatios = [];
     lastCurveSampleTime = 0;
+    alarmFired = { total: false, dtr: false };
+    refAnnounced = { fc: false, sc: false };
 
     logArea.innerHTML = '';
     logMessage('Roast Started.');
@@ -231,6 +507,8 @@ async function startRoast() {
     stopBtn.disabled = false;
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
+    if (logTempBtn) logTempBtn.disabled = false;
+    if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
 
     updateStatus('Listening - Phase: Heating');
 
@@ -243,6 +521,20 @@ async function startRoast() {
         const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
         const s = (elapsed % 60).toString().padStart(2, '0');
         if (liveTimerDiv) liveTimerDiv.textContent = `${m}:${s}`;
+
+        const metrics = computeRoastMetrics(roastState);
+
+        // Live development time / DTR once first crack is recorded.
+        if (liveDtrDiv) {
+            if (roastState.firstCrackTime) {
+                liveDtrDiv.textContent = `Dev ${formatMs(metrics.developmentTimeMs)} | DTR ${formatDtr(metrics.dtr)}`;
+            } else {
+                liveDtrDiv.textContent = 'DTR --';
+            }
+        }
+
+        checkTargetAlarms(elapsed, metrics);
+        checkReferenceCues(Date.now() - roastState.startTime);
     }, 1000);
 }
 
@@ -259,6 +551,7 @@ function stopRoast() {
     stopBtn.disabled = true;
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
+    if (logTempBtn) logTempBtn.disabled = true;
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -267,12 +560,8 @@ function stopRoast() {
 
     updateStatus('Finished');
 
-    // Final static render of the completed curve with crack markers.
-    drawRoastCurve(curveCanvas, roastState.curve, {
-        firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
-        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
-        totalMs: roastState.endTime - roastState.startTime
-    });
+    // Final static render of the completed curve (with the reference if following).
+    renderLiveCurve(roastState.endTime - roastState.startTime);
 
     saveFinalRoast();
 }
@@ -289,17 +578,30 @@ function saveFinalRoast() {
         roasterSettings = { weight, profile };
     }
 
+    const greenWeightG = parseFloat(document.getElementById('greenWeightInput')?.value) || 0;
+
     const finalRoastData = {
         date: new Date().toISOString(),
         roaster,
         beanId,
         settings: roasterSettings,
+        greenWeightG,
         timeline: roastState,
         tastingNotes: { flavors: [], text: '' } // To be filled later in History tab
     };
 
     saveRoastToHistory(finalRoastData);
-    alert('Roast saved to history!');
+    window.dispatchEvent(new Event('historyUpdated'));
+
+    // Deduct the green weight used from the selected bean's pantry stock.
+    let stockMsg = '';
+    if (beanId && greenWeightG > 0) {
+        const remaining = adjustBeanQuantity(beanId, -greenWeightG);
+        window.dispatchEvent(new Event('pantryUpdated'));
+        if (remaining != null) stockMsg = `\n${greenWeightG} g deducted (remaining: ${remaining} g).`;
+    }
+
+    alert('Roast saved to history!' + stockMsg);
 }
 
 function calculateRMS(dataArray) {
@@ -311,44 +613,71 @@ function calculateRMS(dataArray) {
     return Math.sqrt(sum / dataArray.length);
 }
 
+// Fraction of crack energy in the high band (0..1). Higher = more 2C-like.
+function spectralHighRatio() {
+    if (!freqArray || !analyser) return 0;
+    analyser.getByteFrequencyData(freqArray);
+    const binHz = audioContext.sampleRate / analyser.fftSize;
+
+    let low = 0, high = 0;
+    for (let i = 0; i < freqArray.length; i++) {
+        const hz = i * binHz;
+        const v = freqArray[i];
+        if (hz >= LOW_BAND[0] && hz < LOW_BAND[1]) low += v;
+        else if (hz >= HIGH_BAND[0] && hz < HIGH_BAND[1]) high += v;
+    }
+    const total = low + high;
+    return total > 0 ? high / total : 0;
+}
+
+function avgRatio() {
+    if (recentRatios.length === 0) return 0;
+    return recentRatios.reduce((a, b) => a + b, 0) / recentRatios.length;
+}
+
 function detectTransient(rms) {
     const now = Date.now();
 
-    // Add to history
     recentRMSHistory.push(rms);
-    if (recentRMSHistory.length > HISTORY_LENGTH) {
-        recentRMSHistory.shift();
-    }
+    if (recentRMSHistory.length > HISTORY_LENGTH) recentRMSHistory.shift();
 
-    // A transient is a sudden spike significantly higher than the baseline AND recent history
-    // Since we applied a high-pass filter, low hums are already removed.
-    // We are looking for sharp high-frequency energy.
+    // A transient is a sudden spike well above the baseline and recent history.
     const recentAvg = recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length;
-    const spikeThreshold = Math.max(baselineNoiseRMS * 1.5, recentAvg * 2, 0.05);
+    const spikeThreshold = Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, recentAvg * 2, 0.05);
 
-    if (rms > spikeThreshold && (now - lastTransientTime > TRANSIENT_COOLDOWN_MS)) {
-        lastTransientTime = now;
-        transientClusterCount++;
+    if (rms <= spikeThreshold || (now - lastTransientTime <= TRANSIENT_COOLDOWN_MS)) return;
 
-        // Reset cluster count if it's been too long since the first snap in the cluster
-        // Actually, let's just reset if it's been a long time since the LAST snap
-        setTimeout(() => {
-            if (Date.now() - lastTransientTime >= CLUSTER_WINDOW_MS) {
-                transientClusterCount = 0;
-            }
-        }, CLUSTER_WINDOW_MS);
+    lastTransientTime = now;
+    transientClusterCount++;
 
-        if (transientClusterCount === 1) {
-             // Initial snap, wait for cluster
-        } else if (transientClusterCount === CRACKS_REQUIRED_FOR_PHASE) {
-            // We got a cluster! Decide if it's first or second crack.
-            if (!roastState.firstCrackTime) {
-                markPhase('First Crack (Auto)', 'firstCrackTime');
-            } else if (!roastState.secondCrackTime && (now - roastState.firstCrackTime > 30000)) {
-                // Must be at least 30s after first crack to be second crack
-                markPhase('Second Crack (Auto)', 'secondCrackTime');
-            }
+    // Capture the spectral signature of this snap.
+    recentRatios.push(spectralHighRatio());
+    if (recentRatios.length > RATIO_WINDOW) recentRatios.shift();
+
+    // Reset the cluster (and signature window) after a quiet gap.
+    setTimeout(() => {
+        if (Date.now() - lastTransientTime >= CLUSTER_WINDOW_MS) {
+            transientClusterCount = 0;
+            recentRatios = [];
         }
+    }, CLUSTER_WINDOW_MS);
+
+    const ratio = avgRatio();
+
+    if (!roastState.firstCrackTime) {
+        // The first sustained burst of cracking is first crack.
+        if (transientClusterCount >= detectionSettings.cracksRequired) {
+            markPhase('First Crack (Auto)', 'firstCrackTime');
+            const pitch = ratio >= detectionSettings.secondCrackPitch ? 'higher-pitched' : 'lower-pitched';
+            logMessage(`Auto-detected ${pitch} cracking (high-band ${(ratio * 100).toFixed(0)}%).`);
+        }
+    } else if (!roastState.secondCrackTime &&
+               now - roastState.firstCrackTime > SECOND_CRACK_MIN_GAP_MS &&
+               recentRatios.length >= detectionSettings.cracksRequired &&
+               ratio >= detectionSettings.secondCrackPitch) {
+        // Faster, higher-pitched cracking after first crack reads as second crack.
+        markPhase('Second Crack (Auto)', 'secondCrackTime');
+        logMessage(`Higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%).`);
     }
 }
 
@@ -366,12 +695,32 @@ function sampleRoastCurve(rms) {
         : rms;
 
     roastState.curve.push({ t: now - roastState.startTime, rms: smoothed });
+    renderLiveCurve(now - roastState.startTime);
+}
 
-    drawRoastCurve(curveCanvas, roastState.curve, {
+// Draw the live curve, overlaying the reference roast behind it when following.
+function renderLiveCurve(elapsedMs) {
+    const liveSeries = {
+        curve: roastState.curve,
+        color: '#ff9800',
+        label: 'This roast',
         firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
-        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
-        totalMs: now - roastState.startTime
-    });
+        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null
+    };
+
+    if (referenceCurve) {
+        drawRoastCurves(curveCanvas, [
+            { curve: referenceCurve, color: REF_COLOR, label: 'Reference',
+              firstCrackMs: referenceMarkers.firstCrackMs, secondCrackMs: referenceMarkers.secondCrackMs },
+            liveSeries
+        ]);
+    } else {
+        drawRoastCurve(curveCanvas, roastState.curve, {
+            firstCrackMs: liveSeries.firstCrackMs,
+            secondCrackMs: liveSeries.secondCrackMs,
+            totalMs: elapsedMs
+        });
+    }
 }
 
 function drawAndAnalyze() {
@@ -396,7 +745,7 @@ function drawAndAnalyze() {
 
     canvasCtx.lineWidth = 2;
     // Turn stroke red if a transient spike is happening right now for visual feedback
-    const isSpiking = (rms > Math.max(baselineNoiseRMS * 1.5, 0.05));
+    const isSpiking = (rms > Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, 0.05));
     canvasCtx.strokeStyle = isSpiking ? '#f44336' : '#ff9800';
 
     canvasCtx.beginPath();

@@ -24,10 +24,15 @@ export function initRoastDashboard() {
 
     // Behmor state management UI
     const weightBtns = document.querySelectorAll('.behmor-weight');
+    const greenWeightInput = document.getElementById('greenWeightInput');
+    // Behmor weight selections map to approximate green weights in grams.
+    const lbToGrams = { '1/4': 113, '1/2': 227, '1': 454 };
     weightBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             weightBtns.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
+            const grams = lbToGrams[e.target.dataset.weight];
+            if (greenWeightInput && grams) greenWeightInput.value = grams;
         });
     });
 
@@ -52,7 +57,8 @@ function populateBeanSelect() {
     pantry.forEach(bean => {
         const option = document.createElement('option');
         option.value = bean.id;
-        option.textContent = `${bean.name} (${bean.process || 'Unknown process'})`;
+        const qty = Number(bean.quantity) || 0;
+        option.textContent = `${bean.name} (${bean.process || 'Unknown process'}) — ${qty} g`;
         beanSelect.appendChild(option);
     });
 
