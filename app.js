@@ -11,6 +11,7 @@ let analyser;
 let dataArray;
 let isRecording = false;
 let animationId;
+let isNotifying = false;
 
 // State for crack detection
 let crackCount = 0;
@@ -33,8 +34,42 @@ function updateStatus(status) {
     statusDiv.textContent = `Status: ${status}`;
 }
 
+function notifyUser(message) {
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(message);
+    }
+
+    if (audioContext) {
+        isNotifying = true;
+
+        const oscillator = audioContext.createOscillator();
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime); // 1000 Hz
+
+        oscillator.connect(audioContext.destination);
+
+        oscillator.start();
+
+        // Play the sound for 1 second
+        setTimeout(() => {
+            oscillator.stop();
+            oscillator.disconnect();
+
+            // Allow 0.2s extra for audio to fully stop before resuming detection
+            setTimeout(() => {
+                isNotifying = false;
+            }, 200);
+
+        }, 1000);
+    }
+}
+
 async function startListening() {
     try {
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -107,6 +142,7 @@ function detectCrack(rms) {
             crackType = 'First Crack Started!';
             logMessage(`>>> FIRST CRACK DETECTED! (RMS: ${rms.toFixed(3)})`);
             updateStatus(`Listening - Phase: ${roastPhase}`);
+            notifyUser('First Crack Started!');
         } else if (crackCount > 1 && crackCount <= 5) {
             crackType = 'First Crack continues';
             logMessage(`- Crack detected (RMS: ${rms.toFixed(3)})`);
@@ -120,6 +156,7 @@ function detectCrack(rms) {
              roastPhase = 'Second Crack Started';
              logMessage(`>>> SECOND CRACK DETECTED! (RMS: ${rms.toFixed(3)})`);
              updateStatus(`Listening - Phase: ${roastPhase}`);
+             notifyUser('Second Crack Started!');
         } else {
              logMessage(`- Crack detected (RMS: ${rms.toFixed(3)})`);
         }
@@ -163,7 +200,9 @@ function drawAndAnalyze() {
 
     // Analyze audio for cracks
     const rms = calculateRMS(dataArray);
-    detectCrack(rms);
+    if (!isNotifying) {
+        detectCrack(rms);
+    }
 }
 
 // Initial canvas setup
