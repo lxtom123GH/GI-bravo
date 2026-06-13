@@ -98,6 +98,29 @@ export function saveRoastTargets(targets) {
     localStorage.setItem('roastTargets', JSON.stringify(targets));
 }
 
+// --- Reference colour samples (optional self-calibrated white-balance targets) ---
+
+export function getReferenceSamples() {
+    const s = localStorage.getItem('referenceSamples');
+    return s ? JSON.parse(s) : [];
+}
+
+export function saveReferenceSamples(list) {
+    localStorage.setItem('referenceSamples', JSON.stringify(list));
+}
+
+export function addReferenceSample(sample) {
+    const list = getReferenceSamples();
+    sample.id = Date.now().toString();
+    list.push(sample);
+    saveReferenceSamples(list);
+    return sample;
+}
+
+export function deleteReferenceSample(id) {
+    saveReferenceSamples(getReferenceSamples().filter(s => s.id !== id));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {
@@ -107,7 +130,8 @@ export function exportAllData() {
         pantry: getPantry(),
         roastHistory: getRoastHistory(),
         detectionSettings: getDetectionSettings(),
-        roastTargets: getRoastTargets()
+        roastTargets: getRoastTargets(),
+        referenceSamples: getReferenceSamples()
     };
 }
 
@@ -126,6 +150,9 @@ export function importAllData(data) {
     }
     if (data.roastTargets && typeof data.roastTargets === 'object') {
         saveRoastTargets({ ...DEFAULT_ROAST_TARGETS, ...data.roastTargets });
+    }
+    if (Array.isArray(data.referenceSamples)) {
+        saveReferenceSamples(data.referenceSamples);
     }
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }
