@@ -277,6 +277,7 @@ function renderHistoryList() {
             if (confirm(`Delete the roast of ${bean.name}? This cannot be undone.`)) {
                 deleteRoastFromHistory(e.target.dataset.id);
                 renderHistoryList();
+                window.dispatchEvent(new Event('historyUpdated'));
             }
         });
     });

@@ -1,5 +1,5 @@
-import { saveRoastToHistory, adjustBeanQuantity, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
-import { drawRoastCurve } from './chart.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
+import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
 let audioContext;
@@ -62,6 +62,13 @@ let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
 let roastTargets = { ...DEFAULT_ROAST_TARGETS };
 let alarmFired = { total: false, dtr: false };
 
+// Reference roast to follow (background profile). Null when not following.
+let referenceCurve = null;     // [{ t, rms }]
+let referenceMarkers = {};     // { firstCrackMs, secondCrackMs }
+let refAnnounced = { fc: false, sc: false };
+const REF_LEAD_MS = 10000;     // announce an upcoming crack this far ahead
+const REF_COLOR = '#888';      // faint background colour for the reference curve
+
 export function initAudioSystem() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
@@ -78,6 +85,11 @@ export function initAudioSystem() {
 
     // Re-sync settings inputs when a backup is imported.
     window.addEventListener('settingsImported', syncSettingsInputs);
+
+    initReferenceUI();
+    // Refresh the reference list when history changes (new roast / import / delete).
+    window.addEventListener('historyUpdated', populateReferenceSelect);
+    window.addEventListener('pantryUpdated', populateReferenceSelect);
 
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
@@ -150,6 +162,85 @@ function checkTargetAlarms(elapsedSeconds, metrics) {
         alarmFired.dtr = true;
         logMessage(`>>> <b>TARGET DTR ${roastTargets.dtrPercent}% REACHED</b> <<<`);
         notifyUser(`Target DTR of ${roastTargets.dtrPercent}% reached!`);
+    }
+}
+
+function initReferenceUI() {
+    const select = document.getElementById('referenceSelect');
+    if (!select) return;
+    populateReferenceSelect();
+    select.addEventListener('change', () => loadReference(select.value));
+}
+
+function populateReferenceSelect() {
+    const select = document.getElementById('referenceSelect');
+    if (!select) return;
+
+    const prev = select.value;
+    const history = getRoastHistory()
+        .filter(r => r.timeline && r.timeline.curve && r.timeline.curve.length >= 2)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    const pantry = getPantry();
+
+    select.innerHTML = '<option value="">None</option>';
+    history.forEach(roast => {
+        const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+        const opt = document.createElement('option');
+        opt.value = roast.id;
+        opt.textContent = `${bean.name} — ${new Date(roast.date).toLocaleDateString()}`;
+        select.appendChild(opt);
+    });
+
+    if (prev && history.find(r => r.id === prev)) select.value = prev;
+    else loadReference(''); // selection no longer valid
+}
+
+function loadReference(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast) {
+        referenceCurve = null;
+        referenceMarkers = {};
+        if (!isRecording) drawRoastCurve(curveCanvas, [], {});
+        return;
+    }
+
+    const start = roast.timeline.startTime;
+    referenceCurve = roast.timeline.curve;
+    referenceMarkers = {
+        firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
+        secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null,
+        totalMs: roast.timeline.endTime - start
+    };
+    refAnnounced = { fc: false, sc: false };
+
+    // Preview the reference when idle.
+    if (!isRecording) {
+        drawRoastCurves(curveCanvas, [{
+            curve: referenceCurve,
+            color: REF_COLOR,
+            label: 'Reference',
+            firstCrackMs: referenceMarkers.firstCrackMs,
+            secondCrackMs: referenceMarkers.secondCrackMs
+        }]);
+    }
+}
+
+// Warn ahead of the reference roast's crack events that haven't happened yet live.
+function checkReferenceCues(elapsedMs) {
+    if (!referenceCurve) return;
+
+    if (referenceMarkers.firstCrackMs != null && !refAnnounced.fc && !roastState.firstCrackTime &&
+        elapsedMs >= referenceMarkers.firstCrackMs - REF_LEAD_MS) {
+        refAnnounced.fc = true;
+        logMessage('>>> <b>Reference: first crack coming up (~10s)</b>');
+        notifyUser('Reference: first crack in ~10s');
+    }
+
+    if (referenceMarkers.secondCrackMs != null && !refAnnounced.sc && !roastState.secondCrackTime &&
+        elapsedMs >= referenceMarkers.secondCrackMs - REF_LEAD_MS) {
+        refAnnounced.sc = true;
+        logMessage('>>> <b>Reference: second crack coming up (~10s)</b>');
+        notifyUser('Reference: second crack in ~10s');
     }
 }
 
@@ -339,6 +430,7 @@ async function startRoast() {
     lastTransientTime = 0;
     lastCurveSampleTime = 0;
     alarmFired = { total: false, dtr: false };
+    refAnnounced = { fc: false, sc: false };
 
     logArea.innerHTML = '';
     logMessage('Roast Started.');
@@ -374,6 +466,7 @@ async function startRoast() {
         }
 
         checkTargetAlarms(elapsed, metrics);
+        checkReferenceCues(Date.now() - roastState.startTime);
     }, 1000);
 }
 
@@ -398,12 +491,8 @@ function stopRoast() {
 
     updateStatus('Finished');
 
-    // Final static render of the completed curve with crack markers.
-    drawRoastCurve(curveCanvas, roastState.curve, {
-        firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
-        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
-        totalMs: roastState.endTime - roastState.startTime
-    });
+    // Final static render of the completed curve (with the reference if following).
+    renderLiveCurve(roastState.endTime - roastState.startTime);
 
     saveFinalRoast();
 }
@@ -433,6 +522,7 @@ function saveFinalRoast() {
     };
 
     saveRoastToHistory(finalRoastData);
+    window.dispatchEvent(new Event('historyUpdated'));
 
     // Deduct the green weight used from the selected bean's pantry stock.
     let stockMsg = '';
@@ -509,12 +599,32 @@ function sampleRoastCurve(rms) {
         : rms;
 
     roastState.curve.push({ t: now - roastState.startTime, rms: smoothed });
+    renderLiveCurve(now - roastState.startTime);
+}
 
-    drawRoastCurve(curveCanvas, roastState.curve, {
+// Draw the live curve, overlaying the reference roast behind it when following.
+function renderLiveCurve(elapsedMs) {
+    const liveSeries = {
+        curve: roastState.curve,
+        color: '#ff9800',
+        label: 'This roast',
         firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
-        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
-        totalMs: now - roastState.startTime
-    });
+        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null
+    };
+
+    if (referenceCurve) {
+        drawRoastCurves(curveCanvas, [
+            { curve: referenceCurve, color: REF_COLOR, label: 'Reference',
+              firstCrackMs: referenceMarkers.firstCrackMs, secondCrackMs: referenceMarkers.secondCrackMs },
+            liveSeries
+        ]);
+    } else {
+        drawRoastCurve(curveCanvas, roastState.curve, {
+            firstCrackMs: liveSeries.firstCrackMs,
+            secondCrackMs: liveSeries.secondCrackMs,
+            totalMs: elapsedMs
+        });
+    }
 }
 
 function drawAndAnalyze() {
