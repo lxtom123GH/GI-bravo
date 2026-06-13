@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Roast Tracker</h2>
@@ -25,7 +26,7 @@
 
             <div class="card">
                 <h3>Roast Setup</h3>
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                     <div style="flex: 1;">
                         <label for="roasterSelect"><strong>Roaster</strong></label>
                         <select id="roasterSelect">
@@ -80,7 +81,7 @@
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="analyzer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3>Audio Analyzer & Timeline</h3>
                     <div style="display: flex; gap: 20px; align-items: center;">
                         <div id="liveTimer" style="font-size: 1.5rem; font-weight: bold; font-family: monospace; color: var(--text-main);">00:00</div>
