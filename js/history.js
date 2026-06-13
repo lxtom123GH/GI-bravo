@@ -2,6 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -250,7 +251,14 @@ function renderHistoryList() {
                     ${logsHtml}
                 </div>
             </details>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
+                <h4>Photos</h4>
+                <div class="roast-photos" data-id="${roast.id}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
+                <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
+                <input type="file" class="photo-input" data-id="${roast.id}" accept="image/*" capture="environment" style="display: none;">
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
@@ -266,6 +274,30 @@ function renderHistoryList() {
             firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - startMs : null,
             secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - startMs : null,
             totalMs: roast.timeline.endTime - startMs
+        });
+
+        renderPhotos(roast.id, card.querySelector('.roast-photos'));
+    });
+
+    document.querySelectorAll('.add-photo-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelector(`.photo-input[data-id="${e.target.dataset.id}"]`).click();
+        });
+    });
+
+    document.querySelectorAll('.photo-input').forEach(inp => {
+        inp.addEventListener('change', async (e) => {
+            const id = e.target.dataset.id;
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    await addPhoto(id, await fileToScaledDataURL(file));
+                    renderPhotos(id, document.querySelector(`.roast-photos[data-id="${id}"]`));
+                } catch (err) {
+                    alert(`Could not add photo: ${err.message}`);
+                }
+            }
+            e.target.value = '';
         });
     });
 
@@ -287,10 +319,42 @@ function renderHistoryList() {
             const bean = pantry.find(b => b.id === roast?.beanId) || { name: 'this roast' };
             if (confirm(`Delete the roast of ${bean.name}? This cannot be undone.`)) {
                 deleteRoastFromHistory(e.target.dataset.id);
+                deletePhotosForRoast(e.target.dataset.id).catch(() => {});
                 renderHistoryList();
                 window.dispatchEvent(new Event('historyUpdated'));
             }
         });
+    });
+}
+
+async function renderPhotos(roastId, container) {
+    if (!container) return;
+    let photos = [];
+    try {
+        photos = await getPhotos(roastId);
+    } catch {
+        container.innerHTML = '<small style="color: var(--text-muted);">Photos unavailable.</small>';
+        return;
+    }
+
+    container.innerHTML = '';
+    if (photos.length === 0) {
+        container.innerHTML = '<small style="color: var(--text-muted);">No photos.</small>';
+        return;
+    }
+
+    photos.forEach(p => {
+        const img = document.createElement('img');
+        img.src = p.dataURL;
+        img.title = 'Click to delete';
+        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid var(--border-color);';
+        img.addEventListener('click', async () => {
+            if (confirm('Delete this photo?')) {
+                await deletePhoto(p.id);
+                renderPhotos(roastId, container);
+            }
+        });
+        container.appendChild(img);
     });
 }
 
