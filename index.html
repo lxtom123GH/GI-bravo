@@ -3,59 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Roasting Audio Detector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: center;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 10px;
-            cursor: pointer;
-        }
-        canvas {
-            border: 1px solid #ccc;
-            background: #f9f9f9;
-            width: 100%;
-            max-width: 500px;
-            height: 150px;
-            margin: 10px 0;
-        }
-        #logArea {
-            text-align: left;
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 200px;
-            overflow-y: scroll;
-            background-color: #eee;
-            font-family: monospace;
-        }
-    </style>
+    <title>Coffee Roasting Tracker</title>
+    <meta name="theme-color" content="#ff9800">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Roast Tracker">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Coffee Roasting Analyzer</h1>
-    <p>Detect 'First Crack' and 'Second Crack' using audio analysis.</p>
-
-    <div>
-        <button id="startBtn">Start Listening</button>
-        <button id="stopBtn" disabled>Stop Listening</button>
+    <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Roast Tracker</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active" data-target="dashboard">Active Roast</li>
+            <li data-target="pantry">Bean Pantry</li>
+            <li data-target="history">Roast History</li>
+        </ul>
     </div>
 
-    <div>
-        <canvas id="oscilloscope"></canvas>
+    <div class="main-content">
+        <!-- Active Roast Dashboard -->
+        <div id="dashboard" class="tab-pane active">
+            <h1>Active Roast Dashboard</h1>
+
+            <div class="card">
+                <h3>Roast Setup</h3>
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label for="roasterSelect"><strong>Roaster</strong></label>
+                        <select id="roasterSelect">
+                            <option value="behmor">Behmor 2000AB Plus</option>
+                            <option value="kkto">KKTO</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="beanSelect"><strong>Beans</strong></label>
+                        <select id="beanSelect">
+                            <option value="">Select beans from pantry...</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="greenWeightInput"><strong>Green weight (g)</strong></label>
+                        <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 454">
+                    </div>
+                </div>
+
+                <!-- Behmor Controls -->
+                <div id="behmorControls" style="border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <h4>Behmor Settings</h4>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <label>Weight:</label>
+                        <button class="behmor-weight" data-weight="1/4">1/4 lb</button>
+                        <button class="behmor-weight" data-weight="1/2">1/2 lb</button>
+                        <button class="behmor-weight active" data-weight="1">1 lb</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <label>Profile:</label>
+                        <button class="behmor-profile active" data-profile="P1">P1</button>
+                        <button class="behmor-profile" data-profile="P2">P2</button>
+                        <button class="behmor-profile" data-profile="P3">P3</button>
+                        <button class="behmor-profile" data-profile="P4">P4</button>
+                        <button class="behmor-profile" data-profile="P5">P5</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <label>Log Actions:</label>
+                        <button class="behmor-action" data-action="Prog A">Prog A</button>
+                        <button class="behmor-action" data-action="Prog B">Prog B</button>
+                        <button class="behmor-action" data-action="Prog C (Reset Time)">Prog C</button>
+                        <button class="behmor-action" data-action="Prog D (Drum Speed)">Prog D</button>
+                    </div>
+                </div>
+
+                <!-- KKTO Controls -->
+                <div id="kktoControls" style="display: none; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <h4>KKTO Actions</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="kkto-action" data-action="Heat Up">Heat Up</button>
+                        <button class="kkto-action" data-action="Heat Down">Heat Down</button>
+                        <button class="kkto-action" data-action="Fan Up">Fan Up</button>
+                        <button class="kkto-action" data-action="Fan Down">Fan Down</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="analyzer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Audio Analyzer & Timeline</h3>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div id="liveTimer" style="font-size: 1.5rem; font-weight: bold; font-family: monospace; color: var(--text-main);">00:00</div>
+                        <div id="liveDtr" style="font-size: 1rem; font-family: monospace; color: var(--text-muted);">DTR --</div>
+                        <div class="status-indicator" id="status" style="margin-bottom: 0;">Status: Ready</div>
+                    </div>
+                </div>
+
+                <div class="roast-controls">
+                    <button id="calibrateBtn">Calibrate Noise</button>
+                    <button id="startBtn">Start Roast & Listening</button>
+                    <button id="stopBtn" disabled class="danger">Stop Roast</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="markFirstCrackBtn" style="flex: 1; background-color: #2196F3;" disabled>Manual: Mark 1st Crack</button>
+                    <button id="markSecondCrackBtn" style="flex: 1; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                    <input type="number" id="tempInput" placeholder="Bean temp°" step="1" style="flex: 1; margin-bottom: 0;">
+                    <button id="logTempBtn" disabled>Log Temp</button>
+                    <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label for="referenceSelect"><strong>Follow reference roast</strong></label>
+                    <select id="referenceSelect"><option value="">None</option></select>
+                    <small style="color: var(--text-muted);">Overlays a past roast's curve and warns ~10s before its cracks.</small>
+                </div>
+
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Detection Settings</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="thresholdSetting">
+                                <strong>Sensitivity threshold:</strong> <span id="thresholdValue">1.5×</span>
+                            </label>
+                            <input type="range" id="thresholdSetting" min="1.1" max="3" step="0.1" value="1.5">
+                            <small style="color: var(--text-muted);">Lower = more sensitive (detects quieter snaps); higher = ignores faint noise.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="cracksSetting">
+                                <strong>Snaps to confirm a crack:</strong> <span id="cracksValue">3</span>
+                            </label>
+                            <input type="range" id="cracksSetting" min="1" max="6" step="1" value="3">
+                            <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="pitchSetting">
+                                <strong>Second-crack pitch threshold:</strong> <span id="pitchValue">50%</span>
+                            </label>
+                            <input type="range" id="pitchSetting" min="0.3" max="0.8" step="0.05" value="0.5">
+                            <small style="color: var(--text-muted);">High-frequency energy share above which cracking is read as second crack. Lower = detects 2nd crack more readily.</small>
+                        </div>
+                        <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
+                    </div>
+                </details>
+
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Roast Targets (alarms)</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+                            Get a beep + notification when the roast reaches a target. Leave blank or 0 to disable.
+                        </p>
+                        <div class="setup-row" style="display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label for="targetTotalSetting"><strong>Target total time (min)</strong></label>
+                                <input type="number" id="targetTotalSetting" min="0" step="0.5" placeholder="e.g. 12">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="targetDtrSetting"><strong>Target DTR (%)</strong></label>
+                                <input type="number" id="targetDtrSetting" min="0" max="50" step="0.5" placeholder="e.g. 20">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <canvas id="oscilloscope"></canvas>
+
+                <h4 style="margin-top: 10px;">Roast Curve (audio energy over time)</h4>
+                <canvas id="roastCurve"></canvas>
+
+                <h3>Timeline & Logs</h3>
+                <div id="logArea"></div>
+            </div>
+        </div>
+
+        <!-- Bean Pantry -->
+        <div id="pantry" class="tab-pane">
+            <h1>Bean Pantry</h1>
+            <div class="card">
+                <h3>Add New Green Beans</h3>
+                <form id="addBeanForm">
+                    <input type="text" id="beanName" placeholder="Bean Name / Blend Name (Required)" required>
+                    <input type="text" id="beanCountry" placeholder="Country of Origin (e.g., Ethiopia)">
+                    <input type="text" id="beanRegion" placeholder="Region (e.g., Yirgacheffe)">
+                    <input type="text" id="beanFarm" placeholder="Farm / Producer">
+                    <select id="beanProcess">
+                        <option value="">Select Process...</option>
+                        <option value="Washed">Washed</option>
+                        <option value="Natural">Natural</option>
+                        <option value="Honey">Honey</option>
+                        <option value="Wet-Hulled">Wet-Hulled</option>
+                        <option value="Anaerobic">Anaerobic</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="beanQuantity" placeholder="Quantity on hand (grams)" min="0" step="1">
+                    <button type="submit">Add to Pantry</button>
+                </form>
+            </div>
+
+            <div id="pantryList">
+                <!-- Bean items will be listed here -->
+            </div>
+        </div>
+
+        <!-- Roast History -->
+        <div id="history" class="tab-pane">
+            <h1>Roast History</h1>
+            <div class="card">
+                <h3>Data Backup</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    All beans and roasts are stored only in this browser. Export a backup to keep them safe.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="exportBackupBtn">Export Backup (JSON)</button>
+                    <button id="importBackupBtn">Import Backup</button>
+                    <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
+                </div>
+            </div>
+
+            <div class="card" id="compareCard">
+                <h3>Compare Roasts</h3>
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label for="compareSelectA"><strong style="color: #ff9800;">Roast A</strong></label>
+                        <select id="compareSelectA"><option value="">Select a roast...</option></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="compareSelectB"><strong style="color: #2196f3;">Roast B</strong></label>
+                        <select id="compareSelectB"><option value="">Select a roast...</option></select>
+                    </div>
+                </div>
+                <canvas id="compareCanvas" style="height: 180px;"></canvas>
+                <div id="compareMetrics"></div>
+            </div>
+
+            <div id="historyContainer">
+                <!-- History cards will go here -->
+            </div>
+        </div>
     </div>
 
-    <div id="status">Status: Inactive</div>
-
-    <h3>Detection Logs</h3>
-    <div id="logArea"></div>
-
-    <script type="module" src="app.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
