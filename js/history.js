@@ -244,8 +244,9 @@ function renderHistoryList() {
                     ${logsHtml}
                 </div>
             </details>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
+                <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
             </div>
         `;
@@ -264,6 +265,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.export-btn').forEach(btn => {
         btn.addEventListener('click', (e) => exportRoast(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.export-csv-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => exportRoastCsv(e.target.dataset.id));
     });
 
     document.querySelectorAll('.edit-notes-btn').forEach(btn => {
@@ -364,6 +369,44 @@ function openTastingModal(id) {
         document.body.removeChild(modalBg);
         renderHistoryList();
     });
+}
+
+function exportRoastCsv(id) {
+    const history = getRoastHistory();
+    const pantry = getPantry();
+    const roast = history.find(r => r.id === id);
+    if (!roast) return;
+
+    const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+    const start = roast.timeline.startTime;
+
+    // Build a time-sorted table of curve samples and crack/end events.
+    const rows = [];
+    (roast.timeline.curve || []).forEach(p => rows.push({ t: p.t / 1000, rms: p.rms, event: '' }));
+    if (roast.timeline.firstCrackTime) rows.push({ t: (roast.timeline.firstCrackTime - start) / 1000, rms: '', event: 'First Crack' });
+    if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', event: 'Second Crack' });
+    if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', event: 'End' });
+    rows.sort((a, b) => a.t - b.t);
+
+    let csv = 'time_s,energy_rms,event\n';
+    rows.forEach(r => {
+        const rms = r.rms === '' ? '' : Number(r.rms).toFixed(4);
+        csv += `${r.t.toFixed(1)},${rms},${r.event}\n`;
+    });
+
+    const safeName = bean.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    const dateStr = new Date(roast.date).toISOString().slice(0, 10);
+    downloadText(`roast-${safeName}-${dateStr}.csv`, csv, 'text/csv');
+}
+
+function downloadText(filename, text, mime) {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function exportRoast(id) {

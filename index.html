@@ -134,6 +134,13 @@
                             <input type="range" id="cracksSetting" min="1" max="6" step="1" value="3">
                             <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared.</small>
                         </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="pitchSetting">
+                                <strong>Second-crack pitch threshold:</strong> <span id="pitchValue">50%</span>
+                            </label>
+                            <input type="range" id="pitchSetting" min="0.3" max="0.8" step="0.05" value="0.5">
+                            <small style="color: var(--text-muted);">High-frequency energy share above which cracking is read as second crack. Lower = detects 2nd crack more readily.</small>
+                        </div>
                         <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
                     </div>
                 </details>

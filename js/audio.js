@@ -65,7 +65,6 @@ const HIGHPASS_HZ = 500;
 const LOW_BAND = [800, 3000];     // first-crack-dominant band (Hz)
 const HIGH_BAND = [3000, 8000];   // second-crack-dominant band (Hz)
 const RATIO_WINDOW = 8;           // number of recent snaps averaged for the signature
-const SECOND_CRACK_HIGH_RATIO = 0.5;   // high-band share above which cracking reads as 2C
 const SECOND_CRACK_MIN_GAP_MS = 20000; // earliest 2C can follow 1C
 let freqArray;
 let recentRatios = [];            // high-band share of recent snaps
@@ -126,16 +125,20 @@ export function initAudioSystem() {
 function initDetectionSettingsUI() {
     const threshInput = document.getElementById('thresholdSetting');
     const cracksInput = document.getElementById('cracksSetting');
+    const pitchInput = document.getElementById('pitchSetting');
     const threshVal = document.getElementById('thresholdValue');
     const cracksVal = document.getElementById('cracksValue');
+    const pitchVal = document.getElementById('pitchValue');
     const resetBtn = document.getElementById('resetDetectionBtn');
     if (!threshInput || !cracksInput) return;
 
     const render = () => {
         threshInput.value = detectionSettings.thresholdMultiplier;
         cracksInput.value = detectionSettings.cracksRequired;
+        if (pitchInput) pitchInput.value = detectionSettings.secondCrackPitch;
         if (threshVal) threshVal.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
         if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
+        if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
     };
 
     const persist = () => saveDetectionSettings(detectionSettings);
@@ -151,6 +154,14 @@ function initDetectionSettingsUI() {
         if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
         persist();
     });
+
+    if (pitchInput) {
+        pitchInput.addEventListener('input', () => {
+            detectionSettings.secondCrackPitch = parseFloat(pitchInput.value);
+            if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+            persist();
+        });
+    }
 
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
@@ -274,6 +285,11 @@ function syncSettingsInputs() {
     const cv = document.getElementById('cracksValue');
     if (c) c.value = detectionSettings.cracksRequired;
     if (cv) cv.textContent = detectionSettings.cracksRequired;
+
+    const p = document.getElementById('pitchSetting');
+    const pv = document.getElementById('pitchValue');
+    if (p) p.value = detectionSettings.secondCrackPitch;
+    if (pv) pv.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
 
     const tt = document.getElementById('targetTotalSetting');
     if (tt) tt.value = roastTargets.totalMinutes || '';
@@ -617,13 +633,13 @@ function detectTransient(rms) {
         // The first sustained burst of cracking is first crack.
         if (transientClusterCount >= detectionSettings.cracksRequired) {
             markPhase('First Crack (Auto)', 'firstCrackTime');
-            const pitch = ratio >= SECOND_CRACK_HIGH_RATIO ? 'higher-pitched' : 'lower-pitched';
+            const pitch = ratio >= detectionSettings.secondCrackPitch ? 'higher-pitched' : 'lower-pitched';
             logMessage(`Auto-detected ${pitch} cracking (high-band ${(ratio * 100).toFixed(0)}%).`);
         }
     } else if (!roastState.secondCrackTime &&
                now - roastState.firstCrackTime > SECOND_CRACK_MIN_GAP_MS &&
                recentRatios.length >= detectionSettings.cracksRequired &&
-               ratio >= SECOND_CRACK_HIGH_RATIO) {
+               ratio >= detectionSettings.secondCrackPitch) {
         // Faster, higher-pitched cracking after first crack reads as second crack.
         markPhase('Second Crack (Auto)', 'secondCrackTime');
         logMessage(`Higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%).`);
