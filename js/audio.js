@@ -76,6 +76,9 @@ export function initAudioSystem() {
     roastTargets = getRoastTargets();
     initTargetsUI();
 
+    // Re-sync settings inputs when a backup is imported.
+    window.addEventListener('settingsImported', syncSettingsInputs);
+
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
     stopBtn.addEventListener('click', stopRoast);
@@ -148,6 +151,28 @@ function checkTargetAlarms(elapsedSeconds, metrics) {
         logMessage(`>>> <b>TARGET DTR ${roastTargets.dtrPercent}% REACHED</b> <<<`);
         notifyUser(`Target DTR of ${roastTargets.dtrPercent}% reached!`);
     }
+}
+
+// Reload persisted settings into module state and update the inputs in place
+// (without rebinding their change listeners) after a backup import.
+function syncSettingsInputs() {
+    detectionSettings = getDetectionSettings();
+    roastTargets = getRoastTargets();
+
+    const t = document.getElementById('thresholdSetting');
+    const tv = document.getElementById('thresholdValue');
+    if (t) t.value = detectionSettings.thresholdMultiplier;
+    if (tv) tv.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
+
+    const c = document.getElementById('cracksSetting');
+    const cv = document.getElementById('cracksValue');
+    if (c) c.value = detectionSettings.cracksRequired;
+    if (cv) cv.textContent = detectionSettings.cracksRequired;
+
+    const tt = document.getElementById('targetTotalSetting');
+    if (tt) tt.value = roastTargets.totalMinutes || '';
+    const td = document.getElementById('targetDtrSetting');
+    if (td) td.value = roastTargets.dtrPercent || '';
 }
 
 function initTargetsUI() {

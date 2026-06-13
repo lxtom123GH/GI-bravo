@@ -101,15 +101,18 @@ export function saveRoastTargets(targets) {
 
 export function exportAllData() {
     return {
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         pantry: getPantry(),
-        roastHistory: getRoastHistory()
+        roastHistory: getRoastHistory(),
+        detectionSettings: getDetectionSettings(),
+        roastTargets: getRoastTargets()
     };
 }
 
 // Validate and import a backup object. Returns { pantry, roasts } counts.
 // Throws on malformed input so callers can surface a clear error.
+// Detection settings and targets are optional (v1 backups omit them).
 export function importAllData(data) {
     if (!data || typeof data !== 'object') throw new Error('Invalid backup file.');
     if (!Array.isArray(data.pantry) || !Array.isArray(data.roastHistory)) {
@@ -117,5 +120,11 @@ export function importAllData(data) {
     }
     savePantry(data.pantry);
     saveRoastHistory(data.roastHistory);
+    if (data.detectionSettings && typeof data.detectionSettings === 'object') {
+        saveDetectionSettings({ ...DEFAULT_DETECTION_SETTINGS, ...data.detectionSettings });
+    }
+    if (data.roastTargets && typeof data.roastTargets === 'object') {
+        saveRoastTargets({ ...DEFAULT_ROAST_TARGETS, ...data.roastTargets });
+    }
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }

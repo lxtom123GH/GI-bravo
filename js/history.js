@@ -145,6 +145,7 @@ function initBackup() {
                 const result = importAllData(JSON.parse(reader.result));
                 renderHistoryList();
                 window.dispatchEvent(new Event('pantryUpdated'));
+                window.dispatchEvent(new Event('settingsImported'));
                 alert(`Imported ${result.pantry} bean(s) and ${result.roasts} roast(s).`);
             } catch (err) {
                 alert(`Import failed: ${err.message}`);
