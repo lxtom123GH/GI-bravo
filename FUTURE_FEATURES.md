@@ -2,7 +2,20 @@
 
 This document outlines high-value features to be implemented in the Coffee Roasting Tracker.
 
-## 1. Roasted Weight & Weight Loss Percentage (Yield)
+## Overarching Architecture: Complexity Tiers (Easy / Moderate / Expert)
+
+To cater to a wide range of users, from casual hobbyists to advanced roasters and Q Graders, new and existing features should be governed by "Complexity Tiers." A global user setting should allow toggling the app's complexity level, progressively revealing more advanced data inputs and metrics.
+
+### Tier Guidelines:
+*   **Easy:** Minimal friction. Focuses on the basics (e.g., Bean, total time, and simple emoji ratings like 🙁/😐/😀 instead of complex flavor wheels).
+*   **Moderate:** The current baseline. Includes flavor wheels, first/second crack times, Development Time Ratio (DTR), and brewing method tags.
+*   **Expert:** Full data logging. Includes yield percentages, environment temperatures (ET), SCA 100-point cupping scores, and detailed brew parameters.
+
+The features below should be implemented with these tiers in mind.
+
+---
+
+## 1. Roasted Weight & Weight Loss Percentage (Yield) [Expert Tier]
 
 Tracking the weight loss during a roast (typically between 12-20%) is a fundamental metric for roasters. It helps ensure batch-to-batch consistency and gives insight into moisture loss and roast development.
 
@@ -18,9 +31,14 @@ Tracking the weight loss during a roast (typically between 12-20%) is a fundamen
 4. **Export Updates (`js/history.js`):**
    - Update `exportRoast` (clipboard text) and `exportRoastCsv` to include the `roastedWeightG` and calculated yield percentage.
 
-## 2. SCA-style Cupping Score & Brew Log
+## 2. SCA-style Cupping Score & Brew Log [Tiered Implementation]
 
-Currently, tasting notes are limited to a flavor wheel and free text. Adding a structured, quantitative evaluation system and a brew log allows testers to objectively grade, compare, and reproduce optimal roasts.
+Currently, tasting notes are limited to a flavor wheel and free text. Adding a structured evaluation system and a brew log allows testers to grade and reproduce roasts, but should be tailored to the user's complexity tier.
+
+### Tiered Tasting UI:
+*   **Easy:** A simple 3-emoji rating system (Sad / Neutral / Happy) alongside a basic text area for general notes.
+*   **Moderate:** The existing Flavor Wheel tags + basic brew method (e.g., "V60", "Espresso") + text notes.
+*   **Expert:** Full structured evaluation (detailed below).
 
 ### Implementation Plan:
 1. **Data Model Updates (`js/storage.js`):**
