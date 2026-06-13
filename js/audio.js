@@ -1,5 +1,6 @@
 import { saveRoastToHistory } from './storage.js';
 import { drawRoastCurve } from './chart.js';
+import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
 let audioContext;
 let microphone;
@@ -17,6 +18,7 @@ const curveCanvas = document.getElementById('roastCurve');
 const logArea = document.getElementById('logArea');
 const statusDiv = document.getElementById('status');
 const liveTimerDiv = document.getElementById('liveTimer');
+const liveDtrDiv = document.getElementById('liveDtr');
 
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -243,6 +245,16 @@ async function startRoast() {
         const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
         const s = (elapsed % 60).toString().padStart(2, '0');
         if (liveTimerDiv) liveTimerDiv.textContent = `${m}:${s}`;
+
+        // Live development time / DTR once first crack is recorded.
+        if (liveDtrDiv) {
+            if (roastState.firstCrackTime) {
+                const metrics = computeRoastMetrics(roastState);
+                liveDtrDiv.textContent = `Dev ${formatMs(metrics.developmentTimeMs)} | DTR ${formatDtr(metrics.dtr)}`;
+            } else {
+                liveDtrDiv.textContent = 'DTR --';
+            }
+        }
     }, 1000);
 }
 

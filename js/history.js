@@ -1,6 +1,7 @@
 import { getRoastHistory, getPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve } from './chart.js';
+import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
 export function initHistory() {
     renderHistoryList();
@@ -37,20 +38,19 @@ function renderHistoryList() {
         }
 
         const startTime = roast.timeline.startTime;
-        const endTime = roast.timeline.endTime;
-        const totalMs = endTime - startTime;
-        const totalMins = Math.floor(totalMs / 60000);
-        const totalSecs = Math.floor((totalMs % 60000) / 1000).toString().padStart(2, '0');
+        const m = computeRoastMetrics(roast.timeline);
 
-        let timelineHtml = `<ul><li><strong>Total Time:</strong> ${totalMins}:${totalSecs}</li>`;
+        let timelineHtml = `<ul><li><strong>Total Time:</strong> ${formatMs(m.totalMs)}</li>`;
 
-        if (roast.timeline.firstCrackTime) {
-            const fcMs = roast.timeline.firstCrackTime - startTime;
-            timelineHtml += `<li><strong>First Crack:</strong> ${Math.floor(fcMs / 60000)}:${Math.floor((fcMs % 60000) / 1000).toString().padStart(2, '0')}</li>`;
+        if (m.timeToFirstCrackMs != null) {
+            timelineHtml += `<li><strong>First Crack:</strong> ${formatMs(m.timeToFirstCrackMs)}</li>`;
         }
-        if (roast.timeline.secondCrackTime) {
-            const scMs = roast.timeline.secondCrackTime - startTime;
-            timelineHtml += `<li><strong>Second Crack:</strong> ${Math.floor(scMs / 60000)}:${Math.floor((scMs % 60000) / 1000).toString().padStart(2, '0')}</li>`;
+        if (m.secondCrackMs != null) {
+            timelineHtml += `<li><strong>Second Crack:</strong> ${formatMs(m.secondCrackMs)}</li>`;
+        }
+        if (m.developmentTimeMs != null) {
+            timelineHtml += `<li><strong>Development Time:</strong> ${formatMs(m.developmentTimeMs)}</li>`;
+            timelineHtml += `<li><strong>Development Ratio (DTR):</strong> ${formatDtr(m.dtr)}</li>`;
         }
         timelineHtml += '</ul>';
 
@@ -216,17 +216,14 @@ function exportRoast(id) {
     }
     text += `\n\nTimeline:\n`;
 
-    const startTime = roast.timeline.startTime;
-    if (roast.timeline.firstCrackTime) {
-        const fcMs = roast.timeline.firstCrackTime - startTime;
-        text += `- First Crack: ${Math.floor(fcMs / 60000)}:${Math.floor((fcMs % 60000) / 1000).toString().padStart(2, '0')}\n`;
+    const m = computeRoastMetrics(roast.timeline);
+    if (m.timeToFirstCrackMs != null) text += `- First Crack: ${formatMs(m.timeToFirstCrackMs)}\n`;
+    if (m.secondCrackMs != null) text += `- Second Crack: ${formatMs(m.secondCrackMs)}\n`;
+    text += `- Total Time: ${formatMs(m.totalMs)}\n`;
+    if (m.developmentTimeMs != null) {
+        text += `- Development Time: ${formatMs(m.developmentTimeMs)}\n`;
+        text += `- Development Ratio (DTR): ${formatDtr(m.dtr)}\n`;
     }
-    if (roast.timeline.secondCrackTime) {
-        const scMs = roast.timeline.secondCrackTime - startTime;
-        text += `- Second Crack: ${Math.floor(scMs / 60000)}:${Math.floor((scMs % 60000) / 1000).toString().padStart(2, '0')}\n`;
-    }
-    const endMs = roast.timeline.endTime - startTime;
-    text += `- Total Time: ${Math.floor(endMs / 60000)}:${Math.floor((endMs % 60000) / 1000).toString().padStart(2, '0')}\n`;
 
     if (roast.tastingNotes) {
         text += `\nTasting Notes:\n`;
