@@ -98,6 +98,16 @@ export function saveRoastTargets(targets) {
     localStorage.setItem('roastTargets', JSON.stringify(targets));
 }
 
+// --- Temperature unit preference ---
+
+export function getTempUnit() {
+    return localStorage.getItem('tempUnit') || 'C';
+}
+
+export function saveTempUnit(unit) {
+    localStorage.setItem('tempUnit', unit === 'F' ? 'F' : 'C');
+}
+
 // --- Reference colour samples (optional self-calibrated white-balance targets) ---
 
 export function getReferenceSamples() {
@@ -131,7 +141,8 @@ export function exportAllData() {
         roastHistory: getRoastHistory(),
         detectionSettings: getDetectionSettings(),
         roastTargets: getRoastTargets(),
-        referenceSamples: getReferenceSamples()
+        referenceSamples: getReferenceSamples(),
+        tempUnit: getTempUnit()
     };
 }
 
@@ -154,5 +165,6 @@ export function importAllData(data) {
     if (Array.isArray(data.referenceSamples)) {
         saveReferenceSamples(data.referenceSamples);
     }
+    if (data.tempUnit) saveTempUnit(data.tempUnit);
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }

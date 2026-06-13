@@ -1,4 +1,4 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit } from './storage.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
 
@@ -28,6 +28,7 @@ const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
 const logTempBtn = document.getElementById('logTempBtn');
 const tempInput = document.getElementById('tempInput');
+const tempUnitSelect = document.getElementById('tempUnit');
 
 // State for Roast and Detection
 let roastState = {
@@ -118,6 +119,10 @@ export function initAudioSystem() {
 
     if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
     if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
+    if (tempUnitSelect) {
+        tempUnitSelect.value = getTempUnit();
+        tempUnitSelect.addEventListener('change', () => saveTempUnit(tempUnitSelect.value));
+    }
 
     // Attach actions from roast dashboard to the timeline
     document.querySelectorAll('.behmor-action, .kkto-action').forEach(btn => {
@@ -364,11 +369,12 @@ function logTemperature() {
 
     roastState.temps.push({ t: Date.now() - roastState.startTime, temp });
 
+    const unit = roastState.tempUnit || 'C';
     const points = computeRoRPoints(roastState.temps);
     const last = points[points.length - 1];
     const rorText = last ? ` (RoR ${formatRoR(last.ror)})` : '';
-    logMessage(`Temp: ${temp}°${rorText}`);
-    if (liveRorDiv) liveRorDiv.textContent = `${temp}° | RoR ${last ? formatRoR(last.ror) : '--'}`;
+    logMessage(`Temp: ${temp}°${unit}${rorText}`);
+    if (liveRorDiv) liveRorDiv.textContent = `${temp}°${unit} | RoR ${last ? formatRoR(last.ror) : '--'}`;
 
     if (tempInput) tempInput.value = '';
 }
@@ -481,7 +487,8 @@ async function startRoast() {
         phase: 'Heating',
         logs: [],
         curve: [],
-        temps: []
+        temps: [],
+        tempUnit: getTempUnit()
     };
     recentRMSHistory = [];
     transientClusterCount = 0;
