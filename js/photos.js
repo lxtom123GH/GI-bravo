@@ -95,27 +95,70 @@ function hexToRgb(hex) {
     return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
 }
 
+// Inspect the central region for over/under-exposure that would corrupt the gains.
+function analyzeExposure(ctx, w, h, frac = 0.5) {
+    const rw = Math.max(1, Math.floor(w * frac));
+    const rh = Math.max(1, Math.floor(h * frac));
+    const x0 = Math.floor((w - rw) / 2);
+    const y0 = Math.floor((h - rh) / 2);
+    const data = ctx.getImageData(x0, y0, rw, rh).data;
+    let lumSum = 0, clipped = 0, dark = 0, n = 0;
+    for (let i = 0; i < data.length; i += 4) {
+        const lum = luminance({ r: data[i], g: data[i + 1], b: data[i + 2] });
+        lumSum += lum;
+        if (data[i] >= 250 || data[i + 1] >= 250 || data[i + 2] >= 250) clipped++;
+        if (lum <= 18) dark++;
+        n++;
+    }
+    return { meanLum: lumSum / n, clippedFrac: clipped / n, darkFrac: dark / n };
+}
+
+// Warnings about a reference photo's exposure, if any.
+function exposureWarnings(exp) {
+    const warnings = [];
+    if (exp.clippedFrac > 0.05) {
+        warnings.push(`The reference looks over-exposed (${Math.round(exp.clippedFrac * 100)}% of it is blown out). Re-shoot darker or use a grey card so the gains are accurate.`);
+    } else if (exp.meanLum < 40) {
+        warnings.push('The reference looks very dark. Add light or re-shoot brighter for a reliable correction.');
+    }
+    return warnings;
+}
+
+// Resolve a target colour from {r,g,b} | "#RRGGBB" | null (null = neutral grey-world).
+function resolveTarget(targetColor, refAvg) {
+    if (targetColor && typeof targetColor === 'object' && 'r' in targetColor) return targetColor;
+    if (typeof targetColor === 'string' && /^#?[0-9a-f]{6}$/i.test(targetColor)) return hexToRgb(targetColor);
+    const grey = (refAvg.r + refAvg.g + refAvg.b) / 3;
+    return { r: grey, g: grey, b: grey };
+}
+
+// Measure the central average colour of an image file (used to self-calibrate a sample).
+export async function measureImageColor(file) {
+    const img = await loadImageFromFile(file);
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const avg = averageCenterColor(ctx, c.width, c.height);
+    return { r: Math.round(avg.r), g: Math.round(avg.g), b: Math.round(avg.b) };
+}
+
 // White-balance a bean photo using a reference-card photo shot under the same light.
 // If targetHex is given, the reference is assumed to be that true colour; otherwise
 // the reference is treated as neutral (grey-world) and the cast is removed while
 // preserving overall exposure. Returns { dataURL, meta:{ color, brightness, gains } }.
-export async function createCalibratedPhoto(refFile, beanFile, targetHex, maxDim = 1024, quality = 0.8) {
+export async function createCalibratedPhoto(refFile, beanFile, targetColor, maxDim = 1024, quality = 0.8) {
     const [refImg, beanImg] = await Promise.all([loadImageFromFile(refFile), loadImageFromFile(beanFile)]);
 
-    // Measure the reference card's average colour.
+    // Measure the reference card's average colour and check its exposure.
     const rc = document.createElement('canvas');
     rc.width = refImg.width; rc.height = refImg.height;
     const rctx = rc.getContext('2d');
     rctx.drawImage(refImg, 0, 0);
     const refAvg = averageCenterColor(rctx, rc.width, rc.height);
+    const warnings = exposureWarnings(analyzeExposure(rctx, rc.width, rc.height));
 
-    let target;
-    if (targetHex && /^#?[0-9a-f]{6}$/i.test(targetHex)) {
-        target = hexToRgb(targetHex);
-    } else {
-        const grey = (refAvg.r + refAvg.g + refAvg.b) / 3;
-        target = { r: grey, g: grey, b: grey };
-    }
+    const target = resolveTarget(targetColor, refAvg);
     const gains = {
         r: target.r / Math.max(1, refAvg.r),
         g: target.g / Math.max(1, refAvg.g),
@@ -145,6 +188,7 @@ export async function createCalibratedPhoto(refFile, beanFile, targetHex, maxDim
 
     return {
         dataURL: c.toDataURL('image/jpeg', quality),
+        warnings,
         meta: {
             type: 'calibrated',
             color: rounded,

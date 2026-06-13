@@ -1,8 +1,8 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -386,15 +386,21 @@ function openCalibratedPhotoModal(roastId) {
         <h3>Colour-Corrected Photo</h3>
         <p style="font-size: 0.85rem; color: var(--text-muted);">
             Under the same light, photograph a white/grey reference card, then the beans.
-            The reference is used to white-balance the bean photo and measure a roast-colour index.
+            The reference white-balances the bean photo and measures a roast-colour index.
+            A neutral grey card (not bright white) gives the most reliable result.
         </p>
         <label><strong>1. Reference card photo</strong></label>
         <input type="file" id="calRefInput" accept="image/*" capture="environment">
         <label><strong>2. Beans photo</strong></label>
         <input type="file" id="calBeanInput" accept="image/*" capture="environment">
-        <label><strong>Reference true colour (optional)</strong></label>
-        <input type="text" id="calHexInput" placeholder="#RRGGBB — leave blank for neutral white/grey">
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+        <label><strong>Reference target</strong></label>
+        <select id="calTarget"></select>
+        <input type="text" id="calHexInput" placeholder="#RRGGBB" style="display: none;">
+        <div style="display: flex; gap: 10px; margin-top: 4px;">
+            <button id="calAddSample" style="font-size: 0.8rem; padding: 5px 10px;">Calibrate new sample…</button>
+            <input type="file" id="calSampleInput" accept="image/*" capture="environment" style="display: none;">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
             <button id="calCancel" class="danger">Cancel</button>
             <button id="calProcess" style="background-color: var(--success);">Process</button>
         </div>
@@ -403,19 +409,70 @@ function openCalibratedPhotoModal(roastId) {
     modalBg.appendChild(modal);
     document.body.appendChild(modalBg);
 
+    const targetSelect = modal.querySelector('#calTarget');
+    const hexInput = modal.querySelector('#calHexInput');
+
+    const populateTargets = (selectId) => {
+        const samples = getReferenceSamples();
+        targetSelect.innerHTML =
+            '<option value="neutral">Neutral white/grey (recommended)</option>' +
+            samples.map(s => `<option value="sample:${s.id}">${s.name} (rgb ${s.color.r},${s.color.g},${s.color.b})</option>`).join('') +
+            '<option value="hex">Custom hex…</option>';
+        if (selectId) targetSelect.value = selectId;
+    };
+    populateTargets();
+
+    targetSelect.addEventListener('change', () => {
+        hexInput.style.display = targetSelect.value === 'hex' ? 'block' : 'none';
+    });
+
     const close = () => document.body.removeChild(modalBg);
     modal.querySelector('#calCancel').addEventListener('click', close);
+
+    // Optional self-calibration: measure a sample once and save it as a reusable target.
+    modal.querySelector('#calAddSample').addEventListener('click', () => modal.querySelector('#calSampleInput').click());
+    modal.querySelector('#calSampleInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+            const color = await measureImageColor(file);
+            const name = prompt('Name this reference sample (e.g. "Grey card, daylight"):');
+            if (!name) return;
+            const saved = addReferenceSample({ name, color });
+            populateTargets(`sample:${saved.id}`);
+            hexInput.style.display = 'none';
+            alert(`Saved "${name}" (rgb ${color.r},${color.g},${color.b}). Shoot it under good neutral daylight for best results.`);
+        } catch (err) {
+            alert(`Could not measure sample: ${err.message}`);
+        }
+    });
 
     modal.querySelector('#calProcess').addEventListener('click', async () => {
         const refFile = modal.querySelector('#calRefInput').files[0];
         const beanFile = modal.querySelector('#calBeanInput').files[0];
-        const hex = modal.querySelector('#calHexInput').value.trim();
         if (!refFile || !beanFile) {
             alert('Please provide both a reference card photo and a beans photo.');
             return;
         }
+
+        // Resolve the white-balance target from the selection.
+        let target = null;
+        const sel = targetSelect.value;
+        if (sel === 'hex') {
+            const hex = hexInput.value.trim();
+            if (!/^#?[0-9a-f]{6}$/i.test(hex)) { alert('Enter a valid hex colour like #c8c8c8.'); return; }
+            target = hex;
+        } else if (sel.startsWith('sample:')) {
+            const s = getReferenceSamples().find(x => x.id === sel.slice(7));
+            target = s ? s.color : null;
+        }
+
         try {
-            const { dataURL, meta } = await createCalibratedPhoto(refFile, beanFile, hex || null);
+            const { dataURL, meta, warnings } = await createCalibratedPhoto(refFile, beanFile, target);
+            if (warnings && warnings.length && !confirm(`${warnings.join('\n\n')}\n\nUse this photo anyway?`)) {
+                return;
+            }
             await addPhoto(roastId, dataURL, meta);
             close();
             renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));
