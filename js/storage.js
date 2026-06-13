@@ -23,6 +23,17 @@ export function deleteBeanFromPantry(id) {
     savePantry(pantry);
 }
 
+// Adjust a bean's on-hand quantity (grams) by delta, clamped at 0.
+// Returns the new quantity, or null if the bean no longer exists.
+export function adjustBeanQuantity(id, deltaGrams) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === id);
+    if (!bean) return null;
+    bean.quantity = Math.max(0, (Number(bean.quantity) || 0) + deltaGrams);
+    savePantry(pantry);
+    return bean.quantity;
+}
+
 export function getRoastHistory() {
     const history = localStorage.getItem('roastHistory');
     return history ? JSON.parse(history) : [];

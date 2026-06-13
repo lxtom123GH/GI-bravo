@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coffee Roasting Tracker</title>
-  <script type="module" crossorigin src="/assets/index-U1NZiVcV.js"></script>
+  <script type="module" crossorigin src="/assets/index-BV51VP6p.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CK-C1R8b.css">
 </head>
 <body>
@@ -40,6 +40,10 @@
                         <select id="beanSelect">
                             <option value="">Select beans from pantry...</option>
                         </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="greenWeightInput"><strong>Green weight (g)</strong></label>
+                        <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 454">
                     </div>
                 </div>
 
@@ -171,6 +175,7 @@
                         <option value="Anaerobic">Anaerobic</option>
                         <option value="Other">Other</option>
                     </select>
+                    <input type="number" id="beanQuantity" placeholder="Quantity on hand (grams)" min="0" step="1">
                     <button type="submit">Add to Pantry</button>
                 </form>
             </div>

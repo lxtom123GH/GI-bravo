@@ -78,6 +78,9 @@ function renderHistoryList() {
         if (roast.roaster === 'behmor' && roast.settings) {
             roasterInfo += ` (${roast.settings.weight}lb, ${roast.settings.profile})`;
         }
+        if (roast.greenWeightG) {
+            roasterInfo += ` &middot; <strong>Green:</strong> ${roast.greenWeightG} g`;
+        }
 
         const startTime = roast.timeline.startTime;
         const m = computeRoastMetrics(roast.timeline);
@@ -266,6 +269,7 @@ function exportRoast(id) {
     if (roast.roaster === 'behmor' && roast.settings) {
         text += ` (${roast.settings.weight}lb, Profile ${roast.settings.profile})`;
     }
+    if (roast.greenWeightG) text += `\nGreen Weight: ${roast.greenWeightG} g`;
     text += `\n\nTimeline:\n`;
 
     const m = computeRoastMetrics(roast.timeline);

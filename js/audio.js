@@ -1,4 +1,4 @@
-import { saveRoastToHistory, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS } from './storage.js';
 import { drawRoastCurve } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr } from './metrics.js';
 
@@ -395,17 +395,29 @@ function saveFinalRoast() {
         roasterSettings = { weight, profile };
     }
 
+    const greenWeightG = parseFloat(document.getElementById('greenWeightInput')?.value) || 0;
+
     const finalRoastData = {
         date: new Date().toISOString(),
         roaster,
         beanId,
         settings: roasterSettings,
+        greenWeightG,
         timeline: roastState,
         tastingNotes: { flavors: [], text: '' } // To be filled later in History tab
     };
 
     saveRoastToHistory(finalRoastData);
-    alert('Roast saved to history!');
+
+    // Deduct the green weight used from the selected bean's pantry stock.
+    let stockMsg = '';
+    if (beanId && greenWeightG > 0) {
+        const remaining = adjustBeanQuantity(beanId, -greenWeightG);
+        window.dispatchEvent(new Event('pantryUpdated'));
+        if (remaining != null) stockMsg = `\n${greenWeightG} g deducted (remaining: ${remaining} g).`;
+    }
+
+    alert('Roast saved to history!' + stockMsg);
 }
 
 function calculateRMS(dataArray) {

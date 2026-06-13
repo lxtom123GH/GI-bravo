@@ -1,4 +1,6 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry } from './storage.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, adjustBeanQuantity } from './storage.js';
+
+const LOW_STOCK_THRESHOLD_G = 250;
 
 export function initPantry() {
     const pantryForm = document.getElementById('addBeanForm');
@@ -11,13 +13,14 @@ export function initPantry() {
             const country = document.getElementById('beanCountry').value;
             const farm = document.getElementById('beanFarm').value;
             const process = document.getElementById('beanProcess').value;
+            const quantity = parseFloat(document.getElementById('beanQuantity').value) || 0;
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process };
+            const newBean = { name, region, country, farm, process, quantity };
             addBeanToPantry(newBean);
 
             pantryForm.reset();
@@ -62,8 +65,37 @@ export function renderPantryList() {
             details += `<br><small>${info.join(' - ')}</small>`;
         }
 
+        const qty = Number(bean.quantity) || 0;
+        let qtyColor = 'var(--text-muted)';
+        let qtyLabel = `${qty} g on hand`;
+        if (qty <= 0) {
+            qtyColor = 'var(--danger)';
+            qtyLabel = 'Out of stock';
+        } else if (qty < LOW_STOCK_THRESHOLD_G) {
+            qtyColor = 'var(--accent)';
+            qtyLabel = `${qty} g on hand (low)`;
+        }
+        details += `<br><small style="color: ${qtyColor};">${qtyLabel}</small>`;
+
         const infoDiv = document.createElement('div');
         infoDiv.innerHTML = details;
+
+        const btnGroup = document.createElement('div');
+        btnGroup.style.display = 'flex';
+        btnGroup.style.gap = '8px';
+
+        const restockBtn = document.createElement('button');
+        restockBtn.textContent = 'Restock';
+        restockBtn.style.padding = '5px 10px';
+        restockBtn.addEventListener('click', () => {
+            const input = prompt(`Add how many grams to ${bean.name}?`, '454');
+            const grams = parseFloat(input);
+            if (!isNaN(grams) && grams > 0) {
+                adjustBeanQuantity(bean.id, grams);
+                renderPantryList();
+                window.dispatchEvent(new Event('pantryUpdated'));
+            }
+        });
 
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Delete';
@@ -77,8 +109,10 @@ export function renderPantryList() {
             }
         });
 
+        btnGroup.appendChild(restockBtn);
+        btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);
-        beanCard.appendChild(deleteBtn);
+        beanCard.appendChild(btnGroup);
         pantryListDiv.appendChild(beanCard);
     });
 }
