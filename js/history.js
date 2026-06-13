@@ -2,7 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -255,6 +255,7 @@ function renderHistoryList() {
                 <h4>Photos</h4>
                 <div class="roast-photos" data-id="${roast.id}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
                 <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
+                <button class="add-calibrated-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
                 <input type="file" class="photo-input" data-id="${roast.id}" accept="image/*" capture="environment" style="display: none;">
             </div>
 
@@ -301,6 +302,10 @@ function renderHistoryList() {
         });
     });
 
+    document.querySelectorAll('.add-calibrated-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => openCalibratedPhotoModal(e.target.dataset.id));
+    });
+
     document.querySelectorAll('.export-btn').forEach(btn => {
         btn.addEventListener('click', (e) => exportRoast(e.target.dataset.id));
     });
@@ -344,6 +349,9 @@ async function renderPhotos(roastId, container) {
     }
 
     photos.forEach(p => {
+        const fig = document.createElement('figure');
+        fig.style.cssText = 'margin: 0; text-align: center;';
+
         const img = document.createElement('img');
         img.src = p.dataURL;
         img.title = 'Click to delete';
@@ -354,7 +362,66 @@ async function renderPhotos(roastId, container) {
                 renderPhotos(roastId, container);
             }
         });
-        container.appendChild(img);
+        fig.appendChild(img);
+
+        if (p.meta && p.meta.brightness != null) {
+            const cap = document.createElement('figcaption');
+            cap.style.cssText = 'font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;';
+            cap.textContent = `WB · ${p.meta.brightness}`;
+            fig.appendChild(cap);
+        }
+
+        container.appendChild(fig);
+    });
+}
+
+function openCalibratedPhotoModal(roastId) {
+    const modalBg = document.createElement('div');
+    modalBg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 460px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3>Colour-Corrected Photo</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Under the same light, photograph a white/grey reference card, then the beans.
+            The reference is used to white-balance the bean photo and measure a roast-colour index.
+        </p>
+        <label><strong>1. Reference card photo</strong></label>
+        <input type="file" id="calRefInput" accept="image/*" capture="environment">
+        <label><strong>2. Beans photo</strong></label>
+        <input type="file" id="calBeanInput" accept="image/*" capture="environment">
+        <label><strong>Reference true colour (optional)</strong></label>
+        <input type="text" id="calHexInput" placeholder="#RRGGBB — leave blank for neutral white/grey">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+            <button id="calCancel" class="danger">Cancel</button>
+            <button id="calProcess" style="background-color: var(--success);">Process</button>
+        </div>
+    `;
+
+    modalBg.appendChild(modal);
+    document.body.appendChild(modalBg);
+
+    const close = () => document.body.removeChild(modalBg);
+    modal.querySelector('#calCancel').addEventListener('click', close);
+
+    modal.querySelector('#calProcess').addEventListener('click', async () => {
+        const refFile = modal.querySelector('#calRefInput').files[0];
+        const beanFile = modal.querySelector('#calBeanInput').files[0];
+        const hex = modal.querySelector('#calHexInput').value.trim();
+        if (!refFile || !beanFile) {
+            alert('Please provide both a reference card photo and a beans photo.');
+            return;
+        }
+        try {
+            const { dataURL, meta } = await createCalibratedPhoto(refFile, beanFile, hex || null);
+            await addPhoto(roastId, dataURL, meta);
+            close();
+            renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));
+        } catch (err) {
+            alert(`Could not process photos: ${err.message}`);
+        }
     });
 }
 
