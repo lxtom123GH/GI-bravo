@@ -1,4 +1,5 @@
 import { saveRoastToHistory } from './storage.js';
+import { drawRoastCurve } from './chart.js';
 
 let audioContext;
 let microphone;
@@ -12,6 +13,7 @@ let timerInterval;
 
 const canvas = document.getElementById('oscilloscope');
 const canvasCtx = canvas.getContext('2d');
+const curveCanvas = document.getElementById('roastCurve');
 const logArea = document.getElementById('logArea');
 const statusDiv = document.getElementById('status');
 const liveTimerDiv = document.getElementById('liveTimer');
@@ -29,8 +31,13 @@ let roastState = {
     secondCrackTime: null,
     endTime: null,
     phase: 'Ready',
-    logs: []
+    logs: [],
+    curve: []
 };
+
+// Roast-curve sampling
+const CURVE_SAMPLE_MS = 1000; // record one energy point per second
+let lastCurveSampleTime = 0;
 
 // State for Audio Processing
 let baselineNoiseRMS = 0.05; // Default safe value
@@ -52,6 +59,8 @@ export function initAudioSystem() {
     canvas.height = canvas.clientHeight;
     canvasCtx.fillStyle = '#121212';
     canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawRoastCurve(curveCanvas, [], {});
 
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
@@ -205,11 +214,13 @@ async function startRoast() {
         secondCrackTime: null,
         endTime: null,
         phase: 'Heating',
-        logs: []
+        logs: [],
+        curve: []
     };
     recentRMSHistory = [];
     transientClusterCount = 0;
     lastTransientTime = 0;
+    lastCurveSampleTime = 0;
 
     logArea.innerHTML = '';
     logMessage('Roast Started.');
@@ -255,6 +266,13 @@ function stopRoast() {
     canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
     updateStatus('Finished');
+
+    // Final static render of the completed curve with crack markers.
+    drawRoastCurve(curveCanvas, roastState.curve, {
+        firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
+        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
+        totalMs: roastState.endTime - roastState.startTime
+    });
 
     saveFinalRoast();
 }
@@ -334,6 +352,28 @@ function detectTransient(rms) {
     }
 }
 
+// Record a smoothed energy point roughly once per second and refresh the live curve.
+function sampleRoastCurve(rms) {
+    if (!roastState.startTime) return;
+
+    const now = Date.now();
+    if (now - lastCurveSampleTime < CURVE_SAMPLE_MS) return;
+    lastCurveSampleTime = now;
+
+    // Smooth using recent history so the curve reflects sustained energy, not single spikes.
+    const smoothed = recentRMSHistory.length
+        ? recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length
+        : rms;
+
+    roastState.curve.push({ t: now - roastState.startTime, rms: smoothed });
+
+    drawRoastCurve(curveCanvas, roastState.curve, {
+        firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
+        secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null,
+        totalMs: now - roastState.startTime
+    });
+}
+
 function drawAndAnalyze() {
     if (!isRecording) return;
 
@@ -347,6 +387,7 @@ function drawAndAnalyze() {
         calibrationSamples.push(rms);
     } else if (!isNotifying) {
         detectTransient(rms);
+        sampleRoastCurve(rms);
     }
 
     // Oscilloscope visual

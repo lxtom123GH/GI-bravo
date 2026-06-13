@@ -1,5 +1,6 @@
 import { getRoastHistory, getPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
+import { drawRoastCurve } from './chart.js';
 
 export function initHistory() {
     renderHistoryList();
@@ -71,6 +72,11 @@ function renderHistoryList() {
                 ${timelineHtml}
             </div>
 
+            <div style="margin: 10px 0;">
+                <h4>Roast Curve</h4>
+                <canvas class="history-curve"></canvas>
+            </div>
+
             <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
                 <h4>Tasting Notes</h4>
                 <div style="margin-bottom: 5px;">${flavorsHtml}</div>
@@ -90,6 +96,15 @@ function renderHistoryList() {
         `;
 
         historyContainer.appendChild(card);
+
+        // Render the saved roast curve (older roasts may not have curve data).
+        const curveCanvas = card.querySelector('.history-curve');
+        const startMs = roast.timeline.startTime;
+        drawRoastCurve(curveCanvas, roast.timeline.curve, {
+            firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - startMs : null,
+            secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - startMs : null,
+            totalMs: roast.timeline.endTime - startMs
+        });
     });
 
     document.querySelectorAll('.export-btn').forEach(btn => {
