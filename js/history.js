@@ -8,14 +8,30 @@ const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
 
 const EMOJI = { sad: '🙁', neutral: '😐', happy: '😀' };
-const SCA_ATTRS = ['aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'sweetness', 'overall'];
 const BREW_METHODS = ['V60', 'Espresso', 'AeroPress', 'French Press', 'Filter / Batch', 'Moka', 'Cold Brew', 'Other'];
 
-// Sum of the SCA-style attribute scores (out of 80), or null if none entered.
-function computeCuppingTotal(scores) {
-    if (!scores) return null;
-    const vals = SCA_ATTRS.map(k => Number(scores[k])).filter(v => !isNaN(v));
-    return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+// SCA cupping form: 7 quality attributes (6.00–10.00) + 3 ten-point attributes
+// (uniformity, clean cup, sweetness, default 10) minus defects = final /100.
+const SCA_QUALITY = ['aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'overall'];
+const SCA_TEN = ['uniformity', 'cleanCup', 'sweetness'];
+const SCA_ALL = [...SCA_QUALITY, ...SCA_TEN];
+const SCA_LABELS = {
+    aroma: 'Fragrance/Aroma', flavor: 'Flavor', aftertaste: 'Aftertaste', acidity: 'Acidity',
+    body: 'Body', balance: 'Balance', overall: 'Overall',
+    uniformity: 'Uniformity', cleanCup: 'Clean Cup', sweetness: 'Sweetness'
+};
+
+// Official SCA final score (/100): sum of quality + ten-point attributes minus
+// defects (taints ×2, faults ×4). Returns null until at least one quality score is set.
+function computeScaTotal(s) {
+    if (!s) return null;
+    const hasQuality = SCA_QUALITY.some(k => s[k] != null && s[k] !== '' && !isNaN(Number(s[k])));
+    if (!hasQuality) return null;
+    let total = 0;
+    SCA_QUALITY.forEach(k => { const v = Number(s[k]); if (!isNaN(v)) total += v; });
+    SCA_TEN.forEach(k => { const v = Number(s[k]); total += isNaN(v) ? 10 : v; });
+    total -= (Number(s.taints) || 0) * 2 + (Number(s.faults) || 0) * 4;
+    return total;
 }
 
 const chip = (text) => `<span style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px;">${text}</span>`;
@@ -26,8 +42,9 @@ function tastingSummary(notes) {
     if (notes.emoji && EMOJI[notes.emoji]) parts.push(`<span style="font-size: 1.2rem;">${EMOJI[notes.emoji]}</span>`);
     const flavors = (notes.flavors || []).map(chip).join('');
     if (flavors) parts.push(flavors);
-    const total = computeCuppingTotal(notes.scores);
-    if (total != null) parts.push(chip(`Cupping ${total.toFixed(2)}/80`));
+    if (notes.scores && notes.scores.total != null) {
+        parts.push(chip(`Cupping ${Number(notes.scores.total).toFixed(2)}/${notes.scores.max || 80}`));
+    }
     const bl = notes.brewLog;
     if (bl && bl.method) {
         let s = bl.method;
@@ -622,12 +639,19 @@ function openTastingModal(id) {
         `<button type="button" class="emoji-btn" data-emoji="${k}" style="font-size: 1.6rem; padding: 6px 12px; border: 2px solid ${selectedEmoji === k ? 'var(--accent)' : 'var(--border-color)'}; border-radius: 6px; background: var(--bg-color); cursor: pointer;">${e}</button>`
     ).join(' ');
 
-    const scoreHtml = SCA_ATTRS.map(k =>
+    const scaRow = (k, min, step, dflt) =>
         `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <label style="flex: 1; text-transform: capitalize;">${k}</label>
-            <input type="number" id="score-${k}" min="0" max="10" step="0.25" value="${scores[k] ?? ''}" style="width: 80px; margin-bottom: 0;">
-        </div>`
-    ).join('');
+            <label style="flex: 1;">${SCA_LABELS[k]}</label>
+            <input type="number" class="sca-input" id="sca-${k}" min="${min}" max="10" step="${step}" value="${scores[k] ?? dflt}" style="width: 80px; margin-bottom: 0;">
+        </div>`;
+    const scoreHtml =
+        SCA_QUALITY.map(k => scaRow(k, 6, 0.25, '')).join('') +
+        SCA_TEN.map(k => scaRow(k, 0, 1, 10)).join('') +
+        `<h5 style="margin-top: 8px;">Defects (cups affected)</h5>
+         <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label>Taints (×2)</label><input type="number" class="sca-input" id="sca-taints" min="0" step="1" value="${scores.taints ?? 0}"></div>
+            <div style="flex: 1;"><label>Faults (×4)</label><input type="number" class="sca-input" id="sca-faults" min="0" step="1" value="${scores.faults ?? 0}"></div>
+         </div>`;
 
     const methodOptions = ['<option value="">Select method…</option>']
         .concat(BREW_METHODS.map(m => `<option value="${m}"${brew.method === m ? ' selected' : ''}>${m}</option>`)).join('');
@@ -657,10 +681,10 @@ function openTastingModal(id) {
         </div>
 
         <div class="ts-scores" style="margin-bottom: 15px;">
-            <h4>Cupping Scores (0–10)</h4>
-            ${scoreHtml}
-            <p style="margin-top: 6px;"><strong>Total: <span id="cupTotal">--</span> / 80</strong>
-            <br><small style="color: var(--text-muted);">Simplified SCA-style sum (not the official 100-point protocol).</small></p>
+            <h4>SCA Cupping Score</h4>
+            <small style="color: var(--text-muted);">Quality attributes 6.00–10.00 (0.25 steps). Uniformity / Clean Cup / Sweetness default to 10; defects are subtracted.</small>
+            <div style="margin-top: 8px;">${scoreHtml}</div>
+            <p style="margin-top: 8px;"><strong>Final score: <span id="cupTotal">--</span> / 100</strong></p>
         </div>
 
         <div class="ts-brew-expert" style="margin-bottom: 15px;">
@@ -728,23 +752,28 @@ function openTastingModal(id) {
         });
     });
 
+    const readScores = () => {
+        const s = {};
+        SCA_ALL.forEach(k => { const v = parseFloat(modal.querySelector(`#sca-${k}`).value); if (!isNaN(v)) s[k] = v; });
+        s.taints = parseInt(modal.querySelector('#sca-taints').value, 10) || 0;
+        s.faults = parseInt(modal.querySelector('#sca-faults').value, 10) || 0;
+        return s;
+    };
     const updateTotal = () => {
-        const live = {};
-        SCA_ATTRS.forEach(k => { const v = parseFloat(modal.querySelector(`#score-${k}`).value); if (!isNaN(v)) live[k] = v; });
-        const total = computeCuppingTotal(live);
+        const total = computeScaTotal(readScores());
         modal.querySelector('#cupTotal').textContent = total != null ? total.toFixed(2) : '--';
     };
-    SCA_ATTRS.forEach(k => modal.querySelector(`#score-${k}`).addEventListener('input', updateTotal));
+    modal.querySelectorAll('.sca-input').forEach(inp => inp.addEventListener('input', updateTotal));
     updateTotal();
 
     modal.querySelector('#modalCancel').addEventListener('click', () => document.body.removeChild(modalBg));
 
     modal.querySelector('#modalSave').addEventListener('click', () => {
         // Collect every section (regardless of current view) so switching tiers never loses data.
-        const newScores = {};
-        SCA_ATTRS.forEach(k => { const v = parseFloat(modal.querySelector(`#score-${k}`).value); if (!isNaN(v)) newScores[k] = v; });
-        const total = computeCuppingTotal(newScores);
-        if (total != null) newScores.total = total;
+        const newScores = readScores();
+        const total = computeScaTotal(newScores);
+        let scores;
+        if (total != null) { newScores.total = total; newScores.max = 100; scores = newScores; }
 
         const num = (id) => { const v = parseFloat(modal.querySelector(id).value); return isNaN(v) ? undefined : v; };
         const brewLog = {
@@ -761,7 +790,7 @@ function openTastingModal(id) {
             flavors: selectedFlavors,
             text: modal.querySelector('#modalNotesText').value,
             emoji: selectedEmoji || undefined,
-            scores: Object.keys(newScores).length ? newScores : undefined,
+            scores,
             brewLog: hasBrew ? brewLog : undefined
         };
         updateRoastInHistory(roast);
@@ -885,10 +914,12 @@ function exportRoast(id) {
         text += `\nTasting Notes:\n`;
         if (tn.emoji && EMOJI[tn.emoji]) text += `Impression: ${EMOJI[tn.emoji]}\n`;
         if (tn.flavors && tn.flavors.length > 0) text += `Flavors: ${tn.flavors.join(', ')}\n`;
-        const total = computeCuppingTotal(tn.scores);
-        if (total != null) {
-            text += `Cupping (/80): ${total.toFixed(2)}\n`;
-            text += SCA_ATTRS.filter(k => tn.scores[k] != null).map(k => `  - ${k}: ${tn.scores[k]}`).join('\n') + '\n';
+        if (tn.scores && tn.scores.total != null) {
+            const sc = tn.scores;
+            text += `Cupping: ${Number(sc.total).toFixed(2)} / ${sc.max || 80}\n`;
+            text += SCA_ALL.filter(k => sc[k] != null).map(k => `  - ${SCA_LABELS[k] || k}: ${sc[k]}`).join('\n');
+            if ((sc.taints || sc.faults)) text += `\n  - defects: ${sc.taints || 0} taint, ${sc.faults || 0} fault`;
+            text += '\n';
         }
         if (tn.brewLog && tn.brewLog.method) {
             const b = tn.brewLog;

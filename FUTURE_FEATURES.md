@@ -69,9 +69,9 @@ Weight loss = `((greenWeightG - roastedWeightG) / greenWeightG) * 100`.
 
 ## 2. SCA-style Cupping Score & Brew Log
 
-**Status:** ✅ Implemented (tiered, with a one-off detail-level override): Easy = emoji + notes; Moderate = flavor wheel + brew method; Expert = cupping scores + full brew params.
+**Status:** ✅ Implemented (tiered, with a one-off detail-level override): Easy = emoji + notes; Moderate = flavor wheel + brew method; Expert = **official SCA 100-point cupping** + full brew params.
 
-⚠️ **Deviation:** the cupping total is a **simplified sum of 8 attributes (/80)**, clearly labelled — not the official SCA **100-point** protocol (which adds uniformity, clean cup, sweetness defaults and defect deductions). See backlog #B1 to upgrade.
+The Expert cupping form now uses the official SCA protocol (see B1): 7 quality attributes (6.00–10.00), Uniformity/Clean Cup/Sweetness (default 10), minus taint/fault defects = final score /100. Older roasts saved with the earlier simplified /80 sum still display correctly (their stored total and `max` are used).
 
 Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertaste,acidity,body,balance,sweetness,overall,total}`, `brewLog{method,doseGrams,yieldGrams,temperature,temperatureUnit,grindSize}`, `text`.
 
@@ -79,8 +79,8 @@ Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertas
 
 ## 🔜 Backlog (not yet implemented)
 
-### B1. Full SCA 100-point cupping form
-Upgrade the simplified /80 sum to the official protocol: 10 categories (incl. uniformity, clean cup, sweetness) each /10, cup counts, defect deductions, total /100. Offer alongside (or instead of) the simplified form.
+### B1. Full SCA 100-point cupping form — ✅ Done
+Shipped: the Expert cupping form uses the official protocol — 7 quality attributes (6.00–10.00, 0.25 steps), Uniformity/Clean Cup/Sweetness (default 10), minus taint (×2)/fault (×4) defects = final /100. Backward-compatible with the earlier /80 records via stored `total`/`max`.
 
 ### B2. Full cascading tier configuration (per-feature defaults) — ✅ Done
 Shipped: per-feature tier overrides for Dashboard and Tasting/cupping (sidebar → "Per-feature mode"), with `getEffectiveTier(feature)` resolving override → global. Persisted and in backup.
