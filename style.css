@@ -183,6 +183,13 @@ canvas {
     margin-bottom: 15px;
 }
 
+/* Complexity tiers: hide higher-tier UI at lower tiers */
+body[data-tier="easy"] .tier-moderate,
+body[data-tier="easy"] .tier-expert,
+body[data-tier="moderate"] .tier-expert {
+    display: none !important;
+}
+
 /* Mobile menu toggle (hidden on desktop) */
 .menu-toggle {
     display: none;

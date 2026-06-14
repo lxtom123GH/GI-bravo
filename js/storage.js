@@ -98,6 +98,19 @@ export function saveRoastTargets(targets) {
     localStorage.setItem('roastTargets', JSON.stringify(targets));
 }
 
+// --- Complexity tier (Easy / Moderate / Expert) ---
+
+const TIERS = ['easy', 'moderate', 'expert'];
+
+export function getTier() {
+    const t = localStorage.getItem('complexityTier');
+    return TIERS.includes(t) ? t : 'moderate';
+}
+
+export function saveTier(tier) {
+    if (TIERS.includes(tier)) localStorage.setItem('complexityTier', tier);
+}
+
 // --- Temperature unit preference ---
 
 export function getTempUnit() {
@@ -142,7 +155,8 @@ export function exportAllData() {
         detectionSettings: getDetectionSettings(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
-        tempUnit: getTempUnit()
+        tempUnit: getTempUnit(),
+        complexityTier: getTier()
     };
 }
 
@@ -166,5 +180,6 @@ export function importAllData(data) {
         saveReferenceSamples(data.referenceSamples);
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
+    if (data.complexityTier) saveTier(data.complexityTier);
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }
