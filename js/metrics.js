@@ -50,3 +50,15 @@ export function formatRoR(ror) {
     if (ror == null || isNaN(ror)) return '--';
     return `${ror.toFixed(1)}°/min`;
 }
+
+// Weight loss (yield) percentage from green and roasted weights.
+export function computeWeightLoss(greenWeightG, roastedWeightG) {
+    const g = Number(greenWeightG), r = Number(roastedWeightG);
+    if (!g || !r || g <= 0 || r <= 0) return null;
+    return ((g - r) / g) * 100;
+}
+
+export function formatPct(p) {
+    if (p == null || isNaN(p)) return '--';
+    return `${p.toFixed(1)}%`;
+}

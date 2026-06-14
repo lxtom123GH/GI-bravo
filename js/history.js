@@ -1,7 +1,7 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
-import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
@@ -129,6 +129,8 @@ function buildComparisonTable(roastA, roastB, pantry, idxA, idxB) {
             name: (pantry.find(b => b.id === roast.beanId) || { name: 'Unknown' }).name,
             m: computeRoastMetrics(roast.timeline),
             green: roast.greenWeightG ? `${roast.greenWeightG} g` : '--',
+            roasted: roast.roastedWeightG ? `${roast.roastedWeightG} g` : '--',
+            loss: formatPct(computeWeightLoss(roast.greenWeightG, roast.roastedWeightG)),
             color
         };
     };
@@ -154,6 +156,8 @@ function buildComparisonTable(roastA, roastB, pantry, idxA, idxB) {
                 ${row('Development', formatMs(a.m.developmentTimeMs), formatMs(b.m.developmentTimeMs))}
                 ${row('DTR', formatDtr(a.m.dtr), formatDtr(b.m.dtr))}
                 ${row('Green Weight', a.green, b.green)}
+                ${row('Roasted Weight', a.roasted, b.roasted)}
+                ${row('Weight Loss', a.loss, b.loss)}
                 ${row('Roast colour', idxA ? idxA.brightness : '--', idxB ? idxB.brightness : '--')}
             </tbody>
         </table>
@@ -237,6 +241,11 @@ function renderHistoryList() {
         if (roast.greenWeightG) {
             roasterInfo += ` &middot; <strong>Green:</strong> ${roast.greenWeightG} g`;
         }
+        if (roast.roastedWeightG) {
+            roasterInfo += ` &middot; <strong>Roasted:</strong> ${roast.roastedWeightG} g`;
+            const loss = computeWeightLoss(roast.greenWeightG, roast.roastedWeightG);
+            if (loss != null) roasterInfo += ` &middot; <strong>Weight loss:</strong> ${formatPct(loss)}`;
+        }
 
         const startTime = roast.timeline.startTime;
         const m = computeRoastMetrics(roast.timeline);
@@ -307,6 +316,7 @@ function renderHistoryList() {
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                <button class="log-yield-btn" data-id="${roast.id}">Log Roasted Weight</button>
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
@@ -365,6 +375,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.export-csv-btn').forEach(btn => {
         btn.addEventListener('click', (e) => exportRoastCsv(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.log-yield-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => logRoastedWeight(e.target.dataset.id));
     });
 
     document.querySelectorAll('.edit-notes-btn').forEach(btn => {
@@ -618,6 +632,33 @@ function openTastingModal(id) {
     });
 }
 
+function logRoastedWeight(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast) return;
+
+    const current = roast.roastedWeightG || '';
+    const input = prompt('Roasted (post-cool) weight in grams:', current);
+    if (input === null) return; // cancelled
+
+    const trimmed = input.trim();
+    if (trimmed === '') {
+        delete roast.roastedWeightG; // clearing the value
+    } else {
+        const grams = parseFloat(trimmed);
+        if (isNaN(grams) || grams <= 0) { alert('Enter a positive number of grams.'); return; }
+        roast.roastedWeightG = grams;
+        if (roast.greenWeightG) {
+            const loss = computeWeightLoss(roast.greenWeightG, grams);
+            if (loss != null && (loss < 0 || loss > 30)) {
+                if (!confirm(`Weight loss of ${loss.toFixed(1)}% looks unusual (typical is 12–20%). Save anyway?`)) return;
+            }
+        }
+    }
+
+    updateRoastInHistory(roast);
+    renderHistoryList();
+}
+
 function exportRoastCsv(id) {
     const history = getRoastHistory();
     const pantry = getPantry();
@@ -641,7 +682,15 @@ function exportRoastCsv(id) {
     rows.sort((a, b) => a.t - b.t);
 
     const unit = roast.timeline.tempUnit || 'C';
-    let csv = `time_s,energy_rms,temp_${unit},ror_${unit}_per_min,event\n`;
+    // Metadata header (commented) followed by the time-series table.
+    let csv = `# Bean: ${bean.name}\n# Date: ${new Date(roast.date).toISOString()}\n`;
+    if (roast.greenWeightG) csv += `# Green weight (g): ${roast.greenWeightG}\n`;
+    if (roast.roastedWeightG) {
+        csv += `# Roasted weight (g): ${roast.roastedWeightG}\n`;
+        const loss = computeWeightLoss(roast.greenWeightG, roast.roastedWeightG);
+        if (loss != null) csv += `# Weight loss (%): ${loss.toFixed(1)}\n`;
+    }
+    csv += `time_s,energy_rms,temp_${unit},ror_${unit}_per_min,event\n`;
     rows.forEach(r => {
         const rms = r.rms === '' ? '' : Number(r.rms).toFixed(4);
         const ror = r.ror === '' ? '' : Number(r.ror).toFixed(1);
@@ -677,6 +726,11 @@ function exportRoast(id) {
         text += ` (${roast.settings.weight}lb, Profile ${roast.settings.profile})`;
     }
     if (roast.greenWeightG) text += `\nGreen Weight: ${roast.greenWeightG} g`;
+    if (roast.roastedWeightG) {
+        text += `\nRoasted Weight: ${roast.roastedWeightG} g`;
+        const loss = computeWeightLoss(roast.greenWeightG, roast.roastedWeightG);
+        if (loss != null) text += `\nWeight Loss: ${formatPct(loss)}`;
+    }
     text += `\n\nTimeline:\n`;
 
     const m = computeRoastMetrics(roast.timeline);
