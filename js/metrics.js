@@ -62,3 +62,11 @@ export function formatPct(p) {
     if (p == null || isNaN(p)) return '--';
     return `${p.toFixed(1)}%`;
 }
+
+// Behmor batch-size settings and their labels per weight unit.
+export const BEHMOR_GRAMS = { '1/4': 113, '1/2': 227, '1': 454 };
+
+export function weightLabel(key, unit) {
+    if (unit === 'imperial') return { '1/4': '¼ lb', '1/2': '½ lb', '1': '1 lb' }[key] || key;
+    return BEHMOR_GRAMS[key] != null ? `${BEHMOR_GRAMS[key]} g` : key;
+}

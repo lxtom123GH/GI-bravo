@@ -1,7 +1,7 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
-import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct } from './metrics.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
@@ -363,6 +363,7 @@ function renderHistoryList() {
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                 <button class="log-yield-btn" data-id="${roast.id}">Log Roasted Weight</button>
+                ${roast.roaster === 'behmor' && roast.timeline.curve && roast.timeline.curve.length >= 2 ? `<button class="save-template-btn" data-id="${roast.id}">Save as Behmor template</button>` : ''}
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
@@ -425,6 +426,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.log-yield-btn').forEach(btn => {
         btn.addEventListener('click', (e) => logRoastedWeight(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.save-template-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => saveBehmorTemplateFromRoast(e.target.dataset.id));
     });
 
     document.querySelectorAll('.edit-notes-btn').forEach(btn => {
@@ -797,6 +802,45 @@ function openTastingModal(id) {
         document.body.removeChild(modalBg);
         renderHistoryList();
     });
+}
+
+function saveBehmorTemplateFromRoast(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast) return;
+
+    const profile = roast.settings && roast.settings.profile;
+    const weight = roast.settings && roast.settings.weight;
+    if (!profile || !weight || profile === 'unknown' || weight === 'unknown') {
+        alert('This roast has no Behmor profile/weight recorded, so it cannot be saved as a template.');
+        return;
+    }
+    if (!roast.timeline.curve || roast.timeline.curve.length < 2) {
+        alert('This roast has no curve data to use as a template.');
+        return;
+    }
+
+    const label = weightLabel(weight, getWeightUnit());
+    if (getBehmorTemplates()[`${profile}|${weight}`] &&
+        !confirm(`A template already exists for ${profile} @ ${label}. Replace it?`)) {
+        return;
+    }
+
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+    const start = roast.timeline.startTime;
+    saveBehmorTemplate(profile, weight, {
+        curve: roast.timeline.curve,
+        firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
+        secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null,
+        totalMs: roast.timeline.endTime - start,
+        name: `${bean.name}, ${new Date(roast.date).toLocaleDateString()}`,
+        savedFrom: id,
+        savedAt: Date.now()
+    });
+
+    window.dispatchEvent(new Event('historyUpdated'));
+    window.dispatchEvent(new Event('behmorConfigChanged'));
+    alert(`Saved as the Behmor ${profile} @ ${label} template. It will auto-load when you select that profile and weight.`);
 }
 
 function logRoastedWeight(id) {
