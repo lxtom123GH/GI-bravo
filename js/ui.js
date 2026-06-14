@@ -1,23 +1,38 @@
-import { getTier, saveTier } from './storage.js';
+import { getTier, saveTier, getFeatureTier, setFeatureTier, getEffectiveTier } from './storage.js';
 
 // --- Common UI and State Management ---
 
-// Apply the complexity tier as a body attribute so CSS can show/hide advanced UI.
+// Apply complexity tiers. The global tier is the default; per-feature overrides
+// (dashboard, tasting) can raise/lower individual areas. The dashboard's
+// effective tier drives the body attribute that CSS uses to show/hide UI.
 export function initTier() {
-    const sel = document.getElementById('tierSelect');
-    const apply = (t) => { document.body.dataset.tier = t; };
+    const globalSel = document.getElementById('tierSelect');
+    const dashSel = document.getElementById('dashboardTierSelect');
+    const tastingSel = document.getElementById('tastingTierSelect');
 
-    apply(getTier());
-    if (sel) {
-        sel.value = getTier();
-        sel.addEventListener('change', () => { saveTier(sel.value); apply(sel.value); });
+    const applyDashboard = () => { document.body.dataset.tier = getEffectiveTier('dashboard'); };
+
+    const syncControls = () => {
+        if (globalSel) globalSel.value = getTier();
+        if (dashSel) dashSel.value = getFeatureTier('dashboard') || '';
+        if (tastingSel) tastingSel.value = getFeatureTier('tasting') || '';
+    };
+
+    syncControls();
+    applyDashboard();
+
+    if (globalSel) {
+        globalSel.addEventListener('change', () => { saveTier(globalSel.value); applyDashboard(); });
     }
-    // Reflect an imported tier setting.
-    window.addEventListener('settingsImported', () => {
-        const t = getTier();
-        if (sel) sel.value = t;
-        apply(t);
-    });
+    if (dashSel) {
+        dashSel.addEventListener('change', () => { setFeatureTier('dashboard', dashSel.value); applyDashboard(); });
+    }
+    if (tastingSel) {
+        tastingSel.addEventListener('change', () => setFeatureTier('tasting', tastingSel.value));
+    }
+
+    // Reflect imported settings.
+    window.addEventListener('settingsImported', () => { syncControls(); applyDashboard(); });
 }
 
 export function initTabs() {

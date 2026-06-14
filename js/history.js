@@ -1,4 +1,4 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getTier } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct } from './metrics.js';
@@ -694,7 +694,7 @@ function openTastingModal(id) {
 
     // Show/hide sections by the selected detail level (one-off override of the global tier).
     const tierSel = modal.querySelector('#tastingTier');
-    tierSel.value = getTier();
+    tierSel.value = getEffectiveTier('tasting');
     const applyTier = (t) => {
         modal.querySelector('.ts-emoji').style.display = t === 'easy' ? 'block' : 'none';
         modal.querySelector('.ts-flavors').style.display = t === 'easy' ? 'none' : 'block';

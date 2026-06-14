@@ -111,6 +111,34 @@ export function saveTier(tier) {
     if (TIERS.includes(tier)) localStorage.setItem('complexityTier', tier);
 }
 
+// Per-feature tier overrides: { dashboard?: tier, tasting?: tier }.
+// A missing/empty value means the feature inherits the global tier.
+export function getFeatureTiers() {
+    const s = localStorage.getItem('featureTiers');
+    return s ? JSON.parse(s) : {};
+}
+
+export function saveFeatureTiers(obj) {
+    localStorage.setItem('featureTiers', JSON.stringify(obj || {}));
+}
+
+export function getFeatureTier(feature) {
+    const t = getFeatureTiers()[feature];
+    return TIERS.includes(t) ? t : null;
+}
+
+export function setFeatureTier(feature, tier) {
+    const obj = getFeatureTiers();
+    if (TIERS.includes(tier)) obj[feature] = tier;
+    else delete obj[feature];
+    saveFeatureTiers(obj);
+}
+
+// The tier in effect for a feature: its override if set, else the global tier.
+export function getEffectiveTier(feature) {
+    return getFeatureTier(feature) || getTier();
+}
+
 // --- Temperature unit preference ---
 
 export function getTempUnit() {
@@ -156,7 +184,8 @@ export function exportAllData() {
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
         tempUnit: getTempUnit(),
-        complexityTier: getTier()
+        complexityTier: getTier(),
+        featureTiers: getFeatureTiers()
     };
 }
 
@@ -181,5 +210,6 @@ export function importAllData(data) {
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);
+    if (data.featureTiers && typeof data.featureTiers === 'object') saveFeatureTiers(data.featureTiers);
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }
