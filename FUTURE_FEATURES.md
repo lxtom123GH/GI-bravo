@@ -1,61 +1,107 @@
-# Future Features
+# Roadmap & Future Features
 
-This document outlines high-value features to be implemented in the Coffee Roasting Tracker.
+This document tracks the Coffee Roasting Tracker's shipped features and the
+outstanding backlog. _Last reviewed: 2026-06-14._
+
+---
+
+## ✅ Shipped (in `main`)
+
+Core / fixes:
+- App wiring via `main.js` (modular `js/` UI now actually runs); removed orphaned `app.js`; `dist/` rebuilt.
+- Tasting-notes save routed through `storage.js`.
+- High-pass filter lowered 3000 Hz → 500 Hz (was removing first crack's low-frequency signature).
+
+Roasting:
+- Live **roast curve** chart (audio energy over time) with crack markers; per-history-card curves.
+- **Development Time Ratio (DTR)** and roast metrics (live readout, history, export).
+- **Crack notifications** (beep + desktop) with detection paused during the beep.
+- **Detection tuning** UI: sensitivity threshold, cluster size, second-crack pitch (persisted).
+- **Frequency-based 1C/2C classification** (low- vs high-band FFT energy).
+- **Target alarms** for total time and DTR.
+- **Reference-roast follow mode** (overlay a past curve live + pre-crack heads-up).
+- **Manual temperature logging → approximate Rate of Rise**, with °C/°F unit.
+
+Beans / history / data:
+- **Bean pantry** quantities: low-stock states, restock, per-roast green-weight deduction.
+- **Roast history** with delete; **JSON backup/restore** (incl. settings, targets, reference samples, unit, tier).
+- **Roast comparison** view (overlay two roasts + metrics table).
+- **Roast Trends** chart (DTR / total time / first crack / roast colour across batches).
+- **CSV export** (time, energy, temp, RoR, events + metadata header).
+- **Roasted weight & weight-loss % (yield)** — see section 1.
+
+Photos / colour:
+- **Roast photos** stored in IndexedDB (downscaled).
+- **Reference-card white balance** + roast-colour brightness index; shown in cards and comparison.
+- **Exposure guard** (warns on clipped/dark reference) + optional **self-calibrated reference samples**.
+
+Platform / UX:
+- **PWA**: manifest, icons, service worker (installable + offline).
+- **Responsive** mobile layout (off-canvas drawer).
+- **Complexity tiers** (Easy/Moderate/Expert) — lightweight global version; see section below.
+- **Tiered cupping & brew log** — see section 2.
+
+---
 
 ## Overarching Architecture: Complexity Tiers (Easy / Moderate / Expert)
 
 To cater to a wide range of users, from casual hobbyists to advanced roasters and Q Graders, new and existing features should be governed by "Complexity Tiers."
 
+**Status:** ✅ Lightweight version shipped — a global Mode selector (sidebar) sets `body[data-tier]` and CSS hides higher-tier UI; the cupping modal has a one-off override. ⏳ The full cascading hierarchy below (specifically the **per-feature default**) is outstanding — see backlog #B2.
+
 ### Configuration Hierarchy:
-To provide maximum flexibility, the complexity tiers should be managed through a cascading configuration system:
-1.  **Global Default:** A master setting in the app's preferences (e.g., User is set to "Moderate" globally).
-2.  **Per-Feature Default:** The ability to override the global setting for specific features (e.g., User is globally "Moderate", but sets Cupping/Tasting to "Expert").
-3.  **One-off Override:** A toggle directly on the UI when performing an action to temporarily switch tiers (e.g., A user generally does "Easy" 3-emoji cuppings, but wants to do a one-off "Expert" 100-point cupping for a specific competition roast).
+1.  **Global Default:** ✅ A master setting in the app's preferences.
+2.  **Per-Feature Default:** ⏳ Override the global setting for specific features (e.g. globally "Moderate" but Cupping set to "Expert").
+3.  **One-off Override:** ✅ A toggle on the UI to temporarily switch tiers (implemented on the cupping modal).
 
 ### Tier Guidelines:
-*   **Easy:** Minimal friction. Focuses on the basics (e.g., Bean, total time, and simple emoji ratings like 🙁/😐/😀 instead of complex flavor wheels).
-*   **Moderate:** The current baseline. Includes flavor wheels, first/second crack times, Development Time Ratio (DTR), and brewing method tags.
-*   **Expert:** Full data logging. Includes yield percentages, environment temperatures (ET), SCA 100-point cupping scores, and detailed brew parameters.
-
-The features below should be implemented with these tiers in mind.
+*   **Easy:** Minimal friction. Basics only (bean, total time, emoji ratings 🙁/😐/😀).
+*   **Moderate:** Baseline. Flavor wheel, crack times, DTR, brew method.
+*   **Expert:** Full logging. Yield, environment temps, SCA cupping, detailed brew params.
 
 ---
 
-## 1. Roasted Weight & Weight Loss Percentage (Yield) [Expert Tier]
+## 1. Roasted Weight & Weight Loss Percentage (Yield)
 
-Tracking the weight loss during a roast (typically between 12-20%) is a fundamental metric for roasters. It helps ensure batch-to-batch consistency and gives insight into moisture loss and roast development.
+**Status:** ✅ Implemented (available to all tiers, not gated to Expert). "Log Roasted Weight" button on each history card stores `roastedWeightG`; card shows weight + loss %; comparison table and clipboard/CSV exports include it; sanity-check warns outside 12–20%.
 
-### Implementation Plan:
-1. **Data Model Updates (`js/storage.js`):**
-   - The `roast` object needs a new property `roastedWeightG`.
-2. **UI Updates - History List (`js/history.js`):**
-   - **Roast Card (`renderHistoryList`):** Add an "Edit Yield" or "Log Roasted Weight" button to the roast card in the history view. We shouldn't ask for it in the Active Roast tab because beans need to cool down before weighing.
-   - **Display:** In the roast card, display the `Roasted Weight: {weight} g` and `Yield / Weight Loss: {percentage}%` if `roastedWeightG` exists. The formula for weight loss is `((greenWeightG - roastedWeightG) / greenWeightG) * 100`.
-   - **Modal UI:** Create a simple prompt or modal to input `roastedWeightG`. Upon saving, update the roast object using `updateRoastInHistory`.
-3. **UI Updates - Comparison (`js/history.js`):**
-   - Update `buildComparisonTable` to include rows for "Roasted Weight" and "Weight Loss %".
-4. **Export Updates (`js/history.js`):**
-   - Update `exportRoast` (clipboard text) and `exportRoastCsv` to include the `roastedWeightG` and calculated yield percentage.
+Weight loss = `((greenWeightG - roastedWeightG) / greenWeightG) * 100`.
 
-## 2. SCA-style Cupping Score & Brew Log [Tiered Implementation]
+## 2. SCA-style Cupping Score & Brew Log
 
-Currently, tasting notes are limited to a flavor wheel and free text. Adding a structured evaluation system and a brew log allows testers to grade and reproduce roasts, but should be tailored to the user's complexity tier.
+**Status:** ✅ Implemented (tiered, with a one-off detail-level override): Easy = emoji + notes; Moderate = flavor wheel + brew method; Expert = cupping scores + full brew params.
 
-### Tiered Tasting UI:
-*   **Easy:** A simple 3-emoji rating system (Sad / Neutral / Happy) alongside a basic text area for general notes.
-*   **Moderate:** The existing Flavor Wheel tags + basic brew method (e.g., "V60", "Espresso") + text notes.
-*   **Expert:** Full structured evaluation (detailed below).
+⚠️ **Deviation:** the cupping total is a **simplified sum of 8 attributes (/80)**, clearly labelled — not the official SCA **100-point** protocol (which adds uniformity, clean cup, sweetness defaults and defect deductions). See backlog #B1 to upgrade.
 
-### Implementation Plan:
-1. **Data Model Updates (`js/storage.js`):**
-   - Update the `tastingNotes` object within a roast to include:
-     - `scores`: An object with SCA parameters (e.g., `aroma`, `acidity`, `body`, `flavor`, `aftertaste`, `sweetness`, `balance`, `overall`), each rated out of 10, plus an overall score out of 100.
-     - `brewLog`: An object detailing the brew method (e.g., `method`, `doseGrams`, `yieldGrams`, `temperatureUnit`, `temperature`, `grindSize`).
-2. **UI Updates - Tasting Notes Modal (`js/history.js` -> `openTastingModal`):**
-   - **Tabs or Sections:** Split the modal into "Flavors", "Cupping Scores", and "Brew Parameters".
-   - **Cupping Scores Section:** Add number inputs or sliders (0-10, with 0.25 increments) for each SCA parameter. Automatically calculate the total score (out of 100).
-   - **Brew Parameters Section:** Add inputs for the brew method (dropdown), dose, yield/water weight, and grind setting.
-3. **UI Updates - History List (`js/history.js`):**
-   - In the roast card, display a summary of the tasting: "Total Score: 86.5" and a brief summary of the brew parameters (e.g., "V60 | 15g in / 250g out").
-4. **Data Persistence (`js/storage.js`):**
-   - Ensure the new `scores` and `brewLog` properties are serialized correctly when saving to `localStorage` and exporting/importing backups.
+Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertaste,acidity,body,balance,sweetness,overall,total}`, `brewLog{method,doseGrams,yieldGrams,temperature,temperatureUnit,grindSize}`, `text`.
+
+---
+
+## 🔜 Backlog (not yet implemented)
+
+### B1. Full SCA 100-point cupping form
+Upgrade the simplified /80 sum to the official protocol: 10 categories (incl. uniformity, clean cup, sweetness) each /10, cup counts, defect deductions, total /100. Offer alongside (or instead of) the simplified form.
+
+### B2. Full cascading tier configuration (per-feature defaults)
+Add the middle layer of the hierarchy: per-feature tier overrides (e.g. global Moderate, but Cupping always Expert), stored in preferences and respected by each feature.
+
+### B3. Automatic Rate of Rise via thermocouple
+Read a bean-probe thermocouple directly via **Web Serial** or **Web Bluetooth** (Chrome) for high-resolution automatic RoR, instead of manual readings. Plot a true RoR curve.
+
+### B4. Multi-patch colour calibration (ColorChecker)
+Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) with a 3×3 correction for proper colorimetric accuracy; optionally map toward an Agtron-style index.
+
+### B5. Behmor P1–P5 reference profile templates
+User-definable reference time/temperature templates per Behmor profile button, auto-loadable as the follow reference (research-flagged: home roasters want Behmor curve auto-population).
+
+### B6. README & developer docs
+Document the app (purpose, features, how to run/build, data model, PWA/HTTPS notes) for users and contributors.
+
+### B7. Optional photo inclusion in JSON backup
+Photos live in IndexedDB and are excluded from the JSON backup by default (size). Offer an opt-in "include photos" export, or a separate photo-archive export/import.
+
+### B8. Cloud sync / community comparison (requires backend — out of current scope)
+Research surfaced demand for comparing roasts of the same bean with other users. This needs a server, which conflicts with the current browser-only, no-backend design. Parked unless that constraint changes.
+
+### Environment / ET logging (Expert tier)
+The tier guidelines mention environment temperature (ET) logging at Expert tier; not yet implemented as a structured field.
