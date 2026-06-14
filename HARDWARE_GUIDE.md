@@ -46,7 +46,9 @@ If you drill off-center, the drum will wobble and snap the rigid probe. If you d
 *   **The Fix:** You must buy a brand new roasting drum from Behmor or a distributor (like Sweet Maria's or iDrinkCoffee). They typically cost between $35.00 and $45.00 USD. Do not attempt to use metal epoxy or silver solder to fix it; the thermal cycling of the roaster will break it.
 
 **Can someone else do this for me?**
-Yes. If you don't have a drill press or don't want to risk breaking your drum, professional installation services exist. For example, *Chocolate Alchemy* offers a Behmor Thermocouple Modification Service where you ship your roaster to them. However, it is expensive (historically costing around $375 for the service, or buying a pre-modded roaster from them).
+Yes. If you don't have a drill press or don't want to risk breaking your drum, you have a few options:
+*   **The "Cash & Six-Pack" Local Option (Highly Recommended):** This is a 5-minute job for anyone with a drill press and a V-block. You don't need a specialized service. Walk into a local **independent auto mechanic**, a **small machine/fabrication shop**, a **gunsmith**, or a **local makerspace**. Don't call ahead; walk in with the drum, the probe, and a sharpie mark. Offer $20 cash or a six-pack of beer for 5 minutes on their drill press.
+*   **The Expensive Mail-In Option:** Professional installation services exist (e.g., *Chocolate Alchemy* offers a Behmor Thermocouple Modification Service where you ship your roaster to them). However, this is expensive (historically costing around $375 for the service, or buying a pre-modded roaster).
 
 ### Stream 2: KKTO (Turbo Oven)
 *The Challenge: The sweeping agitator arms.*
