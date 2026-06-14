@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-BjL15LzZ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CK-C1R8b.css">
+  <script type="module" crossorigin src="/assets/index-BUjD15__.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-My1BTILp.css">
 </head>
 <body>
     <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
@@ -24,6 +24,14 @@
             <li data-target="pantry">Bean Pantry</li>
             <li data-target="history">Roast History</li>
         </ul>
+        <div class="sidebar-footer" style="padding: 15px 25px; border-top: 1px solid var(--border-color);">
+            <label for="tierSelect" style="font-size: 0.85rem; color: var(--text-muted);">Mode</label>
+            <select id="tierSelect" style="margin-bottom: 0;">
+                <option value="easy">Easy</option>
+                <option value="moderate">Moderate</option>
+                <option value="expert">Expert</option>
+            </select>
+        </div>
     </div>
 
     <div class="main-content">
@@ -112,7 +120,7 @@
                     <button id="markSecondCrackBtn" style="flex: 1; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
                     <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;">
                     <select id="tempUnit" style="width: auto; margin-bottom: 0;">
                         <option value="C">°C</option>
@@ -122,13 +130,13 @@
                     <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
+                <div class="tier-moderate" style="margin-bottom: 15px;">
                     <label for="referenceSelect"><strong>Follow reference roast</strong></label>
                     <select id="referenceSelect"><option value="">None</option></select>
                     <small style="color: var(--text-muted);">Overlays a past roast's curve and warns ~10s before its cracks.</small>
                 </div>
 
-                <details style="margin-bottom: 15px;">
+                <details class="tier-moderate" style="margin-bottom: 15px;">
                     <summary style="cursor: pointer;">Detection Settings</summary>
                     <div style="padding: 15px 5px 5px;">
                         <div style="margin-bottom: 15px;">
@@ -156,7 +164,7 @@
                     </div>
                 </details>
 
-                <details style="margin-bottom: 15px;">
+                <details class="tier-expert" style="margin-bottom: 15px;">
                     <summary style="cursor: pointer;">Roast Targets (alarms)</summary>
                     <div style="padding: 15px 5px 5px;">
                         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">

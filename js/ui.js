@@ -1,4 +1,25 @@
+import { getTier, saveTier } from './storage.js';
+
 // --- Common UI and State Management ---
+
+// Apply the complexity tier as a body attribute so CSS can show/hide advanced UI.
+export function initTier() {
+    const sel = document.getElementById('tierSelect');
+    const apply = (t) => { document.body.dataset.tier = t; };
+
+    apply(getTier());
+    if (sel) {
+        sel.value = getTier();
+        sel.addEventListener('change', () => { saveTier(sel.value); apply(sel.value); });
+    }
+    // Reflect an imported tier setting.
+    window.addEventListener('settingsImported', () => {
+        const t = getTier();
+        if (sel) sel.value = t;
+        apply(t);
+    });
+}
+
 export function initTabs() {
     const sidebar = document.querySelector('.sidebar');
     const menuToggle = document.getElementById('menuToggle');
