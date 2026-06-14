@@ -47,12 +47,12 @@ Platform / UX:
 
 To cater to a wide range of users, from casual hobbyists to advanced roasters and Q Graders, new and existing features should be governed by "Complexity Tiers."
 
-**Status:** ✅ Lightweight version shipped — a global Mode selector (sidebar) sets `body[data-tier]` and CSS hides higher-tier UI; the cupping modal has a one-off override. ⏳ The full cascading hierarchy below (specifically the **per-feature default**) is outstanding — see backlog #B2.
+**Status:** ✅ Full three-level hierarchy shipped — global Mode selector, per-feature overrides (Dashboard, Tasting), and a one-off override on the cupping modal.
 
 ### Configuration Hierarchy:
-1.  **Global Default:** ✅ A master setting in the app's preferences.
-2.  **Per-Feature Default:** ⏳ Override the global setting for specific features (e.g. globally "Moderate" but Cupping set to "Expert").
-3.  **One-off Override:** ✅ A toggle on the UI to temporarily switch tiers (implemented on the cupping modal).
+1.  **Global Default:** ✅ A master "Mode" setting in the sidebar.
+2.  **Per-Feature Default:** ✅ "Per-feature mode" in the sidebar overrides the global tier for the Dashboard and Tasting/cupping areas (Inherit / Easy / Moderate / Expert). Persisted and included in backup.
+3.  **One-off Override:** ✅ The cupping modal's detail-level select (defaults to the effective tasting tier).
 
 ### Tier Guidelines:
 *   **Easy:** Minimal friction. Basics only (bean, total time, emoji ratings 🙁/😐/😀).
@@ -82,8 +82,8 @@ Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertas
 ### B1. Full SCA 100-point cupping form
 Upgrade the simplified /80 sum to the official protocol: 10 categories (incl. uniformity, clean cup, sweetness) each /10, cup counts, defect deductions, total /100. Offer alongside (or instead of) the simplified form.
 
-### B2. Full cascading tier configuration (per-feature defaults)
-Add the middle layer of the hierarchy: per-feature tier overrides (e.g. global Moderate, but Cupping always Expert), stored in preferences and respected by each feature.
+### B2. Full cascading tier configuration (per-feature defaults) — ✅ Done
+Shipped: per-feature tier overrides for Dashboard and Tasting/cupping (sidebar → "Per-feature mode"), with `getEffectiveTier(feature)` resolving override → global. Persisted and in backup.
 
 ### B3. Automatic Rate of Rise via thermocouple
 Read a bean-probe thermocouple directly via **Web Serial** or **Web Bluetooth** (Chrome) for high-resolution automatic RoR, instead of manual readings. Plot a true RoR curve.
