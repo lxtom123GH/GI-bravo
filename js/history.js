@@ -1,4 +1,4 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getTier } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct } from './metrics.js';
@@ -6,6 +6,36 @@ import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDat
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
+
+const EMOJI = { sad: '🙁', neutral: '😐', happy: '😀' };
+const SCA_ATTRS = ['aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'sweetness', 'overall'];
+const BREW_METHODS = ['V60', 'Espresso', 'AeroPress', 'French Press', 'Filter / Batch', 'Moka', 'Cold Brew', 'Other'];
+
+// Sum of the SCA-style attribute scores (out of 80), or null if none entered.
+function computeCuppingTotal(scores) {
+    if (!scores) return null;
+    const vals = SCA_ATTRS.map(k => Number(scores[k])).filter(v => !isNaN(v));
+    return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+}
+
+const chip = (text) => `<span style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px;">${text}</span>`;
+
+// Build a compact summary of whatever tasting data a roast has.
+function tastingSummary(notes) {
+    const parts = [];
+    if (notes.emoji && EMOJI[notes.emoji]) parts.push(`<span style="font-size: 1.2rem;">${EMOJI[notes.emoji]}</span>`);
+    const flavors = (notes.flavors || []).map(chip).join('');
+    if (flavors) parts.push(flavors);
+    const total = computeCuppingTotal(notes.scores);
+    if (total != null) parts.push(chip(`Cupping ${total.toFixed(2)}/80`));
+    const bl = notes.brewLog;
+    if (bl && bl.method) {
+        let s = bl.method;
+        if (bl.doseGrams && bl.yieldGrams) s += ` · ${bl.doseGrams}g→${bl.yieldGrams}g`;
+        parts.push(chip(s));
+    }
+    return parts.length ? parts.join(' ') : '<em>No tasting data.</em>';
+}
 
 export function initHistory() {
     renderHistoryList();
@@ -275,8 +305,7 @@ function renderHistoryList() {
 
         // Tasting Notes Section
         let notes = roast.tastingNotes || { flavors: [], text: '' };
-        let flavorsHtml = notes.flavors.map(f => `<span style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px;">${f}</span>`).join('');
-        if (!flavorsHtml) flavorsHtml = '<em>No flavors tagged.</em>';
+        const flavorsHtml = tastingSummary(notes);
 
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between;">
@@ -573,23 +602,87 @@ function openTastingModal(id) {
     modal.style.maxHeight = '90vh';
     modal.style.overflowY = 'auto';
 
+    const scores = { ...(notes.scores || {}) };
+    const brew = { ...(notes.brewLog || {}) };
+    let selectedFlavors = [...(notes.flavors || [])];
+    let selectedEmoji = notes.emoji || null;
+
+    // Flavor wheel buttons
     let flavorsHtml = '';
     for (const [category, subFlavors] of Object.entries(flavorWheel)) {
         flavorsHtml += `<h5>${category}</h5><div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">`;
         subFlavors.forEach(f => {
-            const isSelected = notes.flavors.includes(f) ? 'background-color: var(--accent); color: #000;' : 'background-color: var(--bg-color); color: var(--text-main);';
-            flavorsHtml += `<button type="button" class="flavor-btn" data-flavor="${f}" style="${isSelected} border: 1px solid var(--border-color); padding: 5px; border-radius: 4px; cursor: pointer;">${f}</button>`;
+            const sel = selectedFlavors.includes(f) ? 'background-color: var(--accent); color: #000;' : 'background-color: var(--bg-color); color: var(--text-main);';
+            flavorsHtml += `<button type="button" class="flavor-btn" data-flavor="${f}" style="${sel} border: 1px solid var(--border-color); padding: 5px; border-radius: 4px; cursor: pointer;">${f}</button>`;
         });
         flavorsHtml += `</div>`;
     }
 
+    const emojiHtml = Object.entries(EMOJI).map(([k, e]) =>
+        `<button type="button" class="emoji-btn" data-emoji="${k}" style="font-size: 1.6rem; padding: 6px 12px; border: 2px solid ${selectedEmoji === k ? 'var(--accent)' : 'var(--border-color)'}; border-radius: 6px; background: var(--bg-color); cursor: pointer;">${e}</button>`
+    ).join(' ');
+
+    const scoreHtml = SCA_ATTRS.map(k =>
+        `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <label style="flex: 1; text-transform: capitalize;">${k}</label>
+            <input type="number" id="score-${k}" min="0" max="10" step="0.25" value="${scores[k] ?? ''}" style="width: 80px; margin-bottom: 0;">
+        </div>`
+    ).join('');
+
+    const methodOptions = ['<option value="">Select method…</option>']
+        .concat(BREW_METHODS.map(m => `<option value="${m}"${brew.method === m ? ' selected' : ''}>${m}</option>`)).join('');
+
     modal.innerHTML = `
-        <h3>Edit Tasting Notes</h3>
-        <div style="margin-bottom: 15px;">
+        <h3>Tasting Notes</h3>
+        <label for="tastingTier"><strong>Detail level</strong></label>
+        <select id="tastingTier">
+            <option value="easy">Easy</option>
+            <option value="moderate">Moderate</option>
+            <option value="expert">Expert</option>
+        </select>
+
+        <div class="ts-emoji" style="margin-bottom: 15px;">
+            <h4>Overall impression</h4>
+            <div style="display: flex; gap: 10px;">${emojiHtml}</div>
+        </div>
+
+        <div class="ts-flavors" style="margin-bottom: 15px;">
             <h4>Flavor Wheel</h4>
             ${flavorsHtml}
         </div>
-        <textarea id="modalNotesText" rows="4" placeholder="General impressions, brewing method, etc.">${notes.text}</textarea>
+
+        <div class="ts-brew-basic" style="margin-bottom: 15px;">
+            <label for="brewMethod"><strong>Brew method</strong></label>
+            <select id="brewMethod">${methodOptions}</select>
+        </div>
+
+        <div class="ts-scores" style="margin-bottom: 15px;">
+            <h4>Cupping Scores (0–10)</h4>
+            ${scoreHtml}
+            <p style="margin-top: 6px;"><strong>Total: <span id="cupTotal">--</span> / 80</strong>
+            <br><small style="color: var(--text-muted);">Simplified SCA-style sum (not the official 100-point protocol).</small></p>
+        </div>
+
+        <div class="ts-brew-expert" style="margin-bottom: 15px;">
+            <h4>Brew Parameters</h4>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Dose (g)</label><input type="number" id="brewDose" step="0.1" value="${brew.doseGrams ?? ''}"></div>
+                <div style="flex: 1;"><label>Yield (g)</label><input type="number" id="brewYield" step="1" value="${brew.yieldGrams ?? ''}"></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Water temp</label><input type="number" id="brewTemp" step="1" value="${brew.temperature ?? ''}"></div>
+                <div style="flex: 0 0 70px;"><label>Unit</label>
+                    <select id="brewTempUnit">
+                        <option value="C"${brew.temperatureUnit !== 'F' ? ' selected' : ''}>°C</option>
+                        <option value="F"${brew.temperatureUnit === 'F' ? ' selected' : ''}>°F</option>
+                    </select>
+                </div>
+            </div>
+            <label>Grind setting</label><input type="text" id="brewGrind" value="${brew.grindSize ?? ''}">
+        </div>
+
+        <label for="modalNotesText"><strong>Notes</strong></label>
+        <textarea id="modalNotesText" rows="4" placeholder="General impressions, etc.">${notes.text || ''}</textarea>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button id="modalCancel" class="danger">Cancel</button>
             <button id="modalSave" style="background-color: var(--success);">Save</button>
@@ -599,8 +692,26 @@ function openTastingModal(id) {
     modalBg.appendChild(modal);
     document.body.appendChild(modalBg);
 
-    // Modal Events
-    let selectedFlavors = [...notes.flavors];
+    // Show/hide sections by the selected detail level (one-off override of the global tier).
+    const tierSel = modal.querySelector('#tastingTier');
+    tierSel.value = getTier();
+    const applyTier = (t) => {
+        modal.querySelector('.ts-emoji').style.display = t === 'easy' ? 'block' : 'none';
+        modal.querySelector('.ts-flavors').style.display = t === 'easy' ? 'none' : 'block';
+        modal.querySelector('.ts-brew-basic').style.display = t === 'easy' ? 'none' : 'block';
+        modal.querySelector('.ts-scores').style.display = t === 'expert' ? 'block' : 'none';
+        modal.querySelector('.ts-brew-expert').style.display = t === 'expert' ? 'block' : 'none';
+    };
+    applyTier(tierSel.value);
+    tierSel.addEventListener('change', () => applyTier(tierSel.value));
+
+    modal.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedEmoji = selectedEmoji === btn.dataset.emoji ? null : btn.dataset.emoji;
+            modal.querySelectorAll('.emoji-btn').forEach(b =>
+                b.style.borderColor = (b.dataset.emoji === selectedEmoji) ? 'var(--accent)' : 'var(--border-color)');
+        });
+    });
 
     modal.querySelectorAll('.flavor-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -617,14 +728,41 @@ function openTastingModal(id) {
         });
     });
 
-    document.getElementById('modalCancel').addEventListener('click', () => {
-        document.body.removeChild(modalBg);
-    });
+    const updateTotal = () => {
+        const live = {};
+        SCA_ATTRS.forEach(k => { const v = parseFloat(modal.querySelector(`#score-${k}`).value); if (!isNaN(v)) live[k] = v; });
+        const total = computeCuppingTotal(live);
+        modal.querySelector('#cupTotal').textContent = total != null ? total.toFixed(2) : '--';
+    };
+    SCA_ATTRS.forEach(k => modal.querySelector(`#score-${k}`).addEventListener('input', updateTotal));
+    updateTotal();
 
-    document.getElementById('modalSave').addEventListener('click', () => {
+    modal.querySelector('#modalCancel').addEventListener('click', () => document.body.removeChild(modalBg));
+
+    modal.querySelector('#modalSave').addEventListener('click', () => {
+        // Collect every section (regardless of current view) so switching tiers never loses data.
+        const newScores = {};
+        SCA_ATTRS.forEach(k => { const v = parseFloat(modal.querySelector(`#score-${k}`).value); if (!isNaN(v)) newScores[k] = v; });
+        const total = computeCuppingTotal(newScores);
+        if (total != null) newScores.total = total;
+
+        const num = (id) => { const v = parseFloat(modal.querySelector(id).value); return isNaN(v) ? undefined : v; };
+        const brewLog = {
+            method: modal.querySelector('#brewMethod').value || undefined,
+            doseGrams: num('#brewDose'),
+            yieldGrams: num('#brewYield'),
+            temperature: num('#brewTemp'),
+            temperatureUnit: modal.querySelector('#brewTempUnit').value,
+            grindSize: modal.querySelector('#brewGrind').value.trim() || undefined
+        };
+        const hasBrew = brewLog.method || brewLog.doseGrams != null || brewLog.yieldGrams != null || brewLog.temperature != null || brewLog.grindSize;
+
         roast.tastingNotes = {
             flavors: selectedFlavors,
-            text: document.getElementById('modalNotesText').value
+            text: modal.querySelector('#modalNotesText').value,
+            emoji: selectedEmoji || undefined,
+            scores: Object.keys(newScores).length ? newScores : undefined,
+            brewLog: hasBrew ? brewLog : undefined
         };
         updateRoastInHistory(roast);
         document.body.removeChild(modalBg);
@@ -743,9 +881,24 @@ function exportRoast(id) {
     }
 
     if (roast.tastingNotes) {
+        const tn = roast.tastingNotes;
         text += `\nTasting Notes:\n`;
-        if (roast.tastingNotes.flavors.length > 0) text += `Flavors: ${roast.tastingNotes.flavors.join(', ')}\n`;
-        if (roast.tastingNotes.text) text += `${roast.tastingNotes.text}\n`;
+        if (tn.emoji && EMOJI[tn.emoji]) text += `Impression: ${EMOJI[tn.emoji]}\n`;
+        if (tn.flavors && tn.flavors.length > 0) text += `Flavors: ${tn.flavors.join(', ')}\n`;
+        const total = computeCuppingTotal(tn.scores);
+        if (total != null) {
+            text += `Cupping (/80): ${total.toFixed(2)}\n`;
+            text += SCA_ATTRS.filter(k => tn.scores[k] != null).map(k => `  - ${k}: ${tn.scores[k]}`).join('\n') + '\n';
+        }
+        if (tn.brewLog && tn.brewLog.method) {
+            const b = tn.brewLog;
+            let line = `Brew: ${b.method}`;
+            if (b.doseGrams && b.yieldGrams) line += ` (${b.doseGrams}g → ${b.yieldGrams}g)`;
+            if (b.temperature != null) line += ` @ ${b.temperature}°${b.temperatureUnit || 'C'}`;
+            if (b.grindSize) line += `, grind ${b.grindSize}`;
+            text += line + '\n';
+        }
+        if (tn.text) text += `${tn.text}\n`;
     }
 
     text += `\nLogs:\n${roast.timeline.logs.join('\n')}`;
