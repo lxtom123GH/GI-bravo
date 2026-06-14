@@ -1,6 +1,6 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit } from './storage.js';
 import { drawRoastCurve, drawRoastCurves } from './chart.js';
-import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
+import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 
 let audioContext;
 let microphone;
@@ -109,6 +109,10 @@ export function initAudioSystem() {
     // Refresh the reference list when history changes (new roast / import / delete).
     window.addEventListener('historyUpdated', populateReferenceSelect);
     window.addEventListener('pantryUpdated', populateReferenceSelect);
+    window.addEventListener('settingsImported', populateReferenceSelect);
+    // Auto-load a Behmor profile template when the roaster config changes.
+    window.addEventListener('behmorConfigChanged', applyBehmorTemplate);
+    applyBehmorTemplate(); // apply for the initial dashboard config
 
     calibrateBtn.addEventListener('click', startCalibration);
     startBtn.addEventListener('click', startRoast);
@@ -229,37 +233,75 @@ function populateReferenceSelect() {
         select.appendChild(opt);
     });
 
-    if (prev && history.find(r => r.id === prev)) select.value = prev;
+    // Behmor profile templates
+    const templates = getBehmorTemplates();
+    Object.entries(templates).forEach(([key, t]) => {
+        const opt = document.createElement('option');
+        opt.value = `behmor:${key}`;
+        opt.textContent = `Behmor ${t.profile} @ ${weightLabel(t.weight, getWeightUnit())}${t.name ? ' — ' + t.name : ''}`;
+        select.appendChild(opt);
+    });
+
+    const stillValid = (prev.startsWith('behmor:') && templates[prev.slice(7)]) || history.find(r => r.id === prev);
+    if (prev && stillValid) select.value = prev;
     else loadReference(''); // selection no longer valid
 }
 
-function loadReference(id) {
-    const roast = getRoastHistory().find(r => r.id === id);
-    if (!roast) {
-        referenceCurve = null;
-        referenceMarkers = {};
-        if (!isRecording) drawRoastCurve(curveCanvas, [], {});
-        return;
+function loadReference(value) {
+    if (value && value.startsWith('behmor:')) {
+        const tmpl = getBehmorTemplates()[value.slice(7)];
+        if (tmpl) {
+            applyReference(tmpl.curve, { firstCrackMs: tmpl.firstCrackMs, secondCrackMs: tmpl.secondCrackMs, totalMs: tmpl.totalMs });
+            return;
+        }
     }
+    const roast = getRoastHistory().find(r => r.id === value);
+    if (!roast) { applyReference(null, {}); return; }
 
     const start = roast.timeline.startTime;
-    referenceCurve = roast.timeline.curve;
-    referenceMarkers = {
+    applyReference(roast.timeline.curve, {
         firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
         secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null,
         totalMs: roast.timeline.endTime - start
-    };
+    });
+}
+
+function applyReference(curve, markers) {
+    referenceCurve = (curve && curve.length >= 2) ? curve : null;
+    referenceMarkers = referenceCurve ? markers : {};
     refAnnounced = { fc: false, sc: false };
 
-    // Preview the reference when idle.
     if (!isRecording) {
-        drawRoastCurves(curveCanvas, [{
-            curve: referenceCurve,
-            color: REF_COLOR,
-            label: 'Reference',
-            firstCrackMs: referenceMarkers.firstCrackMs,
-            secondCrackMs: referenceMarkers.secondCrackMs
-        }]);
+        if (referenceCurve) {
+            drawRoastCurves(curveCanvas, [{
+                curve: referenceCurve, color: REF_COLOR, label: 'Reference',
+                firstCrackMs: markers.firstCrackMs, secondCrackMs: markers.secondCrackMs
+            }]);
+        } else {
+            drawRoastCurve(curveCanvas, [], {});
+        }
+    }
+}
+
+// When the Behmor roaster/profile/weight changes, auto-select a matching template.
+function applyBehmorTemplate() {
+    const select = document.getElementById('referenceSelect');
+    if (!select) return;
+
+    const roaster = document.getElementById('roasterSelect')?.value;
+    const profile = document.querySelector('.behmor-profile.active')?.dataset.profile;
+    const weight = document.querySelector('.behmor-weight.active')?.dataset.weight;
+
+    populateReferenceSelect();
+    if (roaster !== 'behmor' || !profile || !weight) return;
+
+    const tmpl = getBehmorTemplate(profile, weight);
+    if (tmpl) {
+        const key = `behmor:${tmpl.profile}|${tmpl.weight}`;
+        if ([...select.options].some(o => o.value === key)) { select.value = key; loadReference(key); }
+    } else if (select.value.startsWith('behmor:')) {
+        select.value = '';
+        loadReference('');
     }
 }
 

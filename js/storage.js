@@ -139,6 +139,58 @@ export function getEffectiveTier(feature) {
     return getFeatureTier(feature) || getTier();
 }
 
+// --- Weight unit + default batch size ---
+
+export function getWeightUnit() {
+    return localStorage.getItem('weightUnit') === 'imperial' ? 'imperial' : 'metric';
+}
+
+export function saveWeightUnit(unit) {
+    localStorage.setItem('weightUnit', unit === 'imperial' ? 'imperial' : 'metric');
+}
+
+// Default Behmor batch size, stored as the machine setting key ('1/4' | '1/2' | '1').
+export function getDefaultWeight() {
+    return localStorage.getItem('defaultWeight') || '1';
+}
+
+export function saveDefaultWeight(w) {
+    localStorage.setItem('defaultWeight', w);
+}
+
+// --- Behmor profile reference templates (keyed by "profile|weight") ---
+
+export function getBehmorTemplates() {
+    const s = localStorage.getItem('behmorTemplates');
+    return s ? JSON.parse(s) : {};
+}
+
+export function saveBehmorTemplates(obj) {
+    localStorage.setItem('behmorTemplates', JSON.stringify(obj || {}));
+}
+
+const behmorKey = (profile, weight) => `${profile}|${weight}`;
+
+// Exact profile+weight match, else fall back to any template for that profile.
+export function getBehmorTemplate(profile, weight) {
+    const o = getBehmorTemplates();
+    if (o[behmorKey(profile, weight)]) return o[behmorKey(profile, weight)];
+    const k = Object.keys(o).find(key => key.startsWith(`${profile}|`));
+    return k ? o[k] : null;
+}
+
+export function saveBehmorTemplate(profile, weight, data) {
+    const o = getBehmorTemplates();
+    o[behmorKey(profile, weight)] = { ...data, profile, weight };
+    saveBehmorTemplates(o);
+}
+
+export function deleteBehmorTemplate(profile, weight) {
+    const o = getBehmorTemplates();
+    delete o[behmorKey(profile, weight)];
+    saveBehmorTemplates(o);
+}
+
 // --- Temperature unit preference ---
 
 export function getTempUnit() {
@@ -185,7 +237,10 @@ export function exportAllData() {
         referenceSamples: getReferenceSamples(),
         tempUnit: getTempUnit(),
         complexityTier: getTier(),
-        featureTiers: getFeatureTiers()
+        featureTiers: getFeatureTiers(),
+        weightUnit: getWeightUnit(),
+        defaultWeight: getDefaultWeight(),
+        behmorTemplates: getBehmorTemplates()
     };
 }
 
@@ -211,5 +266,8 @@ export function importAllData(data) {
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);
     if (data.featureTiers && typeof data.featureTiers === 'object') saveFeatureTiers(data.featureTiers);
+    if (data.weightUnit) saveWeightUnit(data.weightUnit);
+    if (data.defaultWeight) saveDefaultWeight(data.defaultWeight);
+    if (data.behmorTemplates && typeof data.behmorTemplates === 'object') saveBehmorTemplates(data.behmorTemplates);
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }

@@ -1,4 +1,11 @@
-import { getPantry } from './storage.js';
+import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight } from './storage.js';
+import { BEHMOR_GRAMS, weightLabel } from './metrics.js';
+
+// Notify other modules (audio.js) that the Behmor roaster/profile/weight changed,
+// so a matching reference template can be auto-loaded.
+function notifyConfigChanged() {
+    window.dispatchEvent(new Event('behmorConfigChanged'));
+}
 
 export function initRoastDashboard() {
     const roasterSelect = document.getElementById('roasterSelect');
@@ -15,6 +22,7 @@ export function initRoastDashboard() {
                 behmorControls.style.display = 'none';
                 kktoControls.style.display = 'block';
             }
+            notifyConfigChanged();
         });
     }
 
@@ -22,27 +30,60 @@ export function initRoastDashboard() {
     populateBeanSelect();
     window.addEventListener('pantryUpdated', populateBeanSelect);
 
-    // Behmor state management UI
     const weightBtns = document.querySelectorAll('.behmor-weight');
     const greenWeightInput = document.getElementById('greenWeightInput');
-    // Behmor weight selections map to approximate green weights in grams.
-    const lbToGrams = { '1/4': 113, '1/2': 227, '1': 454 };
+    const weightUnitSelect = document.getElementById('weightUnitSelect');
+    const setDefaultBtn = document.getElementById('setDefaultWeightBtn');
+
+    const relabelWeights = () => {
+        const u = getWeightUnit();
+        weightBtns.forEach(b => { b.textContent = weightLabel(b.dataset.weight, u); });
+    };
+
+    const selectWeight = (weight, { prefill = true } = {}) => {
+        weightBtns.forEach(b => b.classList.toggle('active', b.dataset.weight === weight));
+        if (prefill && greenWeightInput) {
+            const grams = BEHMOR_GRAMS[weight];
+            if (grams) greenWeightInput.value = grams;
+        }
+    };
+
+    relabelWeights();
+    selectWeight(getDefaultWeight(), { prefill: false });
+
     weightBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            weightBtns.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            const grams = lbToGrams[e.target.dataset.weight];
-            if (greenWeightInput && grams) greenWeightInput.value = grams;
-        });
+        btn.addEventListener('click', () => { selectWeight(btn.dataset.weight); notifyConfigChanged(); });
     });
+
+    if (weightUnitSelect) {
+        weightUnitSelect.value = getWeightUnit();
+        weightUnitSelect.addEventListener('change', () => { saveWeightUnit(weightUnitSelect.value); relabelWeights(); });
+    }
+
+    if (setDefaultBtn) {
+        setDefaultBtn.addEventListener('click', () => {
+            const active = document.querySelector('.behmor-weight.active');
+            if (active) { saveDefaultWeight(active.dataset.weight); alert(`Default batch size set to ${weightLabel(active.dataset.weight, getWeightUnit())}.`); }
+        });
+    }
 
     const profileBtns = document.querySelectorAll('.behmor-profile');
     profileBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', () => {
             profileBtns.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+            btn.classList.add('active');
+            notifyConfigChanged();
         });
     });
+
+    // Reflect imported settings, and apply the initial template selection.
+    window.addEventListener('settingsImported', () => {
+        if (weightUnitSelect) weightUnitSelect.value = getWeightUnit();
+        relabelWeights();
+        selectWeight(getDefaultWeight(), { prefill: false });
+        notifyConfigChanged();
+    });
+    notifyConfigChanged();
 }
 
 function populateBeanSelect() {
