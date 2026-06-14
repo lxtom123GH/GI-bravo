@@ -1,6 +1,6 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample } from './storage.js';
 import { flavorWheel } from './flavors.js';
-import { drawRoastCurve, drawRoastCurves } from './chart.js';
+import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex } from './photos.js';
 
@@ -13,6 +13,43 @@ export function initHistory() {
     document.querySelector('[data-target="history"]').addEventListener('click', renderHistoryList);
     initBackup();
     initCompare();
+    initTrends();
+}
+
+function initTrends() {
+    const metric = document.getElementById('trendMetric');
+    if (!metric) return;
+    metric.addEventListener('change', renderTrend);
+    renderTrend();
+}
+
+function renderTrend() {
+    const canvas = document.getElementById('trendCanvas');
+    const metricSel = document.getElementById('trendMetric');
+    if (!canvas || !metricSel) return;
+
+    const metric = metricSel.value;
+    const history = getRoastHistory().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const label = r => new Date(r.date).toLocaleDateString();
+
+    if (metric === 'color') {
+        // Roast-colour indices live in IndexedDB; gather then plot.
+        Promise.all(history.map(r => getRoastColorIndex(r.id))).then(indices => {
+            const series = history.map((r, i) => ({ label: label(r), value: indices[i] ? indices[i].brightness : null }));
+            drawTrend(canvas, series, { decimals: 0 });
+        });
+        return;
+    }
+
+    const series = history.map(r => {
+        const m = computeRoastMetrics(r.timeline);
+        let value = null;
+        if (metric === 'dtr') value = m.dtr != null ? m.dtr * 100 : null;
+        else if (metric === 'total') value = m.totalMs != null ? m.totalMs / 60000 : null;
+        else if (metric === 'fc') value = m.timeToFirstCrackMs != null ? m.timeToFirstCrackMs / 60000 : null;
+        return { label: label(r), value };
+    });
+    drawTrend(canvas, series, { decimals: 1 });
 }
 
 function initCompare() {
@@ -174,9 +211,10 @@ function renderHistoryList() {
 
     historyContainer.innerHTML = '';
 
-    // Keep the comparison dropdowns in sync with the current history.
+    // Keep the comparison dropdowns and trend chart in sync with the current history.
     populateCompareSelects();
     renderComparison();
+    renderTrend();
 
     if (history.length === 0) {
         historyContainer.innerHTML = '<p>No roasts recorded yet.</p>';

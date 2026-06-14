@@ -57,6 +57,79 @@ export function drawRoastCurve(canvas, curve, markers = {}) {
     drawMarker(ctx, xOf(markers.secondCrackMs), pad, plotH, '#9c27b0', '2C', markers.secondCrackMs);
 }
 
+// Plot a metric across roasts over time. series: [{ label, value }] in chronological order.
+export function drawTrend(canvas, series, opts = {}) {
+    if (!canvas) return;
+
+    const width = canvas.width = canvas.clientWidth || canvas.width || 500;
+    const height = canvas.height = canvas.clientHeight || canvas.height || 180;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, width, height);
+
+    const pad = { left: 40, right: 10, top: 14, bottom: 26 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+
+    const pts = (series || []).filter(p => p.value != null && !isNaN(p.value));
+    if (pts.length === 0) {
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data for this metric yet', width / 2, height / 2);
+        return;
+    }
+
+    const values = pts.map(p => p.value);
+    let min = Math.min(...values);
+    let max = Math.max(...values);
+    if (min === max) { min -= 1; max += 1; }
+
+    const xOf = i => pad.left + (pts.length === 1 ? plotW / 2 : (i / (pts.length - 1)) * plotW);
+    const yOf = v => pad.top + plotH - ((v - min) / (max - min)) * plotH;
+
+    // Axes + min/max labels
+    ctx.strokeStyle = '#404040';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+    ctx.stroke();
+
+    ctx.fillStyle = '#a0a0a0';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(max.toFixed(opts.decimals ?? 1), pad.left - 4, pad.top + 8);
+    ctx.fillText(min.toFixed(opts.decimals ?? 1), pad.left - 4, pad.top + plotH);
+
+    // Line + dots
+    ctx.strokeStyle = '#ff9800';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+        const x = xOf(i), y = yOf(p.value);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = '#ff9800';
+    pts.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(xOf(i), yOf(p.value), 3, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // First/last x labels
+    ctx.fillStyle = '#a0a0a0';
+    ctx.textAlign = 'left';
+    ctx.fillText(pts[0].label || '', pad.left, pad.top + plotH + 16);
+    if (pts.length > 1) {
+        ctx.textAlign = 'right';
+        ctx.fillText(pts[pts.length - 1].label || '', pad.left + plotW, pad.top + plotH + 16);
+    }
+}
+
 // Overlay several roast curves on one canvas, time-aligned, with a legend.
 // series: array of { curve, color, label, firstCrackMs, secondCrackMs }
 export function drawRoastCurves(canvas, series = []) {

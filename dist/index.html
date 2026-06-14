@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-BpoqJzqZ.js"></script>
+  <script type="module" crossorigin src="/assets/index-IqGzMHzu.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CK-C1R8b.css">
 </head>
 <body>
@@ -227,6 +227,18 @@
                     <button id="importBackupBtn">Import Backup</button>
                     <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
                 </div>
+            </div>
+
+            <div class="card" id="trendsCard">
+                <h3>Trends</h3>
+                <label for="trendMetric"><strong>Metric over time</strong></label>
+                <select id="trendMetric">
+                    <option value="dtr">Development Ratio (DTR %)</option>
+                    <option value="total">Total time (min)</option>
+                    <option value="fc">Time to first crack (min)</option>
+                    <option value="color">Roast colour (brightness)</option>
+                </select>
+                <canvas id="trendCanvas" style="height: 180px;"></canvas>
             </div>
 
             <div class="card" id="compareCard">
