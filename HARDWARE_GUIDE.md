@@ -22,9 +22,31 @@ These parts can be sourced cheaply from AliExpress, or for a bit more money with
 ### Stream 1: Behmor
 *The Challenge: The rotating drum.*
 
-1.  You must drill a 1/8" hole through the left side panel of the Behmor chassis.
-2.  You must drill perfectly through the center axis of the left drum mount. **High accuracy is required here**; if it is off-center, the drum will wobble and snap the rigid probe. Use a drill press or purchase a pre-drilled kit if possible.
-3.  Slide the rigid probe through the chassis and into the drum axis. The drum will rotate *around* the stationary probe, and the beans will constantly tumble over the tip.
+The Behmor drum is driven on the right side by a square motor peg, but the left side sits on a stationary bracket. The left end-cap of the drum has a hollow cylindrical pin/bushing that slides over this bracket.
+
+To insert the probe, you must drill perfectly through the face of that left-side drum bushing, and then through the chassis wall of the Behmor to match it.
+
+**Drilling the Drum (High Accuracy Required):**
+1.  **Remove the Drum:** Do not attempt to drill it while inside the roaster.
+2.  **Center Punch:** Because the face of the cylinder is small, a drill bit will wander. You **must** use a center punch and hammer to tap a starting divot perfectly in the center.
+3.  **Drill Press Setup:** Hold the drum perfectly vertical. Use a V-block or a vice clamped to your drill press table. Ensure the drum is plumb.
+4.  **Pilot Hole:** Chuck a 1/16" pilot drill bit and drill straight through the center punch mark.
+5.  **Final Hole:** Step up to a 5/32" drill bit. This is slightly larger than your 1/8" thermocouple, which gives the drum enough clearance to rotate without binding on the stationary probe.
+
+**Drilling the Chassis:**
+1.  Measure the location of the stationary mounting bracket from the top and back inner walls.
+2.  Transfer those measurements to the outside left panel of the Behmor chassis.
+3.  Drill a 5/32" hole straight through the outer and inner walls.
+
+**Assembly:**
+Slide the rigid 1/8" thermocouple through the chassis wall hole, through the stationary bracket, and into the drum's left pin. Because the hole in the drum (5/32") is slightly larger than the probe (1/8"), the drum rotates freely around the stationary probe.
+
+**What if I make a mistake?**
+If you drill off-center, the drum will wobble and snap the rigid probe. If you destroy the left-side bushing, you cannot buy *just* the bushing because it is permanently welded/crimped into the drum's end-cap.
+*   **The Fix:** You must buy a brand new roasting drum from Behmor or a distributor (like Sweet Maria's or iDrinkCoffee). They typically cost between $35.00 and $45.00 USD. Do not attempt to use metal epoxy or silver solder to fix it; the thermal cycling of the roaster will break it.
+
+**Can someone else do this for me?**
+Yes. If you don't have a drill press or don't want to risk breaking your drum, professional installation services exist. For example, *Chocolate Alchemy* offers a Behmor Thermocouple Modification Service where you ship your roaster to them. However, it is expensive (historically costing around $375 for the service, or buying a pre-modded roaster from them).
 
 ### Stream 2: KKTO (Turbo Oven)
 *The Challenge: The sweeping agitator arms.*
