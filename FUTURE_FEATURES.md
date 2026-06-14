@@ -87,6 +87,11 @@ Shipped: per-feature tier overrides for Dashboard and Tasting/cupping (sidebar â
 
 ### B3. Automatic Rate of Rise via thermocouple
 Read a bean-probe thermocouple directly via **Web Serial** or **Web Bluetooth** (Chrome) for high-resolution automatic RoR, instead of manual readings. Plot a true RoR curve.
+- *Status:* In Progress. The initial DIY hardware documentation (`HARDWARE_GUIDE.md`) and Web Bluetooth connection skeleton (`js/bluetooth.js`) have been created.
+- *Next Steps:*
+  - Wire up `js/bluetooth.js` to the UI to allow users to connect to their ESP32.
+  - Listen for the custom `roasterTemperature` event and store the live values.
+  - Calculate the real-time Rate of Rise (RoR) from these values and plot it on the live roast curve chart alongside the audio energy data.
 
 ### B4. Multi-patch colour calibration (ColorChecker)
 Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) with a 3Ã—3 correction for proper colorimetric accuracy; optionally map toward an Agtron-style index.
