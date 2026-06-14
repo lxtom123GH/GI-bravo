@@ -228,6 +228,18 @@
                 </div>
             </div>
 
+            <div class="card" id="trendsCard">
+                <h3>Trends</h3>
+                <label for="trendMetric"><strong>Metric over time</strong></label>
+                <select id="trendMetric">
+                    <option value="dtr">Development Ratio (DTR %)</option>
+                    <option value="total">Total time (min)</option>
+                    <option value="fc">Time to first crack (min)</option>
+                    <option value="color">Roast colour (brightness)</option>
+                </select>
+                <canvas id="trendCanvas" style="height: 180px;"></canvas>
+            </div>
+
             <div class="card" id="compareCard">
                 <h3>Compare Roasts</h3>
                 <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
