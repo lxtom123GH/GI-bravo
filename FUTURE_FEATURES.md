@@ -110,5 +110,5 @@ Shipped: an "Include photos (larger file)" checkbox on the Data Backup card embe
 ### B8. Cloud sync / community comparison (requires backend — out of current scope)
 Research surfaced demand for comparing roasts of the same bean with other users. This needs a server, which conflicts with the current browser-only, no-backend design. Parked unless that constraint changes.
 
-### Environment / ET logging (Expert tier)
-The tier guidelines mention environment temperature (ET) logging at Expert tier; not yet implemented as a structured field.
+### Environment / ET logging (Expert tier) — ✅ Done
+Shipped: an Expert-tier "Log ET" input records timestamped environment-temperature readings into `roastState.envTemps` (timeline entries, count shown in history, `env_<unit>` column in the CSV export). Saved with the roast and in backup.

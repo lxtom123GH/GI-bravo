@@ -30,6 +30,8 @@ const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
 const logTempBtn = document.getElementById('logTempBtn');
 const tempInput = document.getElementById('tempInput');
 const tempUnitSelect = document.getElementById('tempUnit');
+const envTempInput = document.getElementById('envTempInput');
+const logEnvTempBtn = document.getElementById('logEnvTempBtn');
 const connectProbeBtn = document.getElementById('connectProbeBtn');
 const probeStatus = document.getElementById('probeStatus');
 const manualPowerBtns = document.querySelectorAll('.manual-power');
@@ -52,6 +54,7 @@ let roastState = {
     logs: [],
     curve: [],
     temps: [],
+    envTemps: [],
     powerLog: []
 };
 
@@ -136,6 +139,8 @@ export function initAudioSystem() {
 
     if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
     if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
+    if (logEnvTempBtn) logEnvTempBtn.addEventListener('click', logEnvTemperature);
+    if (envTempInput) envTempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logEnvTemperature(); });
 
     if (connectProbeBtn) connectProbeBtn.addEventListener('click', toggleProbe);
     document.addEventListener('roasterTemperature', onProbeTemperature);
@@ -471,6 +476,16 @@ function logTemperature() {
     if (tempInput) tempInput.value = '';
 }
 
+// Record a manual environment-temperature (ET) reading.
+function logEnvTemperature() {
+    if (!isRecording || !roastState.startTime) return;
+    const temp = parseFloat(envTempInput && envTempInput.value);
+    if (isNaN(temp)) return;
+    roastState.envTemps.push({ t: Date.now() - roastState.startTime, temp });
+    logMessage(`ET: ${temp}°${roastState.tempUnit || 'C'}`);
+    if (envTempInput) envTempInput.value = '';
+}
+
 // Record a manual power change (Behmor manual mode: P1–P5 = 0/25/50/75/100%).
 function logPower(power) {
     if (!isRecording || !roastState.startTime || isNaN(power)) return;
@@ -634,6 +649,7 @@ async function startRoast() {
         logs: [],
         curve: [],
         temps: [],
+        envTemps: [],
         powerLog: [],
         tempUnit: getTempUnit()
     };
@@ -657,6 +673,7 @@ async function startRoast() {
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
     if (logTempBtn) logTempBtn.disabled = false;
+    if (logEnvTempBtn) logEnvTempBtn.disabled = false;
     if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
     manualPowerBtns.forEach(b => b.disabled = false);
     if (manualPowerStatus) manualPowerStatus.textContent = '';
@@ -703,6 +720,7 @@ function stopRoast() {
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
     if (logTempBtn) logTempBtn.disabled = true;
+    if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
 
     if (animationId) cancelAnimationFrame(animationId);

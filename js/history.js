@@ -328,6 +328,10 @@ function renderHistoryList() {
             const lastRor = rorPts.length ? formatRoR(rorPts[rorPts.length - 1].ror).replace('°', `°${unit}`) : '--';
             timelineHtml += `<li><strong>Temp readings:</strong> ${temps.length} (last RoR ${lastRor})</li>`;
         }
+        const envTemps = roast.timeline.envTemps || [];
+        if (envTemps.length > 0) {
+            timelineHtml += `<li><strong>ET readings:</strong> ${envTemps.length}</li>`;
+        }
         timelineHtml += '</ul>';
 
         const logsHtml = roast.timeline.logs.map(l => `<div><small>${l}</small></div>`).join('');
@@ -938,6 +942,7 @@ function exportRoastCsv(id) {
     if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'Second Crack' });
     if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', temp: '', ror: '', event: 'End' });
     (roast.timeline.powerLog || []).forEach(p => rows.push({ t: p.t / 1000, rms: '', temp: '', ror: '', event: `Power ${p.power}%` }));
+    (roast.timeline.envTemps || []).forEach(p => rows.push({ t: p.t / 1000, rms: '', temp: '', ror: '', env: p.temp, event: '' }));
     rows.sort((a, b) => a.t - b.t);
 
     const unit = roast.timeline.tempUnit || 'C';
@@ -949,11 +954,11 @@ function exportRoastCsv(id) {
         const loss = computeWeightLoss(roast.greenWeightG, roast.roastedWeightG);
         if (loss != null) csv += `# Weight loss (%): ${loss.toFixed(1)}\n`;
     }
-    csv += `time_s,energy_rms,temp_${unit},ror_${unit}_per_min,event\n`;
+    csv += `time_s,energy_rms,temp_${unit},ror_${unit}_per_min,env_${unit},event\n`;
     rows.forEach(r => {
         const rms = r.rms === '' ? '' : Number(r.rms).toFixed(4);
         const ror = r.ror === '' ? '' : Number(r.ror).toFixed(1);
-        csv += `${r.t.toFixed(1)},${rms},${r.temp},${ror},${r.event}\n`;
+        csv += `${r.t.toFixed(1)},${rms},${r.temp},${ror},${r.env ?? ''},${r.event}\n`;
     });
 
     const safeName = bean.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
