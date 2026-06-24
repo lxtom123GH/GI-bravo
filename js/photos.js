@@ -60,6 +60,30 @@ export async function deletePhotosForRoast(roastId) {
     await Promise.all(photos.map(p => deletePhoto(p.id)));
 }
 
+// All photo records across every roast (for backup export).
+export async function getAllPhotos() {
+    const store = await tx('readonly');
+    return new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// Replace the entire photo store with the given records (for backup import).
+export async function replaceAllPhotos(records) {
+    const store = await tx('readwrite');
+    return new Promise((resolve, reject) => {
+        const clearReq = store.clear();
+        clearReq.onsuccess = () => {
+            (records || []).forEach(r => store.put(r));
+        };
+        const t = store.transaction;
+        t.oncomplete = () => resolve();
+        t.onerror = () => reject(t.error);
+    });
+}
+
 // Representative roast-colour index for a roast: brightness of its most recent
 // colour-corrected photo (lower = darker roast). Returns null if none.
 export async function getRoastColorIndex(roastId) {

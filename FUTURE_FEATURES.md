@@ -104,8 +104,8 @@ Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) wi
 ### B6. README & developer docs
 Document the app (purpose, features, how to run/build, data model, PWA/HTTPS notes) for users and contributors.
 
-### B7. Optional photo inclusion in JSON backup
-Photos live in IndexedDB and are excluded from the JSON backup by default (size). Offer an opt-in "include photos" export, or a separate photo-archive export/import.
+### B7. Optional photo inclusion in JSON backup — ✅ Done
+Shipped: an "Include photos (larger file)" checkbox on the Data Backup card embeds all IndexedDB photos (as data URLs) into the JSON export; import restores them into IndexedDB (via `getAllPhotos`/`replaceAllPhotos`). Off by default to keep the file small.
 
 ### B8. Cloud sync / community comparison (requires backend — out of current scope)
 Research surfaced demand for comparing roasts of the same bean with other users. This needs a server, which conflicts with the current browser-only, no-backend design. Parked unless that constraint changes.

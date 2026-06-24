@@ -2,7 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -217,8 +217,14 @@ function initBackup() {
     const importInput = document.getElementById('importBackupInput');
     if (!exportBtn || !importBtn || !importInput) return;
 
-    exportBtn.addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' });
+    const includePhotosCheck = document.getElementById('includePhotosCheck');
+
+    exportBtn.addEventListener('click', async () => {
+        const data = exportAllData();
+        if (includePhotosCheck && includePhotosCheck.checked) {
+            try { data.photos = await getAllPhotos(); } catch { /* photos optional */ }
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -237,13 +243,19 @@ function initBackup() {
             return;
         }
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
             try {
-                const result = importAllData(JSON.parse(reader.result));
+                const parsed = JSON.parse(reader.result);
+                const result = importAllData(parsed);
+                let photoMsg = '';
+                if (Array.isArray(parsed.photos)) {
+                    await replaceAllPhotos(parsed.photos);
+                    photoMsg = ` and ${parsed.photos.length} photo(s)`;
+                }
                 renderHistoryList();
                 window.dispatchEvent(new Event('pantryUpdated'));
                 window.dispatchEvent(new Event('settingsImported'));
-                alert(`Imported ${result.pantry} bean(s) and ${result.roasts} roast(s).`);
+                alert(`Imported ${result.pantry} bean(s), ${result.roasts} roast(s)${photoMsg}.`);
             } catch (err) {
                 alert(`Import failed: ${err.message}`);
             }
