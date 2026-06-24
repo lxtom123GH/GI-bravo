@@ -191,6 +191,29 @@ export function deleteBehmorTemplate(profile, weight) {
     saveBehmorTemplates(o);
 }
 
+// --- Manual roast profiles (recorded power-change recipes), keyed by id ---
+
+export function getManualProfiles() {
+    const s = localStorage.getItem('manualProfiles');
+    return s ? JSON.parse(s) : {};
+}
+
+export function saveManualProfiles(obj) {
+    localStorage.setItem('manualProfiles', JSON.stringify(obj || {}));
+}
+
+export function saveManualProfile(profile) {
+    const o = getManualProfiles();
+    o[profile.id] = profile;
+    saveManualProfiles(o);
+}
+
+export function deleteManualProfile(id) {
+    const o = getManualProfiles();
+    delete o[id];
+    saveManualProfiles(o);
+}
+
 // --- Temperature unit preference ---
 
 export function getTempUnit() {
@@ -240,7 +263,8 @@ export function exportAllData() {
         featureTiers: getFeatureTiers(),
         weightUnit: getWeightUnit(),
         defaultWeight: getDefaultWeight(),
-        behmorTemplates: getBehmorTemplates()
+        behmorTemplates: getBehmorTemplates(),
+        manualProfiles: getManualProfiles()
     };
 }
 
@@ -269,5 +293,6 @@ export function importAllData(data) {
     if (data.weightUnit) saveWeightUnit(data.weightUnit);
     if (data.defaultWeight) saveDefaultWeight(data.defaultWeight);
     if (data.behmorTemplates && typeof data.behmorTemplates === 'object') saveBehmorTemplates(data.behmorTemplates);
+    if (data.manualProfiles && typeof data.manualProfiles === 'object') saveManualProfiles(data.manualProfiles);
     return { pantry: data.pantry.length, roasts: data.roastHistory.length };
 }

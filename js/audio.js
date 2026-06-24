@@ -1,4 +1,4 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles } from './storage.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
@@ -32,9 +32,15 @@ const tempInput = document.getElementById('tempInput');
 const tempUnitSelect = document.getElementById('tempUnit');
 const connectProbeBtn = document.getElementById('connectProbeBtn');
 const probeStatus = document.getElementById('probeStatus');
+const manualPowerBtns = document.querySelectorAll('.manual-power');
+const manualPowerStatus = document.getElementById('manualPowerStatus');
 
 let probeConnected = false;
 let lastProbeLog = 0;
+
+// Reference power schedule (from a manual profile) and which steps were announced.
+let referencePowerLog = null;
+let powerAnnounced = new Set();
 
 // State for Roast and Detection
 let roastState = {
@@ -45,7 +51,8 @@ let roastState = {
     phase: 'Ready',
     logs: [],
     curve: [],
-    temps: []
+    temps: [],
+    powerLog: []
 };
 
 // Roast-curve sampling
@@ -133,6 +140,8 @@ export function initAudioSystem() {
     if (connectProbeBtn) connectProbeBtn.addEventListener('click', toggleProbe);
     document.addEventListener('roasterTemperature', onProbeTemperature);
     document.addEventListener('roasterDisconnected', () => setProbeConnected(false));
+
+    manualPowerBtns.forEach(btn => btn.addEventListener('click', () => logPower(parseInt(btn.dataset.power, 10))));
     if (tempUnitSelect) {
         tempUnitSelect.value = getTempUnit();
         tempUnitSelect.addEventListener('change', () => saveTempUnit(tempUnitSelect.value));
@@ -252,7 +261,18 @@ function populateReferenceSelect() {
         select.appendChild(opt);
     });
 
-    const stillValid = (prev.startsWith('behmor:') && templates[prev.slice(7)]) || history.find(r => r.id === prev);
+    // Manual profiles (recorded power recipes)
+    const manuals = getManualProfiles();
+    Object.values(manuals).forEach(mp => {
+        const opt = document.createElement('option');
+        opt.value = `manual:${mp.id}`;
+        opt.textContent = `Manual: ${mp.name}${mp.weight ? ' @ ' + weightLabel(mp.weight, getWeightUnit()) : ''}`;
+        select.appendChild(opt);
+    });
+
+    const stillValid = (prev.startsWith('behmor:') && templates[prev.slice(7)]) ||
+        (prev.startsWith('manual:') && manuals[prev.slice(7)]) ||
+        history.find(r => r.id === prev);
     if (prev && stillValid) select.value = prev;
     else loadReference(''); // selection no longer valid
 }
@@ -262,6 +282,13 @@ function loadReference(value) {
         const tmpl = getBehmorTemplates()[value.slice(7)];
         if (tmpl) {
             applyReference(tmpl.curve, { firstCrackMs: tmpl.firstCrackMs, secondCrackMs: tmpl.secondCrackMs, totalMs: tmpl.totalMs });
+            return;
+        }
+    }
+    if (value && value.startsWith('manual:')) {
+        const mp = getManualProfiles()[value.slice(7)];
+        if (mp) {
+            applyReference(mp.curve, { firstCrackMs: mp.firstCrackMs, secondCrackMs: mp.secondCrackMs, totalMs: mp.totalMs }, mp.powerLog);
             return;
         }
     }
@@ -276,10 +303,12 @@ function loadReference(value) {
     });
 }
 
-function applyReference(curve, markers) {
+function applyReference(curve, markers, powerLog) {
     referenceCurve = (curve && curve.length >= 2) ? curve : null;
     referenceMarkers = referenceCurve ? markers : {};
+    referencePowerLog = (powerLog && powerLog.length) ? powerLog : null;
     refAnnounced = { fc: false, sc: false };
+    powerAnnounced = new Set();
 
     if (!isRecording) {
         if (referenceCurve) {
@@ -331,6 +360,17 @@ function checkReferenceCues(elapsedMs) {
         refAnnounced.sc = true;
         logMessage('>>> <b>Reference: second crack coming up (~10s)</b>');
         notifyUser('Reference: second crack in ~10s');
+    }
+
+    // Manual-profile power-change cues.
+    if (referencePowerLog) {
+        referencePowerLog.forEach((pc, i) => {
+            if (!powerAnnounced.has(i) && elapsedMs >= pc.t - REF_LEAD_MS) {
+                powerAnnounced.add(i);
+                logMessage(`>>> <b>Reference: set power to ${pc.power}% (~10s)</b>`);
+                notifyUser(`Set power to ${pc.power}% in ~10s`);
+            }
+        });
     }
 }
 
@@ -429,6 +469,15 @@ function logTemperature() {
     if (liveRorDiv) liveRorDiv.textContent = `${temp}°${unit} | RoR ${last ? formatRoR(last.ror) : '--'}`;
 
     if (tempInput) tempInput.value = '';
+}
+
+// Record a manual power change (Behmor manual mode: P1–P5 = 0/25/50/75/100%).
+function logPower(power) {
+    if (!isRecording || !roastState.startTime || isNaN(power)) return;
+    roastState.powerLog.push({ t: Date.now() - roastState.startTime, power });
+    logMessage(`Power → ${power}%`);
+    if (manualPowerStatus) manualPowerStatus.textContent = `Current: ${power}%`;
+    manualPowerBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.power, 10) === power));
 }
 
 // --- Bluetooth temperature probe (B3) ---
@@ -585,6 +634,7 @@ async function startRoast() {
         logs: [],
         curve: [],
         temps: [],
+        powerLog: [],
         tempUnit: getTempUnit()
     };
     recentRMSHistory = [];
@@ -595,6 +645,7 @@ async function startRoast() {
     lastProbeLog = 0;
     alarmFired = { total: false, dtr: false };
     refAnnounced = { fc: false, sc: false };
+    powerAnnounced = new Set();
 
     logArea.innerHTML = '';
     logMessage('Roast Started.');
@@ -607,6 +658,8 @@ async function startRoast() {
     markSecondCrackBtn.disabled = false;
     if (logTempBtn) logTempBtn.disabled = false;
     if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
+    manualPowerBtns.forEach(b => b.disabled = false);
+    if (manualPowerStatus) manualPowerStatus.textContent = '';
 
     updateStatus('Listening - Phase: Heating');
 
@@ -650,6 +703,7 @@ function stopRoast() {
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
     if (logTempBtn) logTempBtn.disabled = true;
+    manualPowerBtns.forEach(b => b.disabled = true);
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
