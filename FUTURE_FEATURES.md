@@ -99,7 +99,7 @@ Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) wi
 ### B5. Behmor P1–P5 reference profile templates
 **Phase 1 — ✅ Done:** save a finished Behmor roast as a template keyed by **profile + weight**; selecting that profile/weight on the dashboard auto-loads it as the follow reference (exact match, else profile-only fallback). Added a **weight-unit toggle** (metric default / imperial) that relabels the Behmor weight buttons, and a **default batch size** preference that pre-selects the weight on load. Templates, unit, and default weight are persisted and included in backup.
 
-**Phase 2 — ⏳ Manual profiles:** Behmor manual mode drives power via the P1–P5 buttons (P1=0%, P2=25%, P3=50%, P4=75%, P5=100%). Add on-screen power logging during a roast (timestamped power changes), save the sequence as a named manual profile (also weight-keyed), and give timed cues on a later manual roast ("at 4:00 → set 50%") alongside the crack heads-up.
+**Phase 2 — ✅ Done (manual profiles):** Expert-tier **Manual power** buttons (0/25/50/75/100% = P1–P5) log timestamped power changes during a roast into `roastState.powerLog`. A finished roast with power changes can be saved as a named **manual profile** (weight-tagged) from History. Selecting it under "Follow reference roast" overlays its curve and gives **timed power cues** (~10 s ahead, e.g. "set power to 50%") alongside the crack heads-up. Manual profiles are persisted, in backup, and power changes appear in the CSV export.
 
 ### B6. README & developer docs
 Document the app (purpose, features, how to run/build, data model, PWA/HTTPS notes) for users and contributors.

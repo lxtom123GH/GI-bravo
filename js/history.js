@@ -1,4 +1,4 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
@@ -364,6 +364,7 @@ function renderHistoryList() {
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                 <button class="log-yield-btn" data-id="${roast.id}">Log Roasted Weight</button>
                 ${roast.roaster === 'behmor' && roast.timeline.curve && roast.timeline.curve.length >= 2 ? `<button class="save-template-btn" data-id="${roast.id}">Save as Behmor template</button>` : ''}
+                ${roast.timeline.powerLog && roast.timeline.powerLog.length ? `<button class="save-manual-btn" data-id="${roast.id}">Save manual profile</button>` : ''}
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
@@ -430,6 +431,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.save-template-btn').forEach(btn => {
         btn.addEventListener('click', (e) => saveBehmorTemplateFromRoast(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.save-manual-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => saveManualProfileFromRoast(e.target.dataset.id));
     });
 
     document.querySelectorAll('.edit-notes-btn').forEach(btn => {
@@ -804,6 +809,36 @@ function openTastingModal(id) {
     });
 }
 
+function saveManualProfileFromRoast(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast || !roast.timeline.powerLog || !roast.timeline.powerLog.length) {
+        alert('This roast has no recorded manual power changes to save.');
+        return;
+    }
+
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
+    const suggested = `${bean.name}, ${new Date(roast.date).toLocaleDateString()}`;
+    const name = prompt('Name this manual profile:', suggested);
+    if (!name) return;
+
+    const start = roast.timeline.startTime;
+    saveManualProfile({
+        id: Date.now().toString(),
+        name,
+        weight: roast.settings && roast.settings.weight,
+        powerLog: roast.timeline.powerLog,
+        curve: roast.timeline.curve || [],
+        firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - start : null,
+        secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - start : null,
+        totalMs: roast.timeline.endTime - start,
+        savedAt: Date.now()
+    });
+
+    window.dispatchEvent(new Event('historyUpdated'));
+    alert(`Saved manual profile "${name}". Select it under "Follow reference roast" to get timed power cues.`);
+}
+
 function saveBehmorTemplateFromRoast(id) {
     const roast = getRoastHistory().find(r => r.id === id);
     if (!roast) return;
@@ -890,6 +925,7 @@ function exportRoastCsv(id) {
     if (roast.timeline.firstCrackTime) rows.push({ t: (roast.timeline.firstCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'First Crack' });
     if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'Second Crack' });
     if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', temp: '', ror: '', event: 'End' });
+    (roast.timeline.powerLog || []).forEach(p => rows.push({ t: p.t / 1000, rms: '', temp: '', ror: '', event: `Power ${p.power}%` }));
     rows.sort((a, b) => a.t - b.t);
 
     const unit = roast.timeline.tempUnit || 'C';
