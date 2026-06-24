@@ -59,7 +59,7 @@ export function disconnectRoaster() {
 
 function onDisconnected() {
     console.log('> Bluetooth Device disconnected');
-    // TODO: Update UI to show disconnected state and possibly attempt reconnect
+    document.dispatchEvent(new Event('roasterDisconnected'));
 }
 
 function handleTemperatureChange(event) {

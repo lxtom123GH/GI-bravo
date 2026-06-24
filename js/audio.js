@@ -1,6 +1,7 @@
 import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit } from './storage.js';
-import { drawRoastCurve, drawRoastCurves } from './chart.js';
+import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
+import { connectRoaster, disconnectRoaster } from './bluetooth.js';
 
 let audioContext;
 let microphone;
@@ -29,6 +30,11 @@ const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
 const logTempBtn = document.getElementById('logTempBtn');
 const tempInput = document.getElementById('tempInput');
 const tempUnitSelect = document.getElementById('tempUnit');
+const connectProbeBtn = document.getElementById('connectProbeBtn');
+const probeStatus = document.getElementById('probeStatus');
+
+let probeConnected = false;
+let lastProbeLog = 0;
 
 // State for Roast and Detection
 let roastState = {
@@ -123,6 +129,10 @@ export function initAudioSystem() {
 
     if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
     if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
+
+    if (connectProbeBtn) connectProbeBtn.addEventListener('click', toggleProbe);
+    document.addEventListener('roasterTemperature', onProbeTemperature);
+    document.addEventListener('roasterDisconnected', () => setProbeConnected(false));
     if (tempUnitSelect) {
         tempUnitSelect.value = getTempUnit();
         tempUnitSelect.addEventListener('change', () => saveTempUnit(tempUnitSelect.value));
@@ -421,6 +431,51 @@ function logTemperature() {
     if (tempInput) tempInput.value = '';
 }
 
+// --- Bluetooth temperature probe (B3) ---
+
+function setProbeConnected(connected) {
+    probeConnected = connected;
+    if (connectProbeBtn) connectProbeBtn.textContent = connected ? 'Disconnect probe' : 'Connect probe (Bluetooth)';
+    if (probeStatus) probeStatus.textContent = connected ? 'Probe: connected' : 'Probe: not connected';
+}
+
+async function toggleProbe() {
+    if (probeConnected) { disconnectRoaster(); setProbeConnected(false); return; }
+    if (!navigator.bluetooth) {
+        alert('Web Bluetooth is not available. Use Chrome or Edge over HTTPS (or localhost).');
+        return;
+    }
+    if (probeStatus) probeStatus.textContent = 'Probe: connecting…';
+    const ok = await connectRoaster();
+    if (ok) setProbeConnected(true);
+    else { setProbeConnected(false); alert('Could not connect to the probe. Make sure it is powered on and advertising.'); }
+}
+
+// Live temperature from the probe (always in °C). Converts to the active unit,
+// shows it live, and — while roasting — logs it (~1/s) and updates RoR + curve.
+function onProbeTemperature(e) {
+    const celsius = e.detail;
+    if (typeof celsius !== 'number' || isNaN(celsius)) return;
+
+    const unit = (isRecording && roastState.tempUnit) ? roastState.tempUnit : getTempUnit();
+    const temp = unit === 'F' ? celsius * 9 / 5 + 32 : celsius;
+
+    if (!isRecording || !roastState.startTime) {
+        if (liveRorDiv) liveRorDiv.textContent = `Probe ${Math.round(temp)}°${unit}`;
+        return;
+    }
+
+    const now = Date.now();
+    if (now - lastProbeLog < 1000) return; // throttle to ~1/s
+    lastProbeLog = now;
+
+    roastState.temps.push({ t: now - roastState.startTime, temp: Math.round(temp * 10) / 10 });
+    const points = computeRoRPoints(roastState.temps);
+    const last = points[points.length - 1];
+    if (liveRorDiv) liveRorDiv.textContent = `${Math.round(temp)}°${unit} | RoR ${last ? formatRoR(last.ror) : '--'}`;
+    renderLiveCurve(now - roastState.startTime);
+}
+
 // Alert the roaster with a desktop notification and an audible beep.
 // The beep briefly suspends detection so it isn't mistaken for a crack.
 function notifyUser(message) {
@@ -537,6 +592,7 @@ async function startRoast() {
     lastTransientTime = 0;
     recentRatios = [];
     lastCurveSampleTime = 0;
+    lastProbeLog = 0;
     alarmFired = { total: false, dtr: false };
     refAnnounced = { fc: false, sc: false };
 
@@ -750,18 +806,19 @@ function renderLiveCurve(elapsedMs) {
         secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null
     };
 
+    const markers = { firstCrackMs: liveSeries.firstCrackMs, secondCrackMs: liveSeries.secondCrackMs, totalMs: elapsedMs };
+
     if (referenceCurve) {
         drawRoastCurves(curveCanvas, [
             { curve: referenceCurve, color: REF_COLOR, label: 'Reference',
               firstCrackMs: referenceMarkers.firstCrackMs, secondCrackMs: referenceMarkers.secondCrackMs },
             liveSeries
         ]);
+    } else if (roastState.temps && roastState.temps.length >= 2) {
+        // Overlay the live temperature line (from the probe) alongside audio energy.
+        drawRoastCurveDual(curveCanvas, roastState.curve, roastState.temps, markers);
     } else {
-        drawRoastCurve(curveCanvas, roastState.curve, {
-            firstCrackMs: liveSeries.firstCrackMs,
-            secondCrackMs: liveSeries.secondCrackMs,
-            totalMs: elapsedMs
-        });
+        drawRoastCurve(curveCanvas, roastState.curve, markers);
     }
 }
 

@@ -85,13 +85,13 @@ Shipped: the Expert cupping form uses the official protocol — 7 quality attrib
 ### B2. Full cascading tier configuration (per-feature defaults) — ✅ Done
 Shipped: per-feature tier overrides for Dashboard and Tasting/cupping (sidebar → "Per-feature mode"), with `getEffectiveTier(feature)` resolving override → global. Persisted and in backup.
 
-### B3. Automatic Rate of Rise via thermocouple
-Read a bean-probe thermocouple directly via **Web Serial** or **Web Bluetooth** (Chrome) for high-resolution automatic RoR, instead of manual readings. Plot a true RoR curve.
-- *Status:* In Progress. The initial DIY hardware documentation (`HARDWARE_GUIDE.md`) and Web Bluetooth connection skeleton (`js/bluetooth.js`) have been created.
-- *Next Steps:*
-  - Wire up `js/bluetooth.js` to the UI to allow users to connect to their ESP32.
-  - Listen for the custom `roasterTemperature` event and store the live values.
-  - Calculate the real-time Rate of Rise (RoR) from these values and plot it on the live roast curve chart alongside the audio energy data.
+### B3. Automatic Rate of Rise via thermocouple — ✅ Done
+Read a bean-probe thermocouple via **Web Bluetooth** (Chrome/Edge) for automatic temperature logging and RoR, instead of manual readings.
+- DIY hardware build documented in `HARDWARE_GUIDE.md` (ESP32 + MAX31855 + K-type probe, with Arduino/BLE firmware).
+- `js/bluetooth.js` connects to the probe and dispatches `roasterTemperature` (°C) ~1/s, and `roasterDisconnected` on drop.
+- A **Connect probe** control (Expert tier) toggles the connection and shows status. Incoming temps are converted to the active unit, shown live, and — while roasting — auto-logged (~1/s) into `roastState.temps`, feeding the same RoR/history/CSV/Trends pipeline as manual entry.
+- The live roast curve overlays a **temperature line** (`drawRoastCurveDual`) alongside audio energy when probe data is present.
+- *Possible follow-up:* Web Serial support, and a dedicated RoR (°/min) trace rather than the raw temperature line.
 
 ### B4. Multi-patch colour calibration (ColorChecker)
 Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) with a 3×3 correction for proper colorimetric accuracy; optionally map toward an Agtron-style index.
