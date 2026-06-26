@@ -280,7 +280,7 @@ function renderHistoryList() {
     renderTrend();
 
     if (history.length === 0) {
-        historyContainer.innerHTML = '<p>No roasts recorded yet.</p>';
+        historyContainer.innerHTML = '<p>No roasts yet — go to <strong>Active Roast</strong> and tap <strong>Start Roast &amp; Listening</strong>, or try the demo from the <strong>Help</strong> tab.</p>';
         return;
     }
 
