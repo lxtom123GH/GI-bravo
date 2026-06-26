@@ -22,6 +22,7 @@
             <li class="active" data-target="dashboard">Active Roast</li>
             <li data-target="pantry">Bean Pantry</li>
             <li data-target="history">Roast History</li>
+            <li data-target="help">Help</li>
         </ul>
         <div class="sidebar-footer" style="padding: 15px 25px; border-top: 1px solid var(--border-color);">
             <label for="tierSelect" style="font-size: 0.85rem; color: var(--text-muted);">Mode</label>
@@ -310,6 +311,58 @@
 
             <div id="historyContainer">
                 <!-- History cards will go here -->
+            </div>
+        </div>
+
+        <!-- Help / User Guide -->
+        <div id="help" class="tab-pane">
+            <h1>Help &amp; Guide</h1>
+
+            <div class="card">
+                <h3>First-time setup</h3>
+                <ol>
+                    <li>Use <strong>Chrome</strong> or <strong>Edge</strong> (needed for the microphone and Bluetooth).</li>
+                    <li><strong>Install the app</strong> (optional): address-bar install icon, or <em>Share → Add to Home Screen</em> on a phone. It then works offline.</li>
+                    <li><strong>Allow the microphone</strong> when asked (first time you start a roast).</li>
+                    <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
+                    <li>Add beans in <strong>Bean Pantry</strong>, then set your roaster on <strong>Active Roast</strong>.</li>
+                    <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Doing a roast</h3>
+                <ol>
+                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings.</li>
+                    <li>Optional: pick a <strong>Follow reference roast</strong> to overlay a past curve with pre-crack cues.</li>
+                    <li>Tap <strong>Start Roast &amp; Listening</strong>. Cracks are detected automatically (beep + timeline); use the <strong>Manual: Mark</strong> buttons if one is missed.</li>
+                    <li>Watch the live timer and DTR. (Expert) log bean temps for Rate of Rise, or connect a Bluetooth probe.</li>
+                    <li>Tap <strong>Stop Roast</strong> to drop — it's saved to history automatically.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>After the roast</h3>
+                <p>In <strong>Roast History</strong>: <strong>Log Roasted Weight</strong> for weight-loss %, <strong>Edit Notes</strong> for tasting/cupping, <strong>Add Photo</strong> (with colour correction for a comparable roast-colour reading), and <strong>Export</strong> a summary or CSV.</p>
+            </div>
+
+            <div class="card">
+                <h3>Ongoing use</h3>
+                <ul>
+                    <li><strong>Reproduce a roast:</strong> save it as a Behmor template, or follow it as a reference.</li>
+                    <li><strong>Compare</strong> two batches and view <strong>Trends</strong> over time in Roast History.</li>
+                    <li><strong>Back up regularly:</strong> Roast History → <strong>Data Backup → Export</strong>. Your data lives only in this browser, so keep backups.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Troubleshooting</h3>
+                <ul>
+                    <li><strong>Mic error:</strong> use Chrome/Edge over the https link and allow the microphone.</li>
+                    <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise.</li>
+                    <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
+                </ul>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Full guide and developer docs are in the project repository (USER_GUIDE.md, README.md, HARDWARE_GUIDE.md).</p>
             </div>
         </div>
     </div>
