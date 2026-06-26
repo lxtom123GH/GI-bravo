@@ -120,13 +120,18 @@ Shipped: an Expert-tier "Log ET" input records timestamped environment-temperatu
 
 ---
 
-## Smaller ideas / nice-to-haves (captured, not yet scheduled)
+## Smaller ideas / nice-to-haves
 
-These surfaced during research/development and are parked here so they aren't lost:
+Shipped:
+- **Service-worker update prompt** — ✅ a "new version available — Reload" banner when an updated SW installs.
+- **Bean cost / usage history** — ✅ optional cost/kg per bean; pantry stock value + per-roast cost (and cost per kg roasted).
+- **B3 follow-up — Web Serial probe** — ✅ a USB temperature-probe path alongside Bluetooth (`js/serial.js`).
+- **B3 follow-up — dedicated RoR trace** — ✅ the live curve overlays a °/min Rate-of-Rise line.
+- **B4 follow-up — linearized fit** — ✅ the ColorChecker matrix is fit/applied in linear light.
+- **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
 
-- **Artisan interoperability** — export/import using Artisan's CSV/`.alog` schema (the current CSV is a generic time-series, not Artisan's format).
-- **Service-worker update prompt** — detect a newly deployed version and offer a reload, instead of silently updating on next visit.
-- **Bean cost / usage history** — track price per bean and cost-per-roast alongside the existing quantity tracking.
-- **B3 follow-ups** — Web Serial probe support; a dedicated °/min RoR trace rather than the raw temperature overlay.
-- **B4 follow-ups** — linearize (undo gamma) before fitting the ColorChecker matrix; auto-detect the chart so corner-tapping isn't needed.
-- **Repo hygiene** — `dist/` is committed but Vercel rebuilds from source; it could be `.gitignore`d to avoid drift (left as-is for now since it's deterministic and in sync).
+Deliberately not built (rationale):
+- **Artisan interoperability** — deferred. Artisan's importer expects specific CSV/`.alog` schemas that can't be validated here; the existing generic CSV (time, energy, temp, RoR, ET, power, events) already serves spreadsheet analysis. Revisit only with a real Artisan round-trip test.
+- **B4 — auto-detect the ColorChecker** — won't-do for now. Reliable chart detection needs real computer vision; the 4-corner tap is a pragmatic, dependency-free alternative.
+- **B8 — cloud sync / community comparison** — parked; needs a backend, which conflicts with the browser-only design.
+- **Repo hygiene** — `dist/` is committed but Vercel rebuilds from source; could be `.gitignore`d to avoid drift (left as-is — deterministic and in sync).
