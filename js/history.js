@@ -2,7 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -374,6 +374,7 @@ function renderHistoryList() {
                 <div class="roast-photos" data-id="${roast.id}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
                 <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
                 <button class="add-calibrated-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
+                <button class="add-colorchecker-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add ColorChecker Photo</button>
                 <input type="file" class="photo-input" data-id="${roast.id}" accept="image/*" capture="environment" style="display: none;">
             </div>
 
@@ -431,6 +432,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.add-calibrated-btn').forEach(btn => {
         btn.addEventListener('click', (e) => openCalibratedPhotoModal(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.add-colorchecker-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => openColorCheckerModal(e.target.dataset.id));
     });
 
     document.querySelectorAll('.export-btn').forEach(btn => {
@@ -506,7 +511,7 @@ async function renderPhotos(roastId, container) {
         if (p.meta && p.meta.brightness != null) {
             const cap = document.createElement('figcaption');
             cap.style.cssText = 'font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;';
-            cap.textContent = `WB · ${p.meta.brightness}`;
+            cap.textContent = `${p.meta.type === 'colorchecker' ? 'CC' : 'WB'} · ${p.meta.brightness}`;
             fig.appendChild(cap);
         }
 
@@ -612,6 +617,110 @@ function openCalibratedPhotoModal(roastId) {
             if (warnings && warnings.length && !confirm(`${warnings.join('\n\n')}\n\nUse this photo anyway?`)) {
                 return;
             }
+            await addPhoto(roastId, dataURL, meta);
+            close();
+            renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));
+        } catch (err) {
+            alert(`Could not process photos: ${err.message}`);
+        }
+    });
+}
+
+function openColorCheckerModal(roastId) {
+    const modalBg = document.createElement('div');
+    modalBg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 460px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3>ColorChecker Photo</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Photograph a 24-patch ColorChecker and the beans under the same light. The chart is
+            used to fit a full colour correction (more accurate than a single grey card).
+        </p>
+        <label><strong>1. ColorChecker photo</strong></label>
+        <input type="file" id="ccChartInput" accept="image/*" capture="environment">
+        <div id="ccCanvasWrap" style="display: none; margin-bottom: 10px;">
+            <p style="font-size: 0.85rem;">Tap the centre of the 4 corner patches in order:
+            <strong>1)</strong> dark-brown (top-left), <strong>2)</strong> bluish-green (top-right),
+            <strong>3)</strong> black (bottom-right), <strong>4)</strong> white (bottom-left).
+            <button id="ccReset" type="button" style="font-size: 0.75rem; padding: 3px 8px;">Reset taps</button></p>
+            <canvas id="ccCanvas" style="width: 100%; border: 1px solid var(--border-color); cursor: crosshair; height: auto;"></canvas>
+            <small id="ccTapStatus" style="color: var(--text-muted);">0 / 4 corners tapped</small>
+        </div>
+        <label><strong>2. Beans photo</strong></label>
+        <input type="file" id="ccBeanInput" accept="image/*" capture="environment">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+            <button id="ccCancel" class="danger">Cancel</button>
+            <button id="ccProcess" style="background-color: var(--success);">Process</button>
+        </div>
+    `;
+
+    modalBg.appendChild(modal);
+    document.body.appendChild(modalBg);
+
+    const close = () => document.body.removeChild(modalBg);
+    modal.querySelector('#ccCancel').addEventListener('click', close);
+
+    const chartInput = modal.querySelector('#ccChartInput');
+    const canvasWrap = modal.querySelector('#ccCanvasWrap');
+    const canvas = modal.querySelector('#ccCanvas');
+    const tapStatus = modal.querySelector('#ccTapStatus');
+    const ctx = canvas.getContext('2d');
+    let chartImg = null;
+    let corners = []; // {x, y} fractions 0..1
+
+    const redraw = () => {
+        if (!chartImg) return;
+        ctx.drawImage(chartImg, 0, 0, canvas.width, canvas.height);
+        corners.forEach((c, i) => {
+            const x = c.x * canvas.width, y = c.y * canvas.height;
+            ctx.fillStyle = '#ff9800';
+            ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(String(i + 1), x, y);
+        });
+        tapStatus.textContent = `${corners.length} / 4 corners tapped`;
+    };
+
+    chartInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                chartImg = img;
+                const w = Math.min(360, img.width);
+                canvas.width = w;
+                canvas.height = Math.round(img.height * (w / img.width));
+                corners = [];
+                canvasWrap.style.display = 'block';
+                redraw();
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener('click', (e) => {
+        if (corners.length >= 4) return;
+        const rect = canvas.getBoundingClientRect();
+        corners.push({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height });
+        redraw();
+    });
+
+    modal.querySelector('#ccReset').addEventListener('click', () => { corners = []; redraw(); });
+
+    modal.querySelector('#ccProcess').addEventListener('click', async () => {
+        const chartFile = chartInput.files[0];
+        const beanFile = modal.querySelector('#ccBeanInput').files[0];
+        if (!chartFile || !beanFile) { alert('Please provide both a ColorChecker photo and a beans photo.'); return; }
+        if (corners.length !== 4) { alert('Please tap all 4 corner patches on the ColorChecker.'); return; }
+        try {
+            const [tl, tr, br, bl] = corners;
+            const { dataURL, meta } = await createColorCheckerPhoto(chartFile, beanFile, { tl, tr, br, bl });
             await addPhoto(roastId, dataURL, meta);
             close();
             renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));

@@ -93,8 +93,10 @@ Read a bean-probe thermocouple via **Web Bluetooth** (Chrome/Edge) for automatic
 - The live roast curve overlays a **temperature line** (`drawRoastCurveDual`) alongside audio energy when probe data is present.
 - *Possible follow-up:* Web Serial support, and a dedicated RoR (°/min) trace rather than the raw temperature line.
 
-### B4. Multi-patch colour calibration (ColorChecker)
-Move beyond single-patch von Kries to a multi-patch chart (e.g. ColorChecker) with a 3×3 correction for proper colorimetric accuracy; optionally map toward an Agtron-style index.
+### B4. Multi-patch colour calibration (ColorChecker) — ✅ Done
+Shipped: an "Add ColorChecker Photo" flow fits a 3×4 affine colour-correction matrix by least squares over the 24 published patch sRGB references (`js/colorcheck.js`), applies it to the bean photo, and stores a roast-colour index (counted alongside the single-patch flow). The user taps the 4 corner patches to locate the grid (bilinear interpolation + per-patch averaging).
+- *Caveat:* fitting is in gamma-encoded sRGB (pragmatic, browser-only) — a relative roast-colour index, not full linear-light colorimetry/Agtron.
+- *Possible follow-up:* linearize before fitting; auto-detect the chart.
 
 ### B5. Behmor P1–P5 reference profile templates
 **Phase 1 — ✅ Done:** save a finished Behmor roast as a template keyed by **profile + weight**; selecting that profile/weight on the dashboard auto-loads it as the follow reference (exact match, else profile-only fallback). Added a **weight-unit toggle** (metric default / imperial) that relabels the Behmor weight buttons, and a **default batch size** preference that pre-selects the weight on load. Templates, unit, and default weight are persisted and included in backup.

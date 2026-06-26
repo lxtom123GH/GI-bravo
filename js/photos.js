@@ -89,10 +89,50 @@ export async function replaceAllPhotos(records) {
 export async function getRoastColorIndex(roastId) {
     const photos = await getPhotos(roastId);
     const calibrated = photos
-        .filter(p => p.meta && p.meta.type === 'calibrated' && p.meta.brightness != null)
+        .filter(p => p.meta && p.meta.brightness != null && (p.meta.type === 'calibrated' || p.meta.type === 'colorchecker'))
         .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     if (calibrated.length === 0) return null;
     return { brightness: calibrated[0].meta.brightness, color: calibrated[0].meta.color, count: calibrated.length };
+}
+
+import { computeCCM, sampleChart, applyCCM } from './colorcheck.js';
+
+// --- Multi-patch ColorChecker calibration (B4) ---
+
+// Build a colour-corrected bean photo using a ColorChecker chart photo.
+// corners: { tl, tr, br, bl } each { x, y } as fractions (0..1) of the chart image.
+export async function createColorCheckerPhoto(chartFile, beanFile, corners, maxDim = 1024, quality = 0.8) {
+    const [chartImg, beanImg] = await Promise.all([loadImageFromFile(chartFile), loadImageFromFile(beanFile)]);
+
+    // Measure the 24 patches and fit the correction matrix.
+    const cc = document.createElement('canvas');
+    cc.width = chartImg.width; cc.height = chartImg.height;
+    const cctx = cc.getContext('2d');
+    cctx.drawImage(chartImg, 0, 0);
+    const data = cctx.getImageData(0, 0, cc.width, cc.height).data;
+    const measured = sampleChart(data, cc.width, cc.height, corners);
+    const ccm = computeCCM(measured);
+
+    // Apply to a downscaled bean image.
+    const scale = Math.min(1, maxDim / Math.max(beanImg.width, beanImg.height));
+    const w = Math.round(beanImg.width * scale);
+    const h = Math.round(beanImg.height * scale);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(beanImg, 0, 0, w, h);
+    applyCCM(ctx, w, h, ccm);
+
+    const color = averageCenterColor(ctx, w, h);
+    const rounded = { r: Math.round(color.r), g: Math.round(color.g), b: Math.round(color.b) };
+    return {
+        dataURL: c.toDataURL('image/jpeg', quality),
+        meta: {
+            type: 'colorchecker',
+            color: rounded,
+            brightness: Math.round(luminance(rounded))
+        }
+    };
 }
 
 // --- Colour correction (reference-card white balance) ---
