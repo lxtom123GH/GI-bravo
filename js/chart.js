@@ -130,10 +130,9 @@ export function drawTrend(canvas, series, opts = {}) {
     }
 }
 
-// Draw the energy curve plus a temperature line on independent scales (shared
-// time axis). tempCurve: [{ t, temp }]. Used when a Bluetooth probe is feeding
-// live temperature so RoR/temp is visible alongside audio energy.
-export function drawRoastCurveDual(canvas, energyCurve, tempCurve, markers = {}) {
+// Draw the energy curve plus a second line (e.g. Rate of Rise) on independent
+// scales (shared time axis). secondCurve: [{ t, v }]; secondLabel names it.
+export function drawRoastCurveDual(canvas, energyCurve, secondCurve, markers = {}, secondLabel = 'temp') {
     if (!canvas) return;
     const width = canvas.width = canvas.clientWidth || canvas.width || 500;
     const height = canvas.height = canvas.clientHeight || canvas.height || 150;
@@ -146,10 +145,10 @@ export function drawRoastCurveDual(canvas, energyCurve, tempCurve, markers = {})
     const plotH = height - pad.top - pad.bottom;
 
     const energy = (energyCurve || []).filter(p => p && p.rms != null);
-    const temps = (tempCurve || []).filter(p => p && p.temp != null);
+    const second = (secondCurve || []).filter(p => p && p.v != null && !isNaN(p.v));
     const lastT = Math.max(
         energy.length ? energy[energy.length - 1].t : 0,
-        temps.length ? temps[temps.length - 1].t : 0
+        second.length ? second[second.length - 1].t : 0
     );
     const totalMs = markers.totalMs || lastT || 1;
     const xOf = t => pad.left + (t / totalMs) * plotW;
@@ -179,12 +178,12 @@ export function drawRoastCurveDual(canvas, energyCurve, tempCurve, markers = {})
     const maxRms = Math.max(0.1, ...energy.map(p => p.rms));
     drawLine(energy, p => p.rms, 0, maxRms, '#ff9800');
 
-    // Temperature (red, scaled to its own range)
-    if (temps.length) {
-        const tv = temps.map(p => p.temp);
-        let tmin = Math.min(...tv), tmax = Math.max(...tv);
-        if (tmin === tmax) { tmin -= 1; tmax += 1; }
-        drawLine(temps, p => p.temp, tmin, tmax, '#e53935');
+    // Second series (red, scaled to its own range)
+    if (second.length) {
+        const sv = second.map(p => p.v);
+        let smin = Math.min(...sv), smax = Math.max(...sv);
+        if (smin === smax) { smin -= 1; smax += 1; }
+        drawLine(second, p => p.v, smin, smax, '#e53935');
     }
 
     // Crack markers
@@ -204,7 +203,7 @@ export function drawRoastCurveDual(canvas, energyCurve, tempCurve, markers = {})
     // Legend
     ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
     ctx.fillStyle = '#ff9800'; ctx.fillText('energy', pad.left + 4, pad.top + 10);
-    if (temps.length) { ctx.fillStyle = '#e53935'; ctx.fillText('temp', pad.left + 60, pad.top + 10); }
+    if (second.length) { ctx.fillStyle = '#e53935'; ctx.fillText(secondLabel, pad.left + 60, pad.top + 10); }
 }
 
 // Overlay several roast curves on one canvas, time-aligned, with a legend.

@@ -16,6 +16,18 @@ export const REFERENCE_SRGB = [
 export const CHECKER_COLS = 6;
 export const CHECKER_ROWS = 4;
 
+// sRGB <-> linear-light conversion (operate on 0..255). Fitting in linear light
+// is more colorimetrically correct than fitting gamma-encoded values.
+function srgbToLinear(v) {
+    const c = v / 255;
+    return (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+}
+function linearToSrgb(l) {
+    const c = l <= 0.0031308 ? 12.92 * l : 1.055 * Math.pow(l, 1 / 2.4) - 0.055;
+    return c * 255;
+}
+const REFERENCE_LINEAR = REFERENCE_SRGB.map(p => p.map(srgbToLinear));
+
 // Solve a small linear system Ax = b (n x n) by Gaussian elimination with partial pivoting.
 function solve(A, b) {
     const n = b.length;
@@ -35,16 +47,17 @@ function solve(A, b) {
     return M.map((row, i) => row[n] / (M[i][i] || 1));
 }
 
-// Compute the 3x4 affine CCM from measured patch RGBs (24x3) against the reference.
-// Returns coefficients so that out = [r,g,b,1] · A, where A is 4x3.
+// Compute the 3x4 affine CCM from measured patch RGBs (24x3, 0..255 sRGB) against
+// the reference, fitting in linear light. Returns A (4x3) so that, in linear light,
+// out = [r,g,b,1] · A.
 export function computeCCM(measured) {
-    // Design matrix rows: [r, g, b, 1]
-    const X = measured.map(p => [p[0], p[1], p[2], 1]);
+    // Design matrix rows in linear light: [r, g, b, 1]
+    const X = measured.map(p => [srgbToLinear(p[0]), srgbToLinear(p[1]), srgbToLinear(p[2]), 1]);
     // Normal equations XtX (4x4) and XtY (4x3)
     const XtX = Array.from({ length: 4 }, () => new Array(4).fill(0));
     const XtY = Array.from({ length: 4 }, () => new Array(3).fill(0));
     for (let i = 0; i < X.length; i++) {
-        const ref = REFERENCE_SRGB[i];
+        const ref = REFERENCE_LINEAR[i];
         for (let a = 0; a < 4; a++) {
             for (let b = 0; b < 4; b++) XtX[a][b] += X[i][a] * X[i][b];
             for (let c = 0; c < 3; c++) XtY[a][c] += X[i][a] * ref[c];
@@ -95,15 +108,19 @@ export function sampleChart(data, w, h, corners) {
     return out;
 }
 
-// Apply a 4x3 CCM to a canvas context's pixels in place.
+// Apply a 4x3 CCM to a canvas context's pixels in place. Pixels are linearized,
+// transformed in linear light, then re-encoded to sRGB.
 export function applyCCM(ctx, w, h, A) {
     const img = ctx.getImageData(0, 0, w, h);
     const d = img.data;
     for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i + 1], b = d[i + 2];
-        d[i] = clamp255(r * A[0][0] + g * A[1][0] + b * A[2][0] + A[3][0]);
-        d[i + 1] = clamp255(r * A[0][1] + g * A[1][1] + b * A[2][1] + A[3][1]);
-        d[i + 2] = clamp255(r * A[0][2] + g * A[1][2] + b * A[2][2] + A[3][2]);
+        const r = srgbToLinear(d[i]), g = srgbToLinear(d[i + 1]), b = srgbToLinear(d[i + 2]);
+        const lr = r * A[0][0] + g * A[1][0] + b * A[2][0] + A[3][0];
+        const lg = r * A[0][1] + g * A[1][1] + b * A[2][1] + A[3][1];
+        const lb = r * A[0][2] + g * A[1][2] + b * A[2][2] + A[3][2];
+        d[i] = clamp255(linearToSrgb(Math.max(0, Math.min(1, lr))));
+        d[i + 1] = clamp255(linearToSrgb(Math.max(0, Math.min(1, lg))));
+        d[i + 2] = clamp255(linearToSrgb(Math.max(0, Math.min(1, lb))));
     }
     ctx.putImageData(img, 0, 0);
 }
