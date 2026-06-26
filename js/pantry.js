@@ -14,13 +14,14 @@ export function initPantry() {
             const farm = document.getElementById('beanFarm').value;
             const process = document.getElementById('beanProcess').value;
             const quantity = parseFloat(document.getElementById('beanQuantity').value) || 0;
+            const costPerKg = parseFloat(document.getElementById('beanCost').value) || 0;
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process, quantity };
+            const newBean = { name, region, country, farm, process, quantity, costPerKg };
             addBeanToPantry(newBean);
 
             pantryForm.reset();
@@ -76,6 +77,12 @@ export function renderPantryList() {
             qtyLabel = `${qty} g on hand (low)`;
         }
         details += `<br><small style="color: ${qtyColor};">${qtyLabel}</small>`;
+
+        const cost = Number(bean.costPerKg) || 0;
+        if (cost > 0) {
+            const onHandValue = (qty / 1000) * cost;
+            details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg · stock value ${onHandValue.toFixed(2)}</small>`;
+        }
 
         const infoDiv = document.createElement('div');
         infoDiv.innerHTML = details;

@@ -305,6 +305,13 @@ function renderHistoryList() {
             const loss = computeWeightLoss(roast.greenWeightG, roast.roastedWeightG);
             if (loss != null) roasterInfo += ` &middot; <strong>Weight loss:</strong> ${formatPct(loss)}`;
         }
+        if (bean.costPerKg && roast.greenWeightG) {
+            const roastCost = (roast.greenWeightG / 1000) * bean.costPerKg;
+            roasterInfo += ` &middot; <strong>Cost:</strong> ${roastCost.toFixed(2)}`;
+            if (roast.roastedWeightG) {
+                roasterInfo += ` (${(roastCost / (roast.roastedWeightG / 1000)).toFixed(2)}/kg roasted)`;
+            }
+        }
 
         const startTime = roast.timeline.startTime;
         const m = computeRoastMetrics(roast.timeline);
