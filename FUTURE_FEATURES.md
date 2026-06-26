@@ -1,7 +1,7 @@
 # Roadmap & Future Features
 
 This document tracks the Coffee Roasting Tracker's shipped features and the
-outstanding backlog. _Last reviewed: 2026-06-14._
+outstanding backlog. _Last reviewed: 2026-06-26._
 
 ---
 
@@ -77,7 +77,10 @@ Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertas
 
 ---
 
-## 🔜 Backlog (not yet implemented)
+## Roadmap items
+
+Everything below is shipped (✅) **except B8** (parked — needs a backend) and the
+small follow-ups noted under B3/B4. Items keep their implementation notes for reference.
 
 ### B1. Full SCA 100-point cupping form — ✅ Done
 Shipped: the Expert cupping form uses the official protocol — 7 quality attributes (6.00–10.00, 0.25 steps), Uniformity/Clean Cup/Sweetness (default 10), minus taint (×2)/fault (×4) defects = final /100. Backward-compatible with the earlier /80 records via stored `total`/`max`.
@@ -103,8 +106,8 @@ Shipped: an "Add ColorChecker Photo" flow fits a 3×4 affine colour-correction m
 
 **Phase 2 — ✅ Done (manual profiles):** Expert-tier **Manual power** buttons (0/25/50/75/100% = P1–P5) log timestamped power changes during a roast into `roastState.powerLog`. A finished roast with power changes can be saved as a named **manual profile** (weight-tagged) from History. Selecting it under "Follow reference roast" overlays its curve and gives **timed power cues** (~10 s ahead, e.g. "set power to 50%") alongside the crack heads-up. Manual profiles are persisted, in backup, and power changes appear in the CSV export.
 
-### B6. README & developer docs
-Document the app (purpose, features, how to run/build, data model, PWA/HTTPS notes) for users and contributors.
+### B6. README & developer docs — ✅ Done
+Shipped: `README.md` (purpose, features, dev/build, data model, PWA/HTTPS notes, project structure) plus `HARDWARE_GUIDE.md`. Kept in sync with the shipped feature set.
 
 ### B7. Optional photo inclusion in JSON backup — ✅ Done
 Shipped: an "Include photos (larger file)" checkbox on the Data Backup card embeds all IndexedDB photos (as data URLs) into the JSON export; import restores them into IndexedDB (via `getAllPhotos`/`replaceAllPhotos`). Off by default to keep the file small.
@@ -114,3 +117,16 @@ Research surfaced demand for comparing roasts of the same bean with other users.
 
 ### Environment / ET logging (Expert tier) — ✅ Done
 Shipped: an Expert-tier "Log ET" input records timestamped environment-temperature readings into `roastState.envTemps` (timeline entries, count shown in history, `env_<unit>` column in the CSV export). Saved with the roast and in backup.
+
+---
+
+## Smaller ideas / nice-to-haves (captured, not yet scheduled)
+
+These surfaced during research/development and are parked here so they aren't lost:
+
+- **Artisan interoperability** — export/import using Artisan's CSV/`.alog` schema (the current CSV is a generic time-series, not Artisan's format).
+- **Service-worker update prompt** — detect a newly deployed version and offer a reload, instead of silently updating on next visit.
+- **Bean cost / usage history** — track price per bean and cost-per-roast alongside the existing quantity tracking.
+- **B3 follow-ups** — Web Serial probe support; a dedicated °/min RoR trace rather than the raw temperature overlay.
+- **B4 follow-ups** — linearize (undo gamma) before fitting the ColorChecker matrix; auto-detect the chart so corner-tapping isn't needed.
+- **Repo hygiene** — `dist/` is committed but Vercel rebuilds from source; it could be `.gitignore`d to avoid drift (left as-is for now since it's deterministic and in sync).
