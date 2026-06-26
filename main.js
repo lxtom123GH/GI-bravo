@@ -2,6 +2,7 @@
 import { initTabs, initTier } from './js/ui.js';
 import { initDemo } from './js/demo.js';
 import { initTour } from './js/tour.js';
+import { initHints } from './js/hints.js';
 import { initRoastDashboard } from './js/roast.js';
 import { initAudioSystem } from './js/audio.js';
 import { initPantry } from './js/pantry.js';
@@ -16,6 +17,7 @@ function init() {
     initHistory();
     initDemo();
     initTour();
+    initHints();
 }
 
 if (document.readyState === 'loading') {

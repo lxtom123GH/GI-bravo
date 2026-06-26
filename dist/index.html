@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-31X7AXyj.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-My1BTILp.css">
+  <script type="module" crossorigin src="/assets/index-gaw64Bz3.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-RQDvBsqv.css">
 </head>
 <body>
     <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
@@ -26,8 +26,11 @@
             <li data-target="help">Help</li>
         </ul>
         <div class="sidebar-footer" style="padding: 15px 25px; border-top: 1px solid var(--border-color);">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                <input type="checkbox" id="hintsToggle" style="width: auto; margin: 0;"> 💡 Show hints
+            </label>
             <label for="tierSelect" style="font-size: 0.85rem; color: var(--text-muted);">Mode</label>
-            <select id="tierSelect" style="margin-bottom: 0;">
+            <select id="tierSelect" style="margin-bottom: 0;" data-hint="How much detail the app shows. Moderate is a good start.">
                 <option value="easy">Easy</option>
                 <option value="moderate">Moderate</option>
                 <option value="expert">Expert</option>
@@ -62,7 +65,7 @@
                 <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                     <div style="flex: 1;">
                         <label for="roasterSelect"><strong>Roaster</strong></label>
-                        <select id="roasterSelect">
+                        <select id="roasterSelect" data-hint="Choose your roaster; the controls below adapt to it.">
                             <option value="behmor">Behmor 2000AB Plus</option>
                             <option value="kkto">KKTO</option>
                         </select>
@@ -142,8 +145,8 @@
                 </div>
 
                 <div class="roast-controls">
-                    <button id="calibrateBtn">Calibrate Noise</button>
-                    <button id="startBtn">Start Roast & Listening</button>
+                    <button id="calibrateBtn" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
+                    <button id="startBtn" data-hint="Start the roast and listen for first and second crack automatically.">Start Roast & Listening</button>
                     <button id="stopBtn" disabled class="danger">Stop Roast</button>
                     <button class="demo-btn" type="button">Try a demo (no mic)</button>
                 </div>
@@ -154,7 +157,7 @@
                 </div>
 
                 <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                    <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;">
+                    <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;" data-hint="Type a bean temperature reading to track Rate of Rise (RoR).">
                     <select id="tempUnit" style="width: auto; margin-bottom: 0;">
                         <option value="C">°C</option>
                         <option value="F">°F</option>
@@ -169,13 +172,13 @@
                 </div>
 
                 <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
-                    <button id="connectProbeBtn" type="button">Connect probe (Bluetooth)</button>
+                    <button id="connectProbeBtn" type="button" data-hint="Connect a DIY Bluetooth thermocouple to log temperature automatically.">Connect probe (Bluetooth)</button>
                     <span id="probeStatus" style="color: var(--text-muted); font-size: 0.9rem;">Probe: not connected</span>
                 </div>
 
                 <div class="tier-moderate" style="margin-bottom: 15px;">
                     <label for="referenceSelect"><strong>Follow reference roast</strong></label>
-                    <select id="referenceSelect"><option value="">None</option></select>
+                    <select id="referenceSelect" data-hint="Overlay a past roast or template and get a heads-up before its cracks." ><option value="">None</option></select>
                     <small style="color: var(--text-muted);">Overlays a past roast's curve and warns ~10s before its cracks.</small>
                 </div>
 
@@ -242,7 +245,7 @@
             <div class="card">
                 <h3>Add New Green Beans</h3>
                 <form id="addBeanForm">
-                    <input type="text" id="beanName" placeholder="Bean Name / Blend Name (Required)" required>
+                    <input type="text" id="beanName" placeholder="Bean Name / Blend Name (Required)" required data-hint="Add green beans here so you can pick them when roasting.">
                     <input type="text" id="beanCountry" placeholder="Country of Origin (e.g., Ethiopia)">
                     <input type="text" id="beanRegion" placeholder="Region (e.g., Yirgacheffe)">
                     <input type="text" id="beanFarm" placeholder="Farm / Producer">
@@ -274,7 +277,7 @@
                     All beans and roasts are stored only in this browser. Export a backup to keep them safe.
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <button id="exportBackupBtn">Export Backup (JSON)</button>
+                    <button id="exportBackupBtn" data-hint="Save all your data to a file. Your data lives only in this browser, so back up regularly.">Export Backup (JSON)</button>
                     <button id="importBackupBtn">Import Backup</button>
                     <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
                     <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--text-muted); margin: 0;">
@@ -286,7 +289,7 @@
             <div class="card" id="trendsCard">
                 <h3>Trends</h3>
                 <label for="trendMetric"><strong>Metric over time</strong></label>
-                <select id="trendMetric">
+                <select id="trendMetric" data-hint="Track a metric across all your roasts over time.">
                     <option value="dtr">Development Ratio (DTR %)</option>
                     <option value="total">Total time (min)</option>
                     <option value="fc">Time to first crack (min)</option>
@@ -300,7 +303,7 @@
                 <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                     <div style="flex: 1;">
                         <label for="compareSelectA"><strong style="color: #ff9800;">Roast A</strong></label>
-                        <select id="compareSelectA"><option value="">Select a roast...</option></select>
+                        <select id="compareSelectA" data-hint="Pick two roasts to compare their curves and numbers side by side."><option value="">Select a roast...</option></select>
                     </div>
                     <div style="flex: 1;">
                         <label for="compareSelectB"><strong style="color: #2196f3;">Roast B</strong></label>
