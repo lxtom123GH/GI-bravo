@@ -887,8 +887,9 @@ function renderLiveCurve(elapsedMs) {
             liveSeries
         ]);
     } else if (roastState.temps && roastState.temps.length >= 2) {
-        // Overlay the live temperature line (from the probe) alongside audio energy.
-        drawRoastCurveDual(curveCanvas, roastState.curve, roastState.temps, markers);
+        // Overlay a live Rate-of-Rise (°/min) trace derived from temperature readings.
+        const ror = computeRoRPoints(roastState.temps).map(p => ({ t: p.t, v: p.ror }));
+        drawRoastCurveDual(curveCanvas, roastState.curve, ror, markers, 'RoR °/min');
     } else {
         drawRoastCurve(curveCanvas, roastState.curve, markers);
     }
