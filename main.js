@@ -1,6 +1,7 @@
 // Entry point: wires together all UI modules for the Coffee Roasting Tracker.
 import { initTabs, initTier } from './js/ui.js';
 import { initDemo } from './js/demo.js';
+import { initTour } from './js/tour.js';
 import { initRoastDashboard } from './js/roast.js';
 import { initAudioSystem } from './js/audio.js';
 import { initPantry } from './js/pantry.js';
@@ -14,6 +15,7 @@ function init() {
     initPantry();
     initHistory();
     initDemo();
+    initTour();
 }
 
 if (document.readyState === 'loading') {
