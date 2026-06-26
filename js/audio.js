@@ -2,6 +2,7 @@ import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, get
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
+import { connectSerial, disconnectSerial } from './serial.js';
 
 let audioContext;
 let microphone;
@@ -33,11 +34,13 @@ const tempUnitSelect = document.getElementById('tempUnit');
 const envTempInput = document.getElementById('envTempInput');
 const logEnvTempBtn = document.getElementById('logEnvTempBtn');
 const connectProbeBtn = document.getElementById('connectProbeBtn');
+const connectSerialBtn = document.getElementById('connectSerialBtn');
 const probeStatus = document.getElementById('probeStatus');
 const manualPowerBtns = document.querySelectorAll('.manual-power');
 const manualPowerStatus = document.getElementById('manualPowerStatus');
 
 let probeConnected = false;
+let serialConnected = false;
 let lastProbeLog = 0;
 
 // Reference power schedule (from a manual profile) and which steps were announced.
@@ -143,8 +146,9 @@ export function initAudioSystem() {
     if (envTempInput) envTempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logEnvTemperature(); });
 
     if (connectProbeBtn) connectProbeBtn.addEventListener('click', toggleProbe);
+    if (connectSerialBtn) connectSerialBtn.addEventListener('click', toggleSerialProbe);
     document.addEventListener('roasterTemperature', onProbeTemperature);
-    document.addEventListener('roasterDisconnected', () => setProbeConnected(false));
+    document.addEventListener('roasterDisconnected', () => { probeConnected = false; serialConnected = false; renderProbe(); });
 
     manualPowerBtns.forEach(btn => btn.addEventListener('click', () => logPower(parseInt(btn.dataset.power, 10))));
     if (tempUnitSelect) {
@@ -497,22 +501,44 @@ function logPower(power) {
 
 // --- Bluetooth temperature probe (B3) ---
 
-function setProbeConnected(connected) {
-    probeConnected = connected;
-    if (connectProbeBtn) connectProbeBtn.textContent = connected ? 'Disconnect probe' : 'Connect probe (Bluetooth)';
-    if (probeStatus) probeStatus.textContent = connected ? 'Probe: connected' : 'Probe: not connected';
+function renderProbe() {
+    if (connectProbeBtn) connectProbeBtn.textContent = probeConnected ? 'Disconnect Bluetooth' : 'Connect probe (Bluetooth)';
+    if (connectSerialBtn) connectSerialBtn.textContent = serialConnected ? 'Disconnect USB' : 'Connect probe (USB)';
+    if (probeStatus) {
+        probeStatus.textContent = (probeConnected || serialConnected)
+            ? `Probe: connected (${probeConnected ? 'Bluetooth' : 'USB'})`
+            : 'Probe: not connected';
+    }
 }
 
 async function toggleProbe() {
-    if (probeConnected) { disconnectRoaster(); setProbeConnected(false); return; }
+    if (probeConnected) { disconnectRoaster(); probeConnected = false; renderProbe(); return; }
     if (!navigator.bluetooth) {
         alert('Web Bluetooth is not available. Use Chrome or Edge over HTTPS (or localhost).');
         return;
     }
     if (probeStatus) probeStatus.textContent = 'Probe: connecting…';
     const ok = await connectRoaster();
-    if (ok) setProbeConnected(true);
-    else { setProbeConnected(false); alert('Could not connect to the probe. Make sure it is powered on and advertising.'); }
+    probeConnected = !!ok;
+    renderProbe();
+    if (!ok) alert('Could not connect to the probe. Make sure it is powered on and advertising.');
+}
+
+async function toggleSerialProbe() {
+    if (serialConnected) { await disconnectSerial(); serialConnected = false; renderProbe(); return; }
+    if (!navigator.serial) {
+        alert('Web Serial is not available. Use Chrome or Edge over HTTPS (or localhost).');
+        return;
+    }
+    if (probeStatus) probeStatus.textContent = 'Probe: connecting…';
+    try {
+        await connectSerial();
+        serialConnected = true;
+    } catch (e) {
+        serialConnected = false;
+        alert('Could not open the serial port.');
+    }
+    renderProbe();
 }
 
 // Live temperature from the probe (always in °C). Converts to the active unit,
