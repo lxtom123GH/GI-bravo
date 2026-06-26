@@ -7,6 +7,8 @@ and photos — all stored locally in your browser with no backend.
 
 🌐 Live app: https://gi-bravo.vercel.app
 
+📖 New here? See the **[User Guide](USER_GUIDE.md)** for a simple step-by-step walkthrough.
+
 Built for the **Behmor 2000AB Plus** and **KKTO** roasters, but the audio
 analysis and logging work with any roaster.
 
