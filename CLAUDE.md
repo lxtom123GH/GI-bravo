@@ -54,5 +54,12 @@ Do these **as a matter of course**, in the same change — not as a follow-up.
   merge it into `main` in one go.
 - Building on an open PR's branch avoids `index.html`/`dist` conflicts, but only helps `main` if
   the above retarget/merge-order is followed.
+- **Pushes after a merge are stranded (learned 2026-06-28):** once a PR is merged it closes, so any
+  commit pushed to that branch afterwards lands on the branch with **no open PR** — the owner won't
+  see it. (Happened with the KKTO panel: #59 merged at the Behmor commit, the later KKTO push needed
+  a brand-new PR #60.) **Fix:** when more work is still coming on a feature, tell the owner
+  explicitly **"don't merge yet — more coming"** vs **"safe to merge now"** on each PR. If a push
+  does get stranded, open a fresh branch/PR off the current tip (the diff vs `main` is just the new
+  commits).
 - After merging, the live bundle hash changes — verify features by checking the live page HTML +
   bundle, not by hash.

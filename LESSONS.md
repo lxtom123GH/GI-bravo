@@ -90,6 +90,12 @@ and Gemini**._
   merging the top branch into `main`. Rule added to `CLAUDE.md`: base PRs on `main`, or retarget
   each to `main` before merging.
 
+### Process lesson — pushes after a merge are stranded — **Adopt**
+- A merged PR is closed, so a commit pushed to that branch afterwards has **no open PR** and the
+  owner can't see it (the KKTO panel push landed after #59 was merged → needed a fresh PR #60).
+  Rule in `CLAUDE.md`: per PR, tell the owner **"don't merge yet — more coming"** vs **"safe to
+  merge now"**; if a push is stranded, open a new branch/PR off the current tip.
+
 ---
 
 _Next: Radar #2 (weekly) and the first monthly retro — see the scheduled routines._
