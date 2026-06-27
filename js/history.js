@@ -34,6 +34,22 @@ function computeScaTotal(s) {
     return total;
 }
 
+// SCA Coffee Value Assessment (CVA, 2024) affective form: 8 attributes scored 1–9.
+const CVA_ATTRS = ['cvaFragrance', 'cvaAroma', 'cvaFlavor', 'cvaAftertaste', 'cvaAcidity', 'cvaSweetness', 'cvaMouthfeel', 'cvaOverall'];
+const CVA_LABELS = {
+    cvaFragrance: 'Fragrance', cvaAroma: 'Aroma', cvaFlavor: 'Flavor', cvaAftertaste: 'Aftertaste',
+    cvaAcidity: 'Acidity', cvaSweetness: 'Sweetness', cvaMouthfeel: 'Mouthfeel', cvaOverall: 'Overall'
+};
+
+// Official CVA cup score: 0.65625 × Σ(8 attrs, 1–9) + 52.75 − 2·nonUniform − 4·defective.
+function computeCvaTotal(s) {
+    if (!s) return null;
+    const present = CVA_ATTRS.filter(k => s[k] != null && s[k] !== '' && !isNaN(Number(s[k])));
+    if (present.length === 0) return null;
+    const sum = CVA_ATTRS.reduce((a, k) => a + (Number(s[k]) || 0), 0);
+    return 0.65625 * sum + 52.75 - 2 * (Number(s.cvaNonUniform) || 0) - 4 * (Number(s.cvaDefective) || 0);
+}
+
 const chip = (text) => `<span style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px;">${text}</span>`;
 
 // Build a compact summary of whatever tasting data a roast has.
@@ -903,6 +919,20 @@ function openTastingModal(id) {
             <div style="flex: 1;"><label>Faults (×4)</label><input type="number" class="sca-input" id="sca-faults" min="0" step="1" value="${scores.faults ?? 0}"></div>
          </div>`;
 
+    const cvaHtml =
+        CVA_ATTRS.map(k =>
+            `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <label style="flex: 1;">${CVA_LABELS[k]}</label>
+                <input type="number" class="cva-input" id="${k}" min="1" max="9" step="1" value="${scores[k] ?? ''}" style="width: 80px; margin-bottom: 0;">
+            </div>`).join('') +
+        `<h5 style="margin-top: 8px;">Cups affected (of 5)</h5>
+         <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label>Non-uniform (×2)</label><input type="number" class="cva-input" id="cvaNonUniform" min="0" max="5" step="1" value="${scores.cvaNonUniform ?? 0}"></div>
+            <div style="flex: 1;"><label>Defective (×4)</label><input type="number" class="cva-input" id="cvaDefective" min="0" max="5" step="1" value="${scores.cvaDefective ?? 0}"></div>
+         </div>`;
+
+    const cuppingForm = scores.form === 'cva' ? 'cva' : 'classic';
+
     const methodOptions = ['<option value="">Select method…</option>']
         .concat(BREW_METHODS.map(m => `<option value="${m}"${brew.method === m ? ' selected' : ''}>${m}</option>`)).join('');
 
@@ -931,9 +961,20 @@ function openTastingModal(id) {
         </div>
 
         <div class="ts-scores" style="margin-bottom: 15px;">
-            <h4>SCA Cupping Score</h4>
-            <small style="color: var(--text-muted);">Quality attributes 6.00–10.00 (0.25 steps). Uniformity / Clean Cup / Sweetness default to 10; defects are subtracted.</small>
-            <div style="margin-top: 8px;">${scoreHtml}</div>
+            <h4>Cupping Score</h4>
+            <label for="cuppingForm">Form</label>
+            <select id="cuppingForm">
+                <option value="classic"${cuppingForm === 'classic' ? ' selected' : ''}>SCA 100-point (classic)</option>
+                <option value="cva"${cuppingForm === 'cva' ? ' selected' : ''}>CVA Affective (2024)</option>
+            </select>
+            <div id="ccClassic" style="margin-top: 8px;">
+                <small style="color: var(--text-muted);">Quality attributes 6.00–10.00 (0.25 steps). Uniformity / Clean Cup / Sweetness default to 10; defects subtracted.</small>
+                <div style="margin-top: 8px;">${scoreHtml}</div>
+            </div>
+            <div id="ccCva" style="margin-top: 8px;">
+                <small style="color: var(--text-muted);">8 attributes scored 1–9 (impression of quality).</small>
+                <div style="margin-top: 8px;">${cvaHtml}</div>
+            </div>
             <p style="margin-top: 8px;"><strong>Final score: <span id="cupTotal">--</span> / 100</strong></p>
         </div>
 
@@ -1002,28 +1043,50 @@ function openTastingModal(id) {
         });
     });
 
-    const readScores = () => {
+    const formSel = modal.querySelector('#cuppingForm');
+    const applyForm = (f) => {
+        modal.querySelector('#ccClassic').style.display = f === 'cva' ? 'none' : 'block';
+        modal.querySelector('#ccCva').style.display = f === 'cva' ? 'block' : 'none';
+    };
+    applyForm(formSel.value);
+
+    const readClassic = () => {
         const s = {};
         SCA_ALL.forEach(k => { const v = parseFloat(modal.querySelector(`#sca-${k}`).value); if (!isNaN(v)) s[k] = v; });
         s.taints = parseInt(modal.querySelector('#sca-taints').value, 10) || 0;
         s.faults = parseInt(modal.querySelector('#sca-faults').value, 10) || 0;
         return s;
     };
-    const updateTotal = () => {
-        const total = computeScaTotal(readScores());
-        modal.querySelector('#cupTotal').textContent = total != null ? total.toFixed(2) : '--';
+    const readCva = () => {
+        const s = {};
+        CVA_ATTRS.forEach(k => { const v = parseFloat(modal.querySelector(`#${k}`).value); if (!isNaN(v)) s[k] = v; });
+        s.cvaNonUniform = parseInt(modal.querySelector('#cvaNonUniform').value, 10) || 0;
+        s.cvaDefective = parseInt(modal.querySelector('#cvaDefective').value, 10) || 0;
+        return s;
     };
-    modal.querySelectorAll('.sca-input').forEach(inp => inp.addEventListener('input', updateTotal));
+    const buildScores = () => {
+        if (formSel.value === 'cva') {
+            const s = readCva();
+            const total = computeCvaTotal(s);
+            return total != null ? { ...s, form: 'cva', total, max: 100 } : undefined;
+        }
+        const s = readClassic();
+        const total = computeScaTotal(s);
+        return total != null ? { ...s, form: 'classic', total, max: 100 } : undefined;
+    };
+    const updateTotal = () => {
+        const s = buildScores();
+        modal.querySelector('#cupTotal').textContent = s ? Number(s.total).toFixed(2) : '--';
+    };
+    modal.querySelectorAll('.sca-input, .cva-input').forEach(inp => inp.addEventListener('input', updateTotal));
+    formSel.addEventListener('change', () => { applyForm(formSel.value); updateTotal(); });
     updateTotal();
 
     modal.querySelector('#modalCancel').addEventListener('click', () => document.body.removeChild(modalBg));
 
     modal.querySelector('#modalSave').addEventListener('click', () => {
-        // Collect every section (regardless of current view) so switching tiers never loses data.
-        const newScores = readScores();
-        const total = computeScaTotal(newScores);
-        let scores;
-        if (total != null) { newScores.total = total; newScores.max = 100; scores = newScores; }
+        // Build scores from whichever cupping form is active.
+        const scores = buildScores();
 
         const num = (id) => { const v = parseFloat(modal.querySelector(id).value); return isNaN(v) ? undefined : v; };
         const brewLog = {
@@ -1242,9 +1305,13 @@ function exportRoast(id) {
         if (tn.flavors && tn.flavors.length > 0) text += `Flavors: ${tn.flavors.join(', ')}\n`;
         if (tn.scores && tn.scores.total != null) {
             const sc = tn.scores;
-            text += `Cupping: ${Number(sc.total).toFixed(2)} / ${sc.max || 80}\n`;
-            text += SCA_ALL.filter(k => sc[k] != null).map(k => `  - ${SCA_LABELS[k] || k}: ${sc[k]}`).join('\n');
-            if ((sc.taints || sc.faults)) text += `\n  - defects: ${sc.taints || 0} taint, ${sc.faults || 0} fault`;
+            const cva = sc.form === 'cva';
+            text += `Cupping (${cva ? 'CVA 2024' : 'SCA classic'}): ${Number(sc.total).toFixed(2)} / ${sc.max || 80}\n`;
+            const attrs = cva ? CVA_ATTRS : SCA_ALL;
+            const labels = cva ? CVA_LABELS : SCA_LABELS;
+            text += attrs.filter(k => sc[k] != null).map(k => `  - ${labels[k] || k}: ${sc[k]}`).join('\n');
+            if (cva && (sc.cvaNonUniform || sc.cvaDefective)) text += `\n  - cups: ${sc.cvaNonUniform || 0} non-uniform, ${sc.cvaDefective || 0} defective`;
+            if (!cva && (sc.taints || sc.faults)) text += `\n  - defects: ${sc.taints || 0} taint, ${sc.faults || 0} fault`;
             text += '\n';
         }
         if (tn.brewLog && tn.brewLog.method) {
