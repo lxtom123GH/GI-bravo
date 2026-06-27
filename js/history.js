@@ -2,6 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { roastRest } from './freshness.js';
 import { buildLeaderboard } from './value.js';
+import { upsertTasting, latestTasting, toNotes } from './tasting.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
@@ -502,7 +503,10 @@ function renderHistoryList() {
 
         // Tasting Notes Section
         let notes = roast.tastingNotes || { flavors: [], text: '' };
-        const flavorsHtml = tastingSummary(notes);
+        let flavorsHtml = tastingSummary(notes);
+        // Tasting-over-time: note when there are several dated tastings.
+        const tcount = Array.isArray(roast.tastingLog) ? roast.tastingLog.length : 0;
+        if (tcount > 1) flavorsHtml += ` ${chip(`📈 ${tcount} tastings over time`)}`;
 
         // Roasted rest/peak badge — how the beans are resting since this roast.
         const rest = roastRest(new Date(roast.date).getTime());
@@ -1180,8 +1184,24 @@ function openTastingModal(id) {
     const methodOptions = ['<option value="">Select method…</option>']
         .concat(BREW_METHODS.map(m => `<option value="${m}"${brew.method === m ? ' selected' : ''}>${m}</option>`)).join('');
 
+    // Tasting-over-time: show prior dated tastings, and default a new entry to today.
+    const tlog = Array.isArray(roast.tastingLog) ? roast.tastingLog : [];
+    const fmtScore = (e) => (e.scores && e.scores.total != null)
+        ? `${Number(e.scores.total).toFixed(0)}/${e.scores.max || 100}`
+        : (e.emoji && EMOJI[e.emoji] ? EMOJI[e.emoji] : '—');
+    const prevHtml = tlog.length
+        ? `<div style="margin: 6px 0 14px; padding: 8px; background: var(--bg-color); border-radius: 6px;">
+               <strong>Tasting over time</strong>
+               <ul style="margin: 4px 0 0;">${tlog.map(e => `<li>${(e.date || '').slice(0, 10) || '—'}: ${fmtScore(e)}${e.text ? ` — ${e.text.slice(0, 40)}` : ''}</li>`).join('')}</ul>
+           </div>`
+        : '';
+    const todayStr = new Date().toISOString().slice(0, 10);
+
     modal.innerHTML = `
         <h3>Tasting Notes</h3>
+        ${prevHtml}
+        <label for="tastingDate"><strong>Tasting date</strong> <span style="font-weight:normal;color:var(--text-muted);">(a new date adds an entry; coffee changes as it rests)</span></label>
+        <input type="date" id="tastingDate" value="${todayStr}" style="margin-bottom: 12px;">
         <label for="tastingTier"><strong>Detail level</strong></label>
         <select id="tastingTier">
             <option value="easy">Easy</option>
@@ -1343,13 +1363,17 @@ function openTastingModal(id) {
         };
         const hasBrew = brewLog.method || brewLog.doseGrams != null || brewLog.yieldGrams != null || brewLog.temperature != null || brewLog.grindSize;
 
-        roast.tastingNotes = {
+        const entry = {
+            date: modal.querySelector('#tastingDate').value || new Date().toISOString().slice(0, 10),
             flavors: selectedFlavors,
             text: modal.querySelector('#modalNotesText').value,
             emoji: selectedEmoji || undefined,
             scores,
             brewLog: hasBrew ? brewLog : undefined
         };
+        // Record this dated tasting, and keep tastingNotes = the latest (backward compatible).
+        roast.tastingLog = upsertTasting(roast.tastingLog, entry);
+        roast.tastingNotes = toNotes(latestTasting(roast.tastingLog));
         updateRoastInHistory(roast);
         document.body.removeChild(modalBg);
         renderHistoryList();

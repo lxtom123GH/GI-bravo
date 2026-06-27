@@ -171,11 +171,13 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    (2000AB Plus / 2000AB / 1600 Plus differ — beep vs blink, drum rpm, A/B temp readouts), a
    setup-sequence guide. **KKTO:** a manual heat/airflow + agitator guide and a roast-phase flow
    (charge → drying → first crack → drop). Both have a **live mode** (auto on roast start) logging
-   timestamped actions onto the roast. Follow-up: capture the Behmor sub-model on the roaster
-   profile; a fuller pre-roast "what will happen" simulation.
+   timestamped actions onto the roast. ✅ Behmor sub-model now stored per roaster profile.
+   Follow-up: a fuller pre-roast "what will happen" simulation.
 5. ✅ Tastiness-per-dollar value leaderboard — done (`js/value.js`): ranks roasts by cup quality
    per dollar (tasting score ÷ cost per cup) in Roast History; pure helpers, unit-tested.
-6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.
+6.5 ✅ Tasting-over-time — done (`js/tasting.js`): each roast keeps a dated tasting log (coffee
+   changes as it rests/ages); modal shows the history; `tastingNotes` stays = latest for back-compat.
+6. Receipt/invoice quick-add (+ photo); swipe-style personalisation; collective space.
 
 Open threads (see `HANDOFF.md` for detail):
 - **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.

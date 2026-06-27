@@ -62,6 +62,8 @@ model) and each roast is tagged with the machine it was done on.
 - 📚 **Roast history** with timelines, logs, and tasting notes.
 - 👅 **Tiered tasting & cupping** — emoji → SCA flavor wheel → **official
   SCA 100-point cupping** + brew log, depending on your chosen mode.
+- 📈 **Tasting over time** — record dated tastings per roast to see how a coffee changes as it
+  rests and ages.
 - 🔬 **Roast comparison** — overlay two roasts with a side-by-side metrics table.
 - 📊 **Roast Trends** — track DTR / time / first crack / roast colour across
   batches over time.
@@ -129,6 +131,7 @@ js/
   blends.js         Blend recipes → per-component weigh-out prep batches
   planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)
   value.js          Tastiness-per-dollar — score ÷ cost-per-cup leaderboard (pure)
+  tasting.js        Tasting-over-time — dated tasting log helpers (pure)
   freshness.js      Green-bean age + roasted rest/peak + FIFO helpers (pure)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
   storage.js        localStorage persistence + JSON backup/restore + settings

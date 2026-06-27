@@ -9,6 +9,7 @@ import {
     getActiveRoasterId, saveActiveRoasterId, getActiveRoaster
 } from './storage.js';
 import { roasterCapacity } from './planner.js';
+import { BEHMOR_MODELS } from './roaster-panel.js';
 
 const MODEL_LABELS = { behmor: 'Behmor 2000AB Plus', kkto: 'KKTO' };
 
@@ -86,6 +87,9 @@ function openRoasterModal() {
                     <option value="behmor">Behmor 2000AB Plus</option>
                     <option value="kkto">KKTO</option>
                 </select>
+                <select id="newBehmorModel" title="Which Behmor model?">
+                    ${BEHMOR_MODELS.map(m => `<option value="${m}">Behmor ${m}</option>`).join('')}
+                </select>
                 <label style="font-size: 0.85rem; color: var(--text-muted);">Drum capacity (g) — used by the batch planner</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="number" id="newRoasterMin" placeholder="Min g" style="width: 50%;">
@@ -118,9 +122,13 @@ function openRoasterModal() {
 
         // Prefill the capacity fields from the model's default, and update on model change.
         const modelSel = modal.querySelector('#newRoasterModel');
+        const behmorSel = modal.querySelector('#newBehmorModel');
         const minIn = modal.querySelector('#newRoasterMin');
         const maxIn = modal.querySelector('#newRoasterMax');
-        const fillCap = () => { const c = roasterCapacity(modelSel.value); minIn.placeholder = `Min ${c.min}`; maxIn.placeholder = `Max ${c.max}`; };
+        const fillCap = () => {
+            const c = roasterCapacity(modelSel.value); minIn.placeholder = `Min ${c.min}`; maxIn.placeholder = `Max ${c.max}`;
+            if (behmorSel) behmorSel.style.display = modelSel.value === 'behmor' ? 'block' : 'none';
+        };
         fillCap();
         modelSel.addEventListener('change', fillCap);
 
@@ -135,7 +143,8 @@ function openRoasterModal() {
             const def = roasterCapacity(model);
             const minG = parseFloat(minIn.value) || def.min;
             const maxG = parseFloat(maxIn.value) || def.max;
-            const r = addRoaster({ name, model, minG, maxG });
+            const extra = model === 'behmor' && behmorSel ? { behmorModel: behmorSel.value } : {};
+            const r = addRoaster({ name, model, minG, maxG, ...extra });
             // Adding a second roaster implies multi-roaster use.
             if (getRoasters().length > 1) saveRoasterMode('multi');
             saveActiveRoasterId(r.id);
