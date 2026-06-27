@@ -3,6 +3,7 @@ import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js'
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
 import { connectSerial, disconnectSerial } from './serial.js';
+import { acquireWakeLock, releaseWakeLock } from './wakelock.js';
 
 let audioContext;
 let microphone;
@@ -697,6 +698,9 @@ async function startRoast() {
     logMessage('Roast Started.');
 
     isRecording = true;
+    // Keep the screen awake for the whole roast — crack detection runs in
+    // requestAnimationFrame, which the browser pauses if the screen locks.
+    acquireWakeLock();
     startBtn.disabled = true;
     calibrateBtn.disabled = true;
     stopBtn.disabled = false;
@@ -743,6 +747,7 @@ async function startRoast() {
 
 function stopRoast() {
     isRecording = false;
+    releaseWakeLock();
 
     if (timerInterval) clearInterval(timerInterval);
 
