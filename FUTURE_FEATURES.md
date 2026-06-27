@@ -180,7 +180,10 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
 6. ✅ Receipt/invoice quick-add (+ photo) — done (`js/receipts.js`): snap a receipt and add
    several beans in one go (name/grams/$ per kg), each landing in the pantry with the purchase
    date; the photo + a purchase record are kept (Recent purchases list). Follow-up: OCR parsing.
-   Remaining: swipe-style personalisation; collective space.
+   Remaining: collective space.
+6.7 ✅ Swipe-style personalisation — done (`js/swipe.js`): swipe each optional Active-Roast
+   control right to keep / left to hide (or tap the buttons); revisitable from Help or the
+   customise panel; writes the same `dashboardHidden` set as "Customise this screen".
 
 Open threads (see `HANDOFF.md` for detail):
 - **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.

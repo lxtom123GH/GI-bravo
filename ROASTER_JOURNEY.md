@@ -213,7 +213,7 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 ## Suggested build order (highest value first)
 1. ✅ **Roaster profiles + per-roast machine tag, single-roaster by default** — DONE
    (`js/roasters.js`): single-roaster shows no picker; "I use more than one roaster" opts into a
-   picker; each roast is tagged with its machine. _(+ swipe-style personalisation still to come.)_
+   picker; each roast is tagged with its machine. _(✅ swipe-style personalisation shipped — `js/swipe.js`.)_
 2. ✅ **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — DONE
    (`js/freshness.js`): green age + "roast soon"/"roast this first" in the pantry, rest/peak
    badge per roast in History.

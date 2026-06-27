@@ -1,30 +1,38 @@
 // Dashboard customise: let each person hide the controls they don't use, so the
 // Active Roast screen isn't cluttered. This is ADDITIVE — hidden sections are forced
 // off regardless of the Mode/tier, while shown sections still follow the tier rules.
-// Choices persist per-device in localStorage.
+// Choices persist per-device in localStorage and are shared with the swipe personaliser
+// (js/swipe.js), which writes the same `dashboardHidden` set.
 
 const KEY = 'dashboardHidden';
 
 // The optional sections offered for hiding. `sel` may match multiple elements
 // (grouped rows) via a data-section attribute, or a single element by id.
-const SECTIONS = [
-    { key: 'calibrate', label: 'Calibrate Noise button', sel: '#calibrateBtn' },
-    { key: 'dryend', label: 'Mark: Dry End button', sel: '#markDryEndBtn' },
-    { key: 'temp', label: 'Temperature & probe logging', sel: '[data-section="temp"]' },
-    { key: 'reference', label: 'Follow a reference roast', sel: '[data-section="reference"]' },
-    { key: 'detection', label: 'Detection settings', sel: '[data-section="detection"]' },
-    { key: 'logactions', label: 'Behmor Prog A–D buttons', sel: '[data-section="logactions"]' }
+export const SECTIONS = [
+    { key: 'calibrate', label: 'Calibrate Noise button', desc: 'Sample room noise before a roast to improve crack detection.', sel: '#calibrateBtn' },
+    { key: 'dryend', label: 'Mark: Dry End button', desc: 'Log the “dry end” / yellowing point during a roast.', sel: '#markDryEndBtn' },
+    { key: 'temp', label: 'Temperature & probe logging', desc: 'Log bean temps by hand or stream them from a Bluetooth probe.', sel: '[data-section="temp"]' },
+    { key: 'reference', label: 'Follow a reference roast', desc: 'Overlay a past roast’s curve to reproduce a good batch.', sel: '[data-section="reference"]' },
+    { key: 'detection', label: 'Detection settings', desc: 'Fine-tune crack-detection sensitivity and pitch.', sel: '[data-section="detection"]' },
+    { key: 'logactions', label: 'Behmor Prog A–D buttons', desc: 'Quick log buttons for the Behmor’s A/B/C/D functions.', sel: '[data-section="logactions"]' }
 ];
 
-function getHidden() {
+export function getHidden() {
     try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
     catch { return new Set(); }
 }
-function saveHidden(set) {
+export function saveHidden(set) {
     localStorage.setItem(KEY, JSON.stringify([...set]));
 }
 
-function applySection(key, hidden) {
+// PURE: return a new hidden-set with `key` kept (removed) or hidden (added).
+export function decide(hidden, key, keep) {
+    const set = new Set(hidden);
+    if (keep) set.delete(key); else set.add(key);
+    return set;
+}
+
+export function applySection(key, hidden) {
     const def = SECTIONS.find(s => s.key === key);
     if (!def) return;
     document.querySelectorAll(def.sel).forEach(el => {
@@ -33,15 +41,13 @@ function applySection(key, hidden) {
     });
 }
 
-function applyAll() {
+export function applyAll() {
     const hidden = getHidden();
     SECTIONS.forEach(s => applySection(s.key, hidden.has(s.key)));
 }
 
-export function initCustomise() {
+function renderPanel() {
     const container = document.getElementById('customiseOptions');
-    applyAll(); // apply saved choices even if the panel UI isn't present
-
     if (!container) return;
     const hidden = getHidden();
     container.innerHTML = '';
@@ -55,14 +61,18 @@ export function initCustomise() {
         const cb = row.querySelector('input');
         cb.checked = !hidden.has(s.key);
         cb.addEventListener('change', () => {
-            const set = getHidden();
-            if (cb.checked) set.delete(s.key); else set.add(s.key);
+            const set = decide(getHidden(), s.key, cb.checked);
             saveHidden(set);
             applySection(s.key, !cb.checked);
         });
         container.appendChild(row);
     });
+}
 
-    // Re-apply if a backup import changed things.
-    window.addEventListener('settingsImported', applyAll);
+export function initCustomise() {
+    applyAll(); // apply saved choices even if the panel UI isn't present
+    renderPanel();
+    // Keep the panel + dashboard in sync when the swipe personaliser or a backup import changes things.
+    window.addEventListener('customiseChanged', () => { applyAll(); renderPanel(); });
+    window.addEventListener('settingsImported', () => { applyAll(); renderPanel(); });
 }

@@ -13,6 +13,7 @@ import { initRoasters } from './js/roasters.js';
 import { initBlends } from './js/blends.js';
 import { initRoasterPanel } from './js/roaster-panel.js';
 import { initReceipts } from './js/receipts.js';
+import { initSwipe } from './js/swipe.js';
 
 // Cloud sync is OPT-IN and pulls in Firebase (~large), so load it lazily after the app
 // is interactive — the signed-out first paint stays as lean as before.
@@ -40,6 +41,7 @@ function init() {
     initTour();
     initHints();
     initCustomise();
+    initSwipe();
     initSyncLazy();
 }
 
