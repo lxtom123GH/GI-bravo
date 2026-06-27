@@ -1,4 +1,4 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
@@ -297,6 +297,68 @@ function initBackup() {
         };
         reader.readAsText(file);
     });
+
+    const sharedBtn = document.getElementById('importSharedBtn');
+    const sharedInput = document.getElementById('importSharedInput');
+    if (sharedBtn && sharedInput) {
+        sharedBtn.addEventListener('click', () => sharedInput.click());
+        sharedInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    importSharedRoast(JSON.parse(reader.result));
+                } catch (err) {
+                    alert(`Import failed: ${err.message}`);
+                }
+                sharedInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+    }
+}
+
+// Export a single roast as a shareable file (no photos; includes the bean name).
+function exportRoastShare(id) {
+    const roast = getRoastHistory().find(r => r.id === id);
+    if (!roast) return;
+    const bean = getPantry().find(b => b.id === roast.beanId);
+    const share = {
+        type: 'roastShare',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        beanName: bean ? bean.name : '',
+        roast
+    };
+    const safe = (bean ? bean.name : 'roast').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    downloadText(`roast-share-${safe}.json`, JSON.stringify(share, null, 2), 'application/json');
+}
+
+// Import a shared roast: adds it to history (new id) without replacing anything,
+// linking to a matching pantry bean by name or creating a minimal one.
+function importSharedRoast(data) {
+    if (!data || data.type !== 'roastShare' || !data.roast) {
+        throw new Error('Not a shared-roast file.');
+    }
+    const roast = data.roast;
+    roast.id = Date.now().toString();
+
+    let beanId = '';
+    if (data.beanName) {
+        const existing = getPantry().find(b => b.name === data.beanName);
+        beanId = existing ? existing.id : addBeanToPantry({ name: data.beanName, quantity: 0 }).id;
+    }
+    roast.beanId = beanId;
+
+    const history = getRoastHistory();
+    history.push(roast);
+    saveRoastHistory(history);
+
+    renderHistoryList();
+    window.dispatchEvent(new Event('pantryUpdated'));
+    window.dispatchEvent(new Event('historyUpdated'));
+    alert(`Imported shared roast${data.beanName ? ` of ${data.beanName}` : ''}.`);
 }
 
 function renderHistoryList() {
@@ -432,6 +494,7 @@ function renderHistoryList() {
                 ${roast.timeline.powerLog && roast.timeline.powerLog.length ? `<button class="save-manual-btn" data-id="${roast.id}">Save manual profile</button>` : ''}
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
+                <button class="share-roast-btn" data-id="${roast.id}">Share (file)</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
             </div>
         `;
@@ -492,6 +555,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.export-csv-btn').forEach(btn => {
         btn.addEventListener('click', (e) => exportRoastCsv(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.share-roast-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => exportRoastShare(e.target.dataset.id));
     });
 
     document.querySelectorAll('.log-yield-btn').forEach(btn => {
