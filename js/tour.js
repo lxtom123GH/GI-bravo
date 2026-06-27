@@ -9,6 +9,7 @@ const STEPS = [
     { sel: '#startBtn', title: 'Start a roast', text: 'Tap to begin — the app listens through your mic and detects first & second crack automatically.' },
     { sel: '.demo-btn', title: 'Try a demo', text: 'New here? Watch a simulated roast — no microphone needed.' },
     { sel: '#roastCurve', title: 'Live roast curve', text: 'Your roast is drawn here in real time, with crack markers.' },
+    { sel: '.nav-links li[data-target="history"]', sidebar: true, title: 'After the roast', text: 'Open Roast History to log the roasted weight, add tasting notes, and take a colour-corrected photo to track how dark each batch is. See Help → “Roast-colour photos”.' },
     { sel: '.nav-links li[data-target="help"]', sidebar: true, title: 'Help anytime', text: 'Open Help for a quick guide or to replay this tour.' }
 ];
 

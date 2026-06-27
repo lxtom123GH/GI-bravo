@@ -26,6 +26,10 @@ export function initHints() {
         if (el) el.addEventListener('change', () => setTimeout(refresh, 0));
     });
     window.addEventListener('settingsImported', () => { toggle.checked = localStorage.getItem(KEY) === '1'; apply(toggle.checked); });
+    // Re-add badges when lists re-render (history/pantry cards and their data-hint
+    // buttons are created dynamically, wiping any existing badges).
+    ['historyUpdated', 'pantryUpdated'].forEach(evt =>
+        window.addEventListener(evt, () => setTimeout(refresh, 0)));
     window.addEventListener('resize', closePopover);
 }
 
