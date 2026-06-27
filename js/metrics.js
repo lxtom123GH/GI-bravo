@@ -18,13 +18,26 @@ export function computeRoastMetrics(timeline, now = Date.now()) {
     const fc = timeline.firstCrackTime;
     const sc = timeline.secondCrackTime;
 
+    const de = timeline.dryEndTime;
+
     const totalMs = start ? end - start : null;
     const timeToFirstCrackMs = fc ? fc - start : null;
     const developmentTimeMs = fc ? end - fc : null;
     // Development Time Ratio: share of the roast spent after first crack.
     const dtr = (developmentTimeMs != null && totalMs) ? developmentTimeMs / totalMs : null;
 
-    return { totalMs, timeToFirstCrackMs, secondCrackMs: sc ? sc - start : null, developmentTimeMs, dtr };
+    // Roast phases (need a Dry End / yellowing marker for drying + Maillard):
+    const dryEndMs = de ? de - start : null;        // end of the drying phase
+    const dryingMs = dryEndMs;
+    const maillardMs = (de && fc) ? fc - de : null;  // dry end -> first crack
+    const pct = (ms) => (ms != null && totalMs) ? (ms / totalMs) * 100 : null;
+
+    return {
+        totalMs, timeToFirstCrackMs, secondCrackMs: sc ? sc - start : null,
+        developmentTimeMs, dtr,
+        dryEndMs, dryingMs, maillardMs,
+        dryingPct: pct(dryingMs), maillardPct: pct(maillardMs), developmentPct: pct(developmentTimeMs)
+    };
 }
 
 // Format a DTR fraction (0..1) as a percentage string.
