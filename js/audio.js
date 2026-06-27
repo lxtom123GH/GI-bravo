@@ -1,4 +1,4 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster } from './storage.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
@@ -982,8 +982,11 @@ function stopRoast() {
 }
 
 function saveFinalRoast() {
-    // Gather UI data
-    const roaster = document.getElementById('roasterSelect').value;
+    // Gather UI data — the active roaster profile drives the machine model + name.
+    const activeRoaster = getActiveRoaster();
+    const roaster = (activeRoaster || { model: 'behmor' }).model;
+    const roasterName = (activeRoaster || {}).name || '';
+    const roasterId = (activeRoaster || {}).id || null;
     const beanId = document.getElementById('beanSelect').value;
 
     let roasterSettings = {};
@@ -998,6 +1001,8 @@ function saveFinalRoast() {
     const finalRoastData = {
         date: new Date().toISOString(),
         roaster,
+        roasterName,
+        roasterId,
         beanId,
         settings: roasterSettings,
         greenWeightG,

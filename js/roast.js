@@ -1,4 +1,4 @@
-import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight, getLastGreenWeight, saveLastGreenWeight } from './storage.js';
+import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight, getLastGreenWeight, saveLastGreenWeight, getActiveRoaster } from './storage.js';
 import { BEHMOR_GRAMS, weightLabel } from './metrics.js';
 
 // Notify other modules (audio.js) that the Behmor roaster/profile/weight changed,
@@ -8,23 +8,18 @@ function notifyConfigChanged() {
 }
 
 export function initRoastDashboard() {
-    const roasterSelect = document.getElementById('roasterSelect');
     const behmorControls = document.getElementById('behmorControls');
     const kktoControls = document.getElementById('kktoControls');
 
-    // Roaster toggle
-    if (roasterSelect) {
-        roasterSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'behmor') {
-                behmorControls.style.display = 'block';
-                kktoControls.style.display = 'none';
-            } else {
-                behmorControls.style.display = 'none';
-                kktoControls.style.display = 'block';
-            }
-            notifyConfigChanged();
-        });
-    }
+    // Show the control panel for the active roaster's model. Driven by roaster profiles
+    // (js/roasters.js), which dispatches 'roasterChanged' when the active machine changes.
+    const applyRoasterControls = () => {
+        const model = (getActiveRoaster() || { model: 'behmor' }).model;
+        if (behmorControls) behmorControls.style.display = model === 'behmor' ? 'block' : 'none';
+        if (kktoControls) kktoControls.style.display = model === 'kkto' ? 'block' : 'none';
+    };
+    applyRoasterControls();
+    window.addEventListener('roasterChanged', () => { applyRoasterControls(); notifyConfigChanged(); });
 
     // Bean select population
     populateBeanSelect();

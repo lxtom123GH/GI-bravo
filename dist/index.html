@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-CpjsMDb1.js"></script>
+  <script type="module" crossorigin src="/assets/index-DGvVb2Nx.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DgArmMS7.css">
 </head>
 <body>
@@ -70,11 +70,9 @@
                 <h3>Roast Setup</h3>
                 <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                     <div style="flex: 1;">
-                        <label for="roasterSelect"><strong>Roaster</strong></label>
-                        <select id="roasterSelect" data-hint="Choose your roaster; the controls below adapt to it.">
-                            <option value="behmor">Behmor 2000AB Plus</option>
-                            <option value="kkto">KKTO</option>
-                        </select>
+                        <label><strong>Roaster</strong></label>
+                        <!-- Filled by js/roasters.js: a name (single-roaster) or a picker (multi). -->
+                        <div id="roasterControl"></div>
                     </div>
                     <div style="flex: 1;">
                         <label for="beanSelect"><strong>Beans</strong></label>
@@ -403,7 +401,8 @@
                     <li><strong>Install the app</strong> (optional): address-bar install icon, or <em>Share → Add to Home Screen</em> on a phone. It then works offline.</li>
                     <li><strong>Allow the microphone</strong> when asked (first time you start a roast).</li>
                     <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
-                    <li>Add beans in <strong>Bean Pantry</strong>, then set your roaster on <strong>Active Roast</strong>.</li>
+                    <li><strong>Your roaster:</strong> on Active Roast it shows your machine — most people use one, so there's nothing to set up. If you use more than one (yours, a friend's, a different Behmor/KKTO), tap <strong>⚙ Manage roasters</strong> to add them; each roast is then tagged with the machine it was done on.</li>
+                    <li>Add beans in <strong>Bean Pantry</strong>, then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
                     <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
                 </ol>
             </div>

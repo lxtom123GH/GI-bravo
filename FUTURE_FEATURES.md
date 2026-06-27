@@ -150,6 +150,19 @@ Shipped:
 - **B4 follow-up — linearized fit** — ✅ the ColorChecker matrix is fit/applied in linear light.
 - **B4 follow-up — DIY custom target** — ✅ self-calibrated N-patch swatch card as a budget ColorChecker (see B4b).
 - **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
+- **Mobile layout + crack false-positive undo + repeating alarm/tones + declutter + smarter calibration** — ✅ (see `ROASTER_JOURNEY.md`).
+- **Weigh-out prep batches** — ✅ bean + grams + photo in the pantry, loadable onto Active Roast.
+- **Behmor weights match the machine (100/200/400 g)** + green weight remembers the usual (e.g. 450 g) — ✅.
+- **Roaster profiles** — ✅ single-roaster by default (frictionless), opt-in multi-roaster (`js/roasters.js`); each roast tagged with its machine. _Roadmap step 1 of `ROASTER_JOURNEY.md`._
+
+## Roadmap (from `ROASTER_JOURNEY.md` — lifecycle walkthrough)
+See that doc for the full "day/week in the life" narrative. Next up, in order:
+1. ✅ Roaster profiles (single/multi) — done.
+2. Green-bean freshness + roasted rest/peak clocks + FIFO nudges.
+3. Blend builder → weigh-out prep plan.
+4. Machine-faithful roaster control panel (pre-roast plan + live; Behmor first).
+5. Tastiness-per-dollar value leaderboard.
+6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.
 
 Open threads (see `HANDOFF.md` for detail):
 - **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.

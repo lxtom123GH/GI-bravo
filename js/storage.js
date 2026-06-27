@@ -288,6 +288,64 @@ export function deleteColorTarget(id) {
     saveColorTargets(getColorTargets().filter(t => t.id !== id));
 }
 
+// --- Roaster profiles (a person's actual machine(s)) ---
+// Each: { id, model: 'behmor' | 'kkto', name }. Single-roaster mode (default) keeps the
+// common case frictionless; multi mode shows a picker and tags each roast with the machine.
+
+export function getRoasters() {
+    const s = localStorage.getItem('roasters');
+    const list = s ? JSON.parse(s) : [];
+    // Seed a sensible default the first time so the dashboard always has a roaster.
+    if (!list.length) {
+        const def = { id: 'r-default', model: 'behmor', name: 'My Behmor' };
+        saveRoasters([def]);
+        return [def];
+    }
+    return list;
+}
+
+export function saveRoasters(list) {
+    localStorage.setItem('roasters', JSON.stringify(list));
+}
+
+export function addRoaster(r) {
+    const list = getRoasters();
+    r.id = 'r-' + Date.now().toString();
+    list.push(r);
+    saveRoasters(list);
+    return r;
+}
+
+export function deleteRoaster(id) {
+    const list = getRoasters().filter(r => r.id !== id);
+    saveRoasters(list);
+    if (getActiveRoasterId() === id) saveActiveRoasterId(list[0] ? list[0].id : null);
+}
+
+export function getRoasterMode() {
+    return localStorage.getItem('roasterMode') === 'multi' ? 'multi' : 'single';
+}
+
+export function saveRoasterMode(mode) {
+    localStorage.setItem('roasterMode', mode === 'multi' ? 'multi' : 'single');
+}
+
+export function getActiveRoasterId() {
+    return localStorage.getItem('activeRoasterId');
+}
+
+export function saveActiveRoasterId(id) {
+    if (id) localStorage.setItem('activeRoasterId', id);
+    else localStorage.removeItem('activeRoasterId');
+}
+
+// The roaster currently in use (active id, else first). Always returns a usable object.
+export function getActiveRoaster() {
+    const list = getRoasters();
+    const id = getActiveRoasterId();
+    return list.find(r => r.id === id) || list[0];
+}
+
 // --- Roast prep batches (weighed-out portions with a photo) ---
 // Each batch: { id, beanId, beanName, grams, photo (downscaled dataURL), note, createdAt }.
 // Lets the user portion green beans into containers, snap a photo to tell them apart,
@@ -328,6 +386,9 @@ export function exportAllData() {
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
         prepBatches: getPrepBatches(),
+        roasters: getRoasters(),
+        roasterMode: getRoasterMode(),
+        activeRoasterId: getActiveRoasterId(),
         tempUnit: getTempUnit(),
         complexityTier: getTier(),
         featureTiers: getFeatureTiers(),
@@ -362,6 +423,11 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.prepBatches)) {
         savePrepBatches(data.prepBatches);
+    }
+    if (Array.isArray(data.roasters) && data.roasters.length) {
+        saveRoasters(data.roasters);
+        if (data.roasterMode) saveRoasterMode(data.roasterMode);
+        if (data.activeRoasterId) saveActiveRoasterId(data.activeRoasterId);
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);
