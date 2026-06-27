@@ -130,6 +130,9 @@ an official Agtron number.
 - **Your Behmor model:** when you add a Behmor under **⚙ Manage roasters** you can pick the exact
   model (2000AB Plus / 2000AB / 1600 Plus); each machine remembers its own, so the control panel
   shows the right button behaviour.
+- **Make the screen yours:** tap **👆 Personalise by swiping** (on Active Roast under “Customise
+  this screen”, or in Help) and swipe each optional control **right to keep / left to hide** — a
+  quick way to declutter. You can redo it any time, or fine-tune with the checkboxes.
 - **Back up your data (important!):** everything lives only in your browser. Use
   **Roast History → Data Backup → Export Backup** every so often to save a file
   (tick *Include photos* if you want them too). **Import** it to restore or to move

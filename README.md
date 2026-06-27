@@ -80,6 +80,8 @@ model) and each roast is tagged with the machine it was done on.
 - 📱 **Installable PWA**, works **offline** after first load.
 - 🌗 Dark UI, responsive layout with a mobile drawer.
 - 🎚️ **Complexity tiers** (Easy / Moderate / Expert) to match your level — see below.
+- 👆 **Swipe-style personalisation** — swipe each optional control to keep or hide it; a friendly,
+  revisitable way to tailor the Active Roast screen (shares state with "Customise this screen").
 
 ---
 
@@ -124,6 +126,8 @@ main.js             Entry point — initializes all modules, registers the servi
 style.css           Dark theme + responsive/tier styles
 js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
+  customise.js      Hide/show optional dashboard controls (shared state)
+  swipe.js          Swipe-style personaliser over the customise sections
   roast.js          Roast setup (bean selection, Behmor/KKTO controls, weight units)
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
