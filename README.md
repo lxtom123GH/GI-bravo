@@ -75,6 +75,10 @@ model) and each roast is tagged with the machine it was done on.
 - 📤 **Export** — per-roast CSV (time, energy, temp, RoR, ET, power, events) and
   a clipboard summary.
 - 💾 **JSON backup/restore** of all beans, roasts, and settings (photos optional).
+- ☁️ **Optional cloud sync & sharing** — opt-in sign-in (email / Google) to back up and sync, with
+  a **shared pantry, roasts, blends and roaster profiles** you can share by email (a collective
+  "roastery"); personal calibration stays per-device. Local-first and fully usable signed-out.
+  Going live needs a one-time Firebase setup — see `GO_LIVE_CHECKLIST.md`.
 
 **Platform**
 - 📱 **Installable PWA**, works **offline** after first load.

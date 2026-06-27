@@ -234,6 +234,9 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
    dated tasting log (coffee changes as it rests/ages); the modal shows the history and defaults to
    today; `tastingNotes` stays = the latest for back-compat. _(+ Behmor sub-model now stored on the
    roaster profile — the #4 follow-up.)_
-8. **Collective space (after the Firebase console steps)** — turns it into a group tool.
+8. ◐ **Collective space** — CODE COMPLETE (`js/sync/`): opt-in cloud sync (email/Google), a
+   shared pantry/roastHistory/blends/roasters scoped to a space you can share by email; personal
+   calibration stays per-device. Runs on the emulator now; **going live needs the Firebase console
+   steps in `GO_LIVE_CHECKLIST.md`.**
 
 Most of 1–3, 5, 7 are local-first and need no backend; 8 builds on the sync pilot.
