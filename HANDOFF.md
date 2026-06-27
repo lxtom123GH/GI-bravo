@@ -17,10 +17,13 @@ A browser-only PWA coffee-roasting tracker, fully featured and shipped to `main`
 tab for usage, `HARDWARE_GUIDE.md` for the DIY probe. The entire roadmap is done
 except the two open threads below.
 
-## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, pilot pending
+## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, pilot built (emulator)
 **Decided 2026-06-27: standardize the portfolio on Firebase**, local-first + opt-in cloud
-sync, GI-bravo as the pilot. Full plan in **`PORTFOLIO_AUTH_SYNC.md`** (the reusable auth+sync
-module contract, data model, and rollout).
+sync, GI-bravo as the pilot. Full plan + as-built status in **`PORTFOLIO_AUTH_SYNC.md`**
+(see §7). The **pilot is implemented** in GI-bravo against the Firebase Local Emulator Suite
+(reusable `js/sync/` module + opt-in UI + rules + tests); no live project wired yet — the PR
+carries a NEEDS-HUMAN checklist (create `lx-apps-hub`, enable email/password + Google, paste
+`.env`, deploy rules). Rollout to the other apps is the next step.
 
 A portfolio-wide survey corrected the original premise: it is **not** "no backend everywhere."
 Firebase is already the incumbent in three repos — `golf-handicap-tracker` already ships the

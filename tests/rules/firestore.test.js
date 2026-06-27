@@ -1,0 +1,116 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const APP = 'gi-bravo';
+let env;
+
+beforeAll(async () => {
+    env = await initializeTestEnvironment({
+        projectId: 'demo-gi-bravo',
+        firestore: {
+            rules: readFileSync(resolve(__dirname, '../../firestore.rules'), 'utf8'),
+            host: '127.0.0.1',
+            port: 8089
+        }
+    });
+});
+beforeEach(() => env.clearFirestore());
+afterAll(() => env.cleanup());
+
+// helpers to reach the per-user and per-space paths
+const userPantry = (db, uid, docId) =>
+    db.collection('apps').doc(APP).collection('users').doc(uid).collection('pantry').doc(docId);
+const spaceDoc = (db, sid) => db.collection('apps').doc(APP).collection('spaces').doc(sid);
+const spaceMember = (db, sid, uid) => spaceDoc(db, sid).collection('members').doc(uid);
+const spaceItem = (db, sid, name, docId) =>
+    spaceDoc(db, sid).collection('data').doc(name).collection('items').doc(docId);
+
+describe('per-user data isolation', () => {
+    it('denies unauthenticated reads/writes', async () => {
+        const db = env.unauthenticatedContext().firestore();
+        await assertFails(userPantry(db, 'alice', 'b1').get());
+        await assertFails(userPantry(db, 'alice', 'b1').set({ name: 'Yirg' }));
+    });
+
+    it('lets the owner read/write their own data', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(userPantry(alice, 'alice', 'b1').set({ name: 'Yirg', updatedAt: 1 }));
+        await assertSucceeds(userPantry(alice, 'alice', 'b1').get());
+    });
+
+    it("denies access to another user's data", async () => {
+        const bob = env.authenticatedContext('bob').firestore();
+        await assertFails(userPantry(bob, 'alice', 'b1').get());
+        await assertFails(userPantry(bob, 'alice', 'b1').set({ name: 'hijack' }));
+    });
+});
+
+describe('shared identity profile + emailIndex', () => {
+    it('any signed-in user can read a profile; only owner writes', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        const bob = env.authenticatedContext('bob').firestore();
+        await assertSucceeds(alice.collection('users').doc('alice').set({ uid: 'alice' }));
+        await assertSucceeds(bob.collection('users').doc('alice').get());
+        await assertFails(bob.collection('users').doc('alice').set({ uid: 'alice', hacked: true }));
+    });
+
+    it('emailIndex write must point to self uid', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(alice.collection('emailIndex').doc('a@x.com').set({ uid: 'alice', email: 'a@x.com' }));
+        await assertFails(alice.collection('emailIndex').doc('b@x.com').set({ uid: 'bob', email: 'b@x.com' }));
+    });
+});
+
+describe('shared spaces (collaboration)', () => {
+    // Seed a space owned by alice with bob as editor and carol as viewer.
+    async function seedSpace() {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            const db = ctx.firestore();
+            await spaceDoc(db, 'sp1').set({ ownerUid: 'alice', name: 'Home roastery' });
+            await spaceMember(db, 'sp1', 'alice').set({ uid: 'alice', role: 'owner' });
+            await spaceMember(db, 'sp1', 'bob').set({ uid: 'bob', role: 'editor' });
+            await spaceMember(db, 'sp1', 'carol').set({ uid: 'carol', role: 'viewer' });
+        });
+    }
+
+    it('owner can create a space only with ownerUid == self', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(spaceDoc(alice, 'new1').set({ ownerUid: 'alice', name: 'Mine' }));
+        await assertFails(spaceDoc(alice, 'new2').set({ ownerUid: 'bob', name: 'Spoof' }));
+    });
+
+    it('editor member can read AND write shared pantry items', async () => {
+        await seedSpace();
+        const bob = env.authenticatedContext('bob').firestore();
+        await assertSucceeds(spaceItem(bob, 'sp1', 'pantry', 'b1').set({ name: 'Shared bean', updatedAt: 1 }));
+        await assertSucceeds(spaceItem(bob, 'sp1', 'pantry', 'b1').get());
+    });
+
+    it('viewer member can read but NOT write shared items', async () => {
+        await seedSpace();
+        const carol = env.authenticatedContext('carol').firestore();
+        await assertSucceeds(spaceItem(carol, 'sp1', 'pantry', 'b1').get());
+        await assertFails(spaceItem(carol, 'sp1', 'pantry', 'b1').set({ name: 'nope' }));
+    });
+
+    it('a non-member is denied reading/writing shared items', async () => {
+        await seedSpace();
+        const mallory = env.authenticatedContext('mallory').firestore();
+        await assertFails(spaceItem(mallory, 'sp1', 'pantry', 'b1').get());
+        await assertFails(spaceItem(mallory, 'sp1', 'pantry', 'b1').set({ name: 'nope' }));
+    });
+
+    it('an editor CANNOT escalate roles by writing a members doc (only owner can)', async () => {
+        await seedSpace();
+        const bob = env.authenticatedContext('bob').firestore();
+        // bob (editor) tries to make himself owner
+        await assertFails(spaceMember(bob, 'sp1', 'bob').set({ uid: 'bob', role: 'owner' }));
+        // owner can
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(spaceMember(alice, 'sp1', 'dave').set({ uid: 'dave', role: 'editor' }));
+    });
+});

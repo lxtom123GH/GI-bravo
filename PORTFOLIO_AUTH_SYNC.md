@@ -8,6 +8,10 @@ opt-in cloud sync, while staying fully usable offline with no account. It is ext
 how `golf_handicap_tracker` already does auth/rules/Firestore, adapted from its
 **cloud-required** model to a **local-first, cloud-optional** model.
 
+> **Status:** ✅ Pilot implemented in GI-bravo against the Firebase Local Emulator Suite
+> (no live project yet). See **§7 Implementation status** at the end for the as-built file
+> map, final data paths, and test results, and the PR's NEEDS-HUMAN checklist for going live.
+
 ---
 
 ## 1. What golf_handicap_tracker already does (the reference)
@@ -165,12 +169,61 @@ public paths later (golf already shows the `visibility == "public"` pattern).
 
 ---
 
-## 6. Open decisions before coding the pilot
+## 6. Decisions (resolved 2026-06-27)
 
-- **Shared project name/brand** for the identity hub.
-- **Auth methods:** email/password (golf has it) only, or add Google/Apple sign-in for fewer
-  passwords across apps?
-- **Conflict policy:** last-write-wins (simplest, proposed v1) vs per-field merge for any app.
-- **Free-tier headroom:** confirm Firestore/Auth/Functions free limits cover the expected
-  multi-app usage in `australia-southeast1`.
-```
+- **Shared project / brand:** one shared identity hub, neutral placeholder project id
+  `lx-apps-hub`; per-app data under `/apps/{appId}/...` (this app `appId = "gi-bravo"`).
+- **Auth methods:** email/password **+ optional Google** sign-in. (Apple deferred — only
+  needed for native iOS App Store distribution; these are PWAs.)
+- **Conflict policy:** **union-by-id + last-write-wins** by `updatedAt`, with a per-collection
+  override hook. (Not per-field merge — these are personal/shared trackers, not co-edited docs.)
+- **Collaboration:** first-class via shared **spaces** (members map `{uid: role}`).
+- **Cost:** stay on the **free tier — no Cloud Functions** in the pilot (Functions need Blaze);
+  revisit billing before adding server-side features.
+
+---
+
+## 7. Implementation status (pilot — GI-bravo)
+
+Built against the **Firebase Local Emulator Suite only** (no live project, no secrets, no
+deploy). Cloud sync is **opt-in and lazy-loaded** (Firebase is code-split into its own chunk),
+so the signed-out first paint is unchanged.
+
+**Module (app-agnostic, `js/sync/`)**
+- `firebase-config.js` — `initializeApp` + `getAuth` + `initializeFirestore` with
+  `persistentLocalCache` (copied from golf); emulator routing on localhost / `VITE_FB_USE_EMULATOR=1`;
+  config from `VITE_FB_*` env with clearly-marked placeholders (`.env.example`).
+- `auth.js` — `signUp / signIn / signInWithGoogle / signOut / sendReset / onAuthState`
+  (fires immediately); upserts the shared `/users/{uid}` profile + `/emailIndex/{email}`.
+- `reconcile.js` — **pure** sync engine: union-by-id + LWW, "changed since last sync"
+  detection (no ping-pong), deletes inferred from a last-synced snapshot. No I/O → unit-tested.
+- `synced-collection.js` — I/O shell: initial/first-sign-in reconcile, `onSnapshot` live
+  updates, `push()` on local change, listener teardown on `stop()`. Signed out it never runs.
+- `spaces.js` — `createSpace / shareSpaceByEmail / resolveEmailToUid / listMySpaces`.
+- `index.js` — public barrel.
+
+**GI-bravo glue:** `js/sync-ui.js` (local adapters for pantry/roastHistory/referenceSamples/
+colorTargets via `js/storage.js`; opt-in Sign-in/Sync + Share-by-email UI in the History tab),
+mounted lazily from `main.js`. No `js/storage.js` write path changed — sync rides the existing
+`pantryUpdated` / `historyUpdated` / `settingsImported` events.
+
+**As-built Firestore paths**
+- Shared identity: `/users/{uid}`, `/emailIndex/{email}`.
+- Per-user app data: `/apps/{appId}/users/{uid}/{collection}/{docId}`.
+- Space metadata + members: `/apps/{appId}/spaces/{spaceId}` and `.../members/{uid}` (role).
+- Shared collections: `/apps/{appId}/spaces/{spaceId}/data/{name}/items/{docId}` (nested under
+  a literal `data` so the items rule can't overlap `members` — an earlier draft let an editor
+  escalate their own role; the rules test caught it and it's fixed).
+- Scope rule for GI-bravo: pantry + roastHistory follow the selected space; referenceSamples +
+  colorTargets stay personal (device calibration).
+
+**Tests** (`npm run test` pure; `npm run test:rules` emulator; `npm run test:all` both)
+- 14 pure `reconcile` tests: first-sign-in merge (local-only / cloud-only / id-collision LWW),
+  union-by-id, edits (local-only / cloud-only / true-conflict / no-op), deletes.
+- 10 emulator rules tests + 1 integration test (cross-device round-trip via `syncedCollection`).
+- Emulator Firestore port moved 8080 → **8089** (8080 was occupied locally).
+
+**Not done (NEEDS-HUMAN / follow-up):** create the real `lx-apps-hub` project; enable
+email/password + Google providers; paste real config into `.env`; deploy `firestore.rules` +
+`storage.rules` + the `members.uid` collection-group index; opt-in photo sync; rollout to
+GI-alpha / tempovibes / golf; richer sharing-roles UI.

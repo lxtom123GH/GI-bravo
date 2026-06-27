@@ -1,0 +1,109 @@
+rules_version = '2';
+
+// Portfolio identity hub (project "lx-apps-hub"). One shared Auth + Firestore, with each
+// app's data namespaced under /apps/{appId}/...  (this app: appId = "gi-bravo").
+//
+// Data is owned by EITHER a single user (per-user subtree) OR a shared "space" whose
+// /members/{uid} docs carry a role: "owner" | "editor" | "viewer".
+//   - viewer  -> read
+//   - editor  -> read + write
+//   - owner   -> read + write + manage membership
+//
+// Fail-closed: anything not explicitly allowed is denied; helper reads that miss return
+// null and the conditions evaluate false, so a malformed/absent doc never grants access.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- helpers -----------------------------------------------------------
+    function isAuthed() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isAuthed() && request.auth.uid == uid;
+    }
+    // Membership doc for the current user in a space (or null if absent).
+    function memberDoc(appId, spaceId) {
+      return get(/databases/$(database)/documents/apps/$(appId)/spaces/$(spaceId)/members/$(request.auth.uid));
+    }
+    function isMember(appId, spaceId) {
+      return isAuthed() && exists(/databases/$(database)/documents/apps/$(appId)/spaces/$(spaceId)/members/$(request.auth.uid));
+    }
+    function spaceRole(appId, spaceId) {
+      return isMember(appId, spaceId) ? memberDoc(appId, spaceId).data.role : '';
+    }
+    function canEditSpace(appId, spaceId) {
+      return spaceRole(appId, spaceId) in ['editor', 'owner'];
+    }
+    function isSpaceOwner(appId, spaceId) {
+      return spaceRole(appId, spaceId) == 'owner';
+    }
+
+    // ---- shared identity profile ------------------------------------------
+    // /users/{uid} is the cross-app profile (readable by any signed-in user so people
+    // can be found by uid for sharing; writable only by the owner).
+    match /users/{uid} {
+      allow read: if isAuthed();
+      allow write: if isOwner(uid);
+    }
+
+    // Lookup table mapping an email -> uid so a "share by email" flow can resolve a
+    // recipient. The record is keyed by the owner's email and self-owned.
+    match /emailIndex/{email} {
+      allow read: if isAuthed();
+      allow write: if isAuthed() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // ---- per-app namespace -------------------------------------------------
+    match /apps/{appId} {
+
+      // Private, per-user data: /apps/{appId}/users/{uid}/{collection}/{docId}
+      match /users/{uid}/{document=**} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Shared spaces: /apps/{appId}/spaces/{spaceId}
+      match /spaces/{spaceId} {
+        // The space metadata doc.
+        allow read: if isMember(appId, spaceId);
+        allow create: if isAuthed()
+          && request.resource.data.ownerUid == request.auth.uid;
+        allow update: if isSpaceOwner(appId, spaceId);
+        allow delete: if isSpaceOwner(appId, spaceId);
+
+        // Membership. Only the space owner may set/change a member's role (prevents
+        // privilege escalation). A user may self-join as a viewer and may leave (delete
+        // their own membership), but may NOT update their own role.
+        match /members/{memberUid} {
+          allow read: if isMember(appId, spaceId) || isOwner(memberUid);
+          allow create: if isSpaceOwner(appId, spaceId)
+            || (isOwner(memberUid) && request.resource.data.role == 'viewer');
+          allow update: if isSpaceOwner(appId, spaceId);
+          allow delete: if isSpaceOwner(appId, spaceId) || isOwner(memberUid);
+        }
+
+        // Shared collections inside a space (e.g. pantry, roasts, roaster):
+        // members read, editors/owners write. Nested under a literal "data" so this rule
+        // cannot overlap the sibling "members" collection (which would let an editor
+        // escalate roles). Path: apps/{appId}/spaces/{spaceId}/data/{name}/items/{docId}.
+        match /data/{name}/items/{docId} {
+          allow read: if isMember(appId, spaceId);
+          allow write: if canEditSpace(appId, spaceId);
+        }
+      }
+    }
+
+    // ---- GOLF ANALOG (guidance only — not built in this pilot) -------------
+    // A round recorded by one player but involving others would be shared with all
+    // participants. Pattern: store participants[] (uids) on the round and allow read to
+    // any participant, write to the recorder/owner. e.g.:
+    //
+    //   match /apps/golf-handicap/rounds/{roundId} {
+    //     allow read: if isAuthed() && request.auth.uid in resource.data.participants;
+    //     allow create: if isAuthed() && request.resource.data.recorderUid == request.auth.uid
+    //                   && request.auth.uid in request.resource.data.participants;
+    //     allow update, delete: if isAuthed() && resource.data.recorderUid == request.auth.uid;
+    //   }
+    //
+    // This reuses the same space/role machinery above when a round belongs to a space.
+  }
+}
