@@ -66,7 +66,8 @@ export function deleteRoastFromHistory(id) {
 export const DEFAULT_DETECTION_SETTINGS = {
     thresholdMultiplier: 1.5, // spike must exceed baseline noise by this factor (lower = more sensitive)
     cracksRequired: 3,        // snaps within the cluster window needed to confirm a crack phase
-    secondCrackPitch: 0.5     // high-band energy share above which cracking reads as second crack
+    secondCrackPitch: 0.5,    // high-band energy share above which cracking reads as second crack
+    calibrationSeconds: 8     // how long Calibrate Noise samples the room (longer catches intermittent talking)
 };
 
 export function getDetectionSettings() {
@@ -274,6 +275,33 @@ export function deleteColorTarget(id) {
     saveColorTargets(getColorTargets().filter(t => t.id !== id));
 }
 
+// --- Roast prep batches (weighed-out portions with a photo) ---
+// Each batch: { id, beanId, beanName, grams, photo (downscaled dataURL), note, createdAt }.
+// Lets the user portion green beans into containers, snap a photo to tell them apart,
+// then load the bean + weight onto the Active Roast screen in one tap.
+
+export function getPrepBatches() {
+    const s = localStorage.getItem('prepBatches');
+    return s ? JSON.parse(s) : [];
+}
+
+export function savePrepBatches(list) {
+    localStorage.setItem('prepBatches', JSON.stringify(list));
+}
+
+export function addPrepBatch(batch) {
+    const list = getPrepBatches();
+    batch.id = Date.now().toString();
+    batch.createdAt = Date.now();
+    list.push(batch);
+    savePrepBatches(list);
+    return batch;
+}
+
+export function deletePrepBatch(id) {
+    savePrepBatches(getPrepBatches().filter(b => b.id !== id));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {
@@ -286,6 +314,7 @@ export function exportAllData() {
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
+        prepBatches: getPrepBatches(),
         tempUnit: getTempUnit(),
         complexityTier: getTier(),
         featureTiers: getFeatureTiers(),
@@ -317,6 +346,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.colorTargets)) {
         saveColorTargets(data.colorTargets);
+    }
+    if (Array.isArray(data.prepBatches)) {
+        savePrepBatches(data.prepBatches);
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);

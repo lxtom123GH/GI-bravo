@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-9j4xyxBb.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-RQDvBsqv.css">
+  <script type="module" crossorigin src="/assets/index-ByaZlwBN.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DgArmMS7.css">
 </head>
 <body>
     <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
@@ -60,6 +60,12 @@
         <div id="dashboard" class="tab-pane active">
             <h1>Active Roast Dashboard</h1>
 
+            <details id="customisePanel" style="margin-bottom: 15px;">
+                <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">⚙️ Customise this screen — hide things you don't use</summary>
+                <div id="customiseOptions" style="padding: 10px 5px 0; display: flex; flex-direction: column; gap: 8px;"></div>
+                <small style="display: block; padding: 8px 5px 0; color: var(--text-muted);">Tip: the <strong>Mode</strong> selector (bottom-left) also switches between Easy, Moderate and Expert detail.</small>
+            </details>
+
             <div class="card">
                 <h3>Roast Setup</h3>
                 <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
@@ -82,6 +88,12 @@
                     </div>
                 </div>
 
+                <div id="prepBatchRow" style="display: none; margin-bottom: 15px;">
+                    <label for="prepBatchSelect"><strong>Use a prepped batch</strong></label>
+                    <select id="prepBatchSelect" data-hint="Load a batch you weighed out in the Bean Pantry — fills the bean and green weight, and shows your photo."><option value="">None</option></select>
+                    <img id="prepBatchThumb" alt="Prepped batch photo" style="display: none; max-height: 120px; border-radius: 6px; margin-top: 8px;">
+                </div>
+
                 <!-- Behmor Controls -->
                 <div id="behmorControls" style="border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <h4>Behmor Settings</h4>
@@ -96,7 +108,7 @@
                         </select>
                         <button id="setDefaultWeightBtn" type="button" style="font-size: 0.8rem; padding: 5px 10px;">Set as default</button>
                     </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
                         <label>Profile:</label>
                         <button class="behmor-profile active" data-profile="P1">P1</button>
                         <button class="behmor-profile" data-profile="P2">P2</button>
@@ -104,7 +116,7 @@
                         <button class="behmor-profile" data-profile="P4">P4</button>
                         <button class="behmor-profile" data-profile="P5">P5</button>
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;" data-section="logactions">
                         <label>Log Actions:</label>
                         <button class="behmor-action" data-action="Prog A">Prog A</button>
                         <button class="behmor-action" data-action="Prog B">Prog B</button>
@@ -144,6 +156,9 @@
                     </div>
                 </div>
 
+                <!-- First-crack alarm acknowledge: appears (and rings) when a crack is auto-detected -->
+                <button id="ackAlarmBtn" type="button" style="display: none; width: 100%; margin-bottom: 12px; padding: 14px; font-size: 1.1rem; background-color: #e53935; box-shadow: 0 0 8px #e53935;">🔔 Crack detected — tap to silence</button>
+
                 <div class="roast-controls">
                     <button id="calibrateBtn" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
                     <button id="startBtn" data-hint="Start the roast and listen for first and second crack automatically. You can still mark cracks and log power yourself.">Start Roast & Listening</button>
@@ -152,13 +167,32 @@
                     <button class="demo-btn" type="button">Try a demo (no mic)</button>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button id="markDryEndBtn" style="flex: 1; background-color: #8d6e63;" disabled data-hint="Tap when the beans turn yellow (end of drying). Splits the roast into drying / Maillard / development phases.">Mark: Dry End</button>
-                    <button id="markFirstCrackBtn" style="flex: 1; background-color: #2196F3;" disabled>Manual: Mark 1st Crack</button>
-                    <button id="markSecondCrackBtn" style="flex: 1; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">🔔 Alarm sound</summary>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 5px 0;">
+                        <label for="alarmToneSelect" style="margin: 0;">Crack alarm tone</label>
+                        <select id="alarmToneSelect" style="width: auto; margin: 0;" data-hint="The sound that repeats when a crack is detected, until you tap to silence it.">
+                            <option value="chime">Chime</option>
+                            <option value="beep">Beep</option>
+                            <option value="bell">Bell</option>
+                            <option value="buzzer">Buzzer</option>
+                        </select>
+                        <button id="testAlarmBtn" type="button" style="font-size: 0.85rem; padding: 6px 12px;">Test</button>
+                        <small style="color: var(--text-muted);">Repeats until you tap “silence”.</small>
+                    </div>
+                </details>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <button id="markDryEndBtn" style="flex: 1; min-width: 120px; background-color: #8d6e63;" disabled data-hint="Tap when the beans turn yellow (end of drying). Splits the roast into drying / Maillard / development phases.">Mark: Dry End</button>
+                    <button id="markFirstCrackBtn" style="flex: 1; min-width: 120px; background-color: #2196F3;" disabled>Manual: Mark 1st Crack</button>
+                    <button id="markSecondCrackBtn" style="flex: 1; min-width: 120px; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button id="undoFirstCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="False alarm? Clear the recorded first crack and keep listening for the real one.">✗ Clear 1st crack</button>
+                    <button id="undoSecondCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="Clear a wrongly-detected second crack and keep listening.">✗ Clear 2nd crack</button>
                 </div>
 
-                <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
                     <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;" data-hint="Type a bean temperature reading to track Rate of Rise (RoR).">
                     <select id="tempUnit" style="width: auto; margin-bottom: 0;">
                         <option value="C">°C</option>
@@ -168,24 +202,24 @@
                     <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
                 </div>
 
-                <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
                     <input type="number" id="envTempInput" placeholder="Environment temp (ET)" step="1" style="flex: 1; margin-bottom: 0;">
                     <button id="logEnvTempBtn" disabled>Log ET</button>
                 </div>
 
-                <div class="tier-expert" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
                     <button id="connectProbeBtn" type="button" data-hint="Connect a DIY Bluetooth thermocouple to log temperature automatically.">Connect probe (Bluetooth)</button>
                     <button id="connectSerialBtn" type="button" data-hint="Connect a USB thermocouple (one Celsius reading per line) to log temperature automatically.">Connect probe (USB)</button>
                     <span id="probeStatus" style="color: var(--text-muted); font-size: 0.9rem;">Probe: not connected</span>
                 </div>
 
-                <div class="tier-moderate" style="margin-bottom: 15px;">
+                <div class="tier-moderate" data-section="reference" style="margin-bottom: 15px;">
                     <label for="referenceSelect"><strong>Follow reference roast</strong></label>
                     <select id="referenceSelect" data-hint="Overlay a past roast or template and get a heads-up before its cracks." ><option value="">None</option></select>
                     <small style="color: var(--text-muted);">Overlays a past roast's curve and warns ~10s before its cracks.</small>
                 </div>
 
-                <details class="tier-moderate" style="margin-bottom: 15px;">
+                <details class="tier-moderate" data-section="detection" style="margin-bottom: 15px;">
                     <summary style="cursor: pointer;">Detection Settings</summary>
                     <div style="padding: 15px 5px 5px;">
                         <div style="margin-bottom: 15px;">
@@ -208,6 +242,13 @@
                             </label>
                             <input type="range" id="pitchSetting" min="0.3" max="0.8" step="0.05" value="0.5">
                             <small style="color: var(--text-muted);">High-frequency energy share above which cracking is read as second crack. Lower = detects 2nd crack more readily.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="calibSetting">
+                                <strong>Calibration time:</strong> <span id="calibValue">8s</span>
+                            </label>
+                            <input type="range" id="calibSetting" min="3" max="20" step="1" value="8">
+                            <small style="color: var(--text-muted);">How long “Calibrate Noise” samples the room. Use a longer time in rooms with <strong>intermittent talking</strong>, and let normal sounds happen while it runs.</small>
                         </div>
                         <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
                     </div>
@@ -265,6 +306,16 @@
                     <input type="number" id="beanCost" placeholder="Cost per kg (optional)" min="0" step="0.01">
                     <button type="submit">Add to Pantry</button>
                 </form>
+            </div>
+
+            <div class="card">
+                <h3>Roast prep — weigh-out</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    Weigh beans into containers and snap a photo so you remember which is which.
+                    Then load one onto <strong>Active Roast</strong> in a single tap.
+                </p>
+                <button id="newPrepBatchBtn" data-hint="Portion out a batch: pick the bean, enter the weight, and photograph the container.">＋ Weigh out a batch</button>
+                <div id="prepList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;"></div>
             </div>
 
             <div id="pantryList">
