@@ -1,12 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { planRoasts, roasterCapacity } from '../../js/planner.js';
+import { planRoasts, roasterCapacity, capacityFor } from '../../js/planner.js';
 
 describe('roasterCapacity', () => {
-    it('knows the Behmor drum range', () => {
-        expect(roasterCapacity('behmor')).toEqual({ min: 225, max: 454 });
+    it('knows the Behmor drum range (~100 g min to 454 g max)', () => {
+        expect(roasterCapacity('behmor')).toEqual({ min: 100, max: 454 });
     });
     it('falls back for unknown models', () => {
         expect(roasterCapacity('mystery').max).toBeGreaterThan(0);
+    });
+});
+
+describe('capacityFor', () => {
+    it('uses the profile min/max when set', () => {
+        expect(capacityFor({ model: 'kkto', minG: 400, maxG: 1200 })).toEqual({ min: 400, max: 1200 });
+    });
+    it('falls back to the model default when the profile has none', () => {
+        expect(capacityFor({ model: 'behmor' })).toEqual({ min: 100, max: 454 });
     });
 });
 

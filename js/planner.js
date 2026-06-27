@@ -5,14 +5,26 @@
 
 import { getActiveRoaster, getLastGreenWeight } from './storage.js';
 
-// Sensible drum capacity per roaster model (grams). Roasting well below min under-fills
-// the drum (uneven); above max overloads it. Tunable later per-profile.
+// Drum capacity per roaster MODEL (grams), the default when a profile doesn't set its own.
+// Behmor 2000AB Plus: ~100 g min (it roasts 1/4 lb / ~113 g and ~100 g samples) to 454 g
+// (1 lb) — verified vs the Behmor manual / Sweet Maria's. KKTO varies by build, so treat
+// its value as an editable estimate (set per profile).
 const CAPACITY = {
-    behmor: { min: 225, max: 454 },
-    kkto: { min: 300, max: 1000 }
+    behmor: { min: 100, max: 454 },
+    kkto: { min: 250, max: 1000 }
 };
 export function roasterCapacity(model) {
-    return CAPACITY[model] || { min: 150, max: 1000 };
+    return CAPACITY[model] || { min: 100, max: 1000 };
+}
+
+// Capacity to plan against: the profile's own min/max if set, else the model default.
+// Lets variants (Mark's KKTO, Stuart's Behmor) be accurate instead of guessed.
+export function capacityFor(roaster) {
+    const def = roasterCapacity(roaster && roaster.model);
+    return {
+        min: roaster && roaster.minG > 0 ? roaster.minG : def.min,
+        max: roaster && roaster.maxG > 0 ? roaster.maxG : def.max
+    };
 }
 
 /**
@@ -48,7 +60,7 @@ export function planRoasts(amountG, { min = 150, max = amountG, target } = {}) {
 // Show a plan for a bag of `amountG` green on the active roaster.
 export function openPlanModal(beanName, amountG) {
     const roaster = getActiveRoaster() || { model: 'behmor', name: 'roaster' };
-    const cap = roasterCapacity(roaster.model);
+    const cap = capacityFor(roaster);
     const target = getLastGreenWeight() || undefined;
 
     const def = String(amountG > 0 ? amountG : (getLastGreenWeight() || 2500));
@@ -69,8 +81,14 @@ export function openPlanModal(beanName, amountG) {
             `<li>${i === 0 ? '<strong>' : ''}${o.roasts} × ${o.size} g${o.leftover ? ` (${o.leftover} g left)` : ' (uses it all ✓)'}${i === 0 ? '</strong> — best fit' : ''}</li>`).join('')
         : '<li>No clean fit within the roaster’s range — adjust the amount.</li>';
 
+    let leftoverNote = '';
+    if (plan.atTarget && plan.atTarget.leftover) {
+        leftoverNote = plan.atTarget.leftover < cap.min
+            ? ` (a ${plan.atTarget.leftover} g runt — below the ${cap.min} g drum minimum, too little to roast evenly)`
+            : ` + a smaller final batch of <strong>${plan.atTarget.leftover} g</strong>`;
+    }
     const targetLine = plan.atTarget
-        ? `<p style="margin-top: 10px;">Your usual <strong>${plan.atTarget.size} g</strong>: ${plan.atTarget.roasts} roasts${plan.atTarget.leftover ? ` + <strong>${plan.atTarget.leftover} g</strong> left over${plan.atTarget.leftover < cap.min ? ' (a runt batch — under the drum minimum)' : ''}` : ' (uses it all ✓)'}.</p>`
+        ? `<p style="margin-top: 10px;">Your usual <strong>${plan.atTarget.size} g</strong>: ${plan.atTarget.roasts} roasts${plan.atTarget.leftover ? leftoverNote : ' (uses it all ✓)'}.</p>`
         : '';
 
     modal.innerHTML = `

@@ -17,13 +17,15 @@ export function initPantry() {
             const process = document.getElementById('beanProcess').value;
             const quantity = parseFloat(document.getElementById('beanQuantity').value) || 0;
             const costPerKg = parseFloat(document.getElementById('beanCost').value) || 0;
+            const density = document.getElementById('beanDensity')?.value || '';
+            const size = document.getElementById('beanSize')?.value || '';
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process, quantity, costPerKg };
+            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size };
             addBeanToPantry(newBean);
 
             pantryForm.reset();

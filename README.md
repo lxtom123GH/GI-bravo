@@ -48,7 +48,10 @@ model) and each roast is tagged with the machine it was done on.
 - 🧪 **Blend builder** — define a recipe (e.g. 60% Colombia · 40% Brazil), pre- or post-blend,
   then "weigh out" a batch into per-component prep batches.
 - 🧮 **Batch planner** — "Plan roasts" suggests roast sizes that fit your drum and divide a bag
-  evenly (2.5 kg → 6 × 417 g, no runt) and shows the leftover your usual size leaves.
+  evenly (2.5 kg → 6 × 417 g, no runt) and shows the leftover your usual size leaves. Drum
+  capacity is per roaster profile (Behmor ≈ 100–454 g; editable for variants).
+- 🔀 **Co-roast compatibility** — optional bean density/size; a pre-blend warns when beans differ
+  too much to roast evenly together.
 - ⚖️ **Yield** — log roasted (post-cool) weight to get weight-loss %.
 - 📚 **Roast history** with timelines, logs, and tasting notes.
 - 👅 **Tiered tasting & cupping** — emoji → SCA flavor wheel → **official

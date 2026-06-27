@@ -12,6 +12,21 @@ const CLASSIC_BLENDS = [
     { name: 'Mocha-Java (classic)', ratio: '25% Yemen/Ethiopia · 75% Indonesian' }
 ];
 
+// PURE: assess whether components suit PRE-blending (roast together). Beans of differing
+// density or size roast unevenly in one batch, so flag it and suggest post-blend instead.
+// `beans` is the pantry list (to look up density/size by beanId).
+export function preBlendWarning(componentBeanIds, beans) {
+    const get = (id, key) => { const b = (beans || []).find(x => x.id === id); return b ? (b[key] || '') : ''; };
+    const densities = new Set(componentBeanIds.map(id => get(id, 'density')).filter(Boolean));
+    const sizes = new Set(componentBeanIds.map(id => get(id, 'size')).filter(Boolean));
+    if (densities.size > 1 || sizes.size > 1) {
+        return { level: 'warn', msg: '⚠️ These beans differ in density/size — they may roast unevenly together. Consider post-blend (roast each separately, then combine).' };
+    }
+    const allHave = componentBeanIds.length > 0 && componentBeanIds.every(id => get(id, 'density') || get(id, 'size'));
+    if (allHave) return { level: 'ok', msg: '✓ Similar size & density — should co-roast evenly.' };
+    return { level: 'info', msg: 'Tip: pre-blending works best with beans of similar size & density. Add those details to your beans for a compatibility check.' };
+}
+
 // PURE: split a total weight across components by percentage. Rounds to whole grams and
 // puts any rounding remainder on the largest component so the parts sum to the total.
 export function splitBlend(components, totalG) {
@@ -116,6 +131,7 @@ function openBlendModal() {
         <label><strong>Components</strong> <span id="pctTotal" style="color: var(--text-muted); font-weight: normal;"></span></label>
         <div id="blendComps">${componentRow()}${componentRow()}</div>
         <button type="button" id="addCompBtn" style="font-size: 0.85rem; padding: 6px 12px;">＋ Add component</button>
+        <div id="blendCompat" style="font-size: 0.85rem; margin-top: 8px;"></div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
             <button id="blendCancel" class="danger">Cancel</button>
             <button id="blendSave" style="background-color: var(--success);">Save blend</button>
@@ -124,19 +140,32 @@ function openBlendModal() {
 
     const compsWrap = modal.querySelector('#blendComps');
     const pctTotalEl = modal.querySelector('#pctTotal');
+    const compatEl = modal.querySelector('#blendCompat');
+    const typeSel = modal.querySelector('#blendType');
     const refreshTotal = () => {
         const total = [...compsWrap.querySelectorAll('.comp-pct')].reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
         pctTotalEl.textContent = `— total ${total}%${total === 100 ? ' ✓' : ''}`;
         pctTotalEl.style.color = total === 100 ? 'var(--success)' : 'var(--text-muted)';
     };
+    // Pre-blend compatibility note (only meaningful when roasting together).
+    const refreshCompat = () => {
+        if (typeSel.value !== 'pre') { compatEl.textContent = ''; return; }
+        const ids = [...compsWrap.querySelectorAll('.comp-bean')].map(s => s.value);
+        const w = preBlendWarning(ids, pantry);
+        compatEl.textContent = w.msg;
+        compatEl.style.color = w.level === 'warn' ? 'var(--danger, #ef4444)' : (w.level === 'ok' ? 'var(--success)' : 'var(--text-muted)');
+    };
     const wireRow = (row) => {
         row.querySelector('.comp-del').addEventListener('click', () => {
-            if (compsWrap.querySelectorAll('.blend-comp').length > 1) { row.remove(); refreshTotal(); }
+            if (compsWrap.querySelectorAll('.blend-comp').length > 1) { row.remove(); refreshTotal(); refreshCompat(); }
         });
         row.querySelector('.comp-pct').addEventListener('input', refreshTotal);
+        row.querySelector('.comp-bean').addEventListener('change', refreshCompat);
     };
     compsWrap.querySelectorAll('.blend-comp').forEach(wireRow);
+    typeSel.addEventListener('change', refreshCompat);
     refreshTotal();
+    refreshCompat();
 
     modal.querySelector('#addCompBtn').addEventListener('click', () => {
         const tmp = document.createElement('div');
@@ -144,6 +173,7 @@ function openBlendModal() {
         const row = tmp.firstElementChild;
         compsWrap.appendChild(row);
         wireRow(row);
+        refreshCompat();
     });
     modal.querySelector('#blendCancel').addEventListener('click', close);
 

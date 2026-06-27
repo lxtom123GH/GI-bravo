@@ -98,7 +98,12 @@ an official Agtron number.
   about what you'll drink in ~2 weeks.
 - **Blends:** in **Bean Pantry → Blends**, build a recipe (e.g. 60% Colombia · 40% Brazil),
   choose *pre-blend* (roast together) or *post-blend* (roast each, combine after), then
-  **Weigh out** a batch — the app splits it into per-bean prep batches ready to roast.
+  **Weigh out** a batch — the app splits it into per-bean prep batches ready to roast. If you
+  set each bean's optional **density** and **size**, a *pre-blend* warns when beans differ too
+  much to roast evenly together (use post-blend instead).
+- **Roaster capacity:** each roaster has a drum min/max (Behmor ≈ 100–454 g) used by **Plan
+  roasts**. Set your own under **⚙ Manage roasters** when adding a machine (a KKTO build, a
+  friend's roaster, etc.).
 - **Reproduce a good roast:** save it as a **Behmor template** (or pick it under
   *Follow reference roast*) so next time the app guides you with its curve and
   crack timing.
