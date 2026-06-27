@@ -71,6 +71,11 @@ restock; low-stock warning; stock value; cost feeds the spend dashboard.
 **Today ✅:** pantry list with quantities, low-stock, cost, stock value; consumption & spend
 dashboard; backup/restore.
 
+**Shipped ✅ (freshness v1, `js/freshness.js`):** the pantry shows each lot's **green age**
+("bought 5 days ago"), flags lots over ~12 months ("roast soon"), and marks the **oldest
+in-stock** bean "roast this first" (FIFO). Each roast in History shows a **rest/peak badge**
+(resting → ready/peak → past peak). Still to come below: lots, roasted inventory.
+
 **Gaps / ideas ✨ (this is where freshness lives):**
 - **Two clocks, not one.** Green beans keep ~12 months+; **roasted** beans have a short arc
   (degas a few days, peak ~4–14 days, fade after). Track **green age** (purchased date) *and*,
@@ -105,14 +110,14 @@ You asked "what blends, where to look, can you find them?" — yes:
 - *Pre-blend* — mix greens, roast together (simple, one roast).
 - *Post-blend* — roast each component to its own ideal, then combine (more control, more work).
 
-**Today ◐:** the pantry holds the components; nothing models a blend.
-**Ideas ✨:**
-- **Blend builder** — pick components + ratios (e.g. 60/40), name it, save as a recipe. It can
-  generate a **prep plan** (weigh 270 g Colombian + 180 g Brazil for a 450 g pre-blend) that flows
-  straight into the weigh-out batches we just built.
+**Shipped ✅ (blend builder, `js/blends.js`):** define a recipe (components + %), pre- or
+post-blend; **"Weigh out"** splits a chosen batch weight into per-component **prep batches**
+(60/40 of 450 g → 270 g + 180 g) that load onto Active Roast. Classic starting points shown.
+**Ideas ✨ (still to come):**
 - **Suggested blends** — given what's in your pantry, surface 2–3 classic ratios you *can* make
   right now, with the source links above.
-- Track **pre- vs post-blend** on the roast so tasting notes know what they're describing.
+- Track **pre- vs post-blend** on the *roast record* so tasting notes know what they're describing
+  (the blend recipe already records it; carry it onto the roast).
 
 ---
 
@@ -200,10 +205,13 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 1. ✅ **Roaster profiles + per-roast machine tag, single-roaster by default** — DONE
    (`js/roasters.js`): single-roaster shows no picker; "I use more than one roaster" opts into a
    picker; each roast is tagged with its machine. _(+ swipe-style personalisation still to come.)_
-2. **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — directly answers "dates"
-   and "no old bins"; high daily value.
-3. **Blend builder → prep plan** — ratios into the weigh-out batches we already have; pairs with
-   the blend research above.
+2. ✅ **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — DONE
+   (`js/freshness.js`): green age + "roast soon"/"roast this first" in the pantry, rest/peak
+   badge per roast in History.
+3. ✅ **Blend builder → prep plan** — DONE (`js/blends.js`): ratios → per-component weigh-out
+   prep batches; pre/post-blend recorded.
+3.5 ✅ **Batch planner** — DONE (`js/planner.js`): "Plan roasts" suggests drum-fitting sizes that
+   divide a bag evenly (2.5 kg → 6 × 417 g, no runt) + shows the leftover the usual size leaves.
 4. **Machine-faithful roaster control panel (pre-roast plan + live, Behmor first)** — the biggest,
    most differentiating piece; tames the manual. Build after profiles exist.
 5. **Tastiness-per-dollar value leaderboard** — small, motivating, uses existing score + cost.

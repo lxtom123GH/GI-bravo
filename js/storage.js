@@ -12,6 +12,7 @@ export function savePantry(pantry) {
 export function addBeanToPantry(bean) {
     const pantry = getPantry();
     bean.id = Date.now().toString(); // simple unique ID
+    if (!bean.purchasedAt) bean.purchasedAt = Date.now(); // for green-bean age / FIFO
     pantry.push(bean);
     savePantry(pantry);
     return bean;
@@ -373,6 +374,31 @@ export function deletePrepBatch(id) {
     savePrepBatches(getPrepBatches().filter(b => b.id !== id));
 }
 
+// --- Blend recipes ---
+// Each: { id, name, type: 'pre' | 'post', components: [{ beanId, beanName, pct }], note }.
+// "Weigh out" a blend turns the ratios into per-component prep batches.
+
+export function getBlends() {
+    const s = localStorage.getItem('blends');
+    return s ? JSON.parse(s) : [];
+}
+
+export function saveBlends(list) {
+    localStorage.setItem('blends', JSON.stringify(list));
+}
+
+export function addBlend(blend) {
+    const list = getBlends();
+    blend.id = Date.now().toString();
+    list.push(blend);
+    saveBlends(list);
+    return blend;
+}
+
+export function deleteBlend(id) {
+    saveBlends(getBlends().filter(b => b.id !== id));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {
@@ -386,6 +412,7 @@ export function exportAllData() {
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
         prepBatches: getPrepBatches(),
+        blends: getBlends(),
         roasters: getRoasters(),
         roasterMode: getRoasterMode(),
         activeRoasterId: getActiveRoasterId(),
@@ -423,6 +450,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.prepBatches)) {
         savePrepBatches(data.prepBatches);
+    }
+    if (Array.isArray(data.blends)) {
+        saveBlends(data.blends);
     }
     if (Array.isArray(data.roasters) && data.roasters.length) {
         saveRoasters(data.roasters);

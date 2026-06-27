@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-DGvVb2Nx.js"></script>
+  <script type="module" crossorigin src="/assets/index-CcwSkXDV.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DgArmMS7.css">
 </head>
 <body>
@@ -302,6 +302,20 @@
                     </select>
                     <input type="number" id="beanQuantity" placeholder="Quantity on hand (grams)" min="0" step="1">
                     <input type="number" id="beanCost" placeholder="Cost per kg (optional)" min="0" step="0.01">
+                    <div style="display: flex; gap: 8px;">
+                        <select id="beanDensity" style="flex: 1;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
+                            <option value="">Density (optional)…</option>
+                            <option value="Low">Low density / soft</option>
+                            <option value="Medium">Medium density</option>
+                            <option value="High">High density / hard</option>
+                        </select>
+                        <select id="beanSize" style="flex: 1;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
+                            <option value="">Bean size (optional)…</option>
+                            <option value="Small">Small</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Large">Large</option>
+                        </select>
+                    </div>
                     <button type="submit">Add to Pantry</button>
                 </form>
             </div>
@@ -314,6 +328,18 @@
                 </p>
                 <button id="newPrepBatchBtn" data-hint="Portion out a batch: pick the bean, enter the weight, and photograph the container.">＋ Weigh out a batch</button>
                 <div id="prepList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;"></div>
+            </div>
+
+            <div class="card tier-moderate">
+                <h3>Blends</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    Build a recipe from your beans (e.g. 60% Colombia · 40% Brazil), then
+                    <strong>weigh it out</strong> — the app splits a batch into per-component
+                    prep batches ready to roast. <em>Pre-blend</em> = roast together;
+                    <em>post-blend</em> = roast separately, combine after.
+                </p>
+                <button id="newBlendBtn" data-hint="Pick beans and percentages (totalling 100%). Then 'Weigh out' turns a batch weight into per-bean amounts.">＋ Create a blend</button>
+                <div id="blendList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;"></div>
             </div>
 
             <div id="pantryList">
@@ -467,6 +493,9 @@
                 <h3>Ongoing use</h3>
                 <ul>
                     <li><strong>Reproduce a roast:</strong> save it as a Behmor template, or follow it as a reference.</li>
+                    <li><strong>Freshness:</strong> the Bean Pantry shows each bean's age, flags old lots, and marks the oldest to roast first. Each roast shows a 🌱 <em>resting → ready (peak) → past peak</em> badge.</li>
+                    <li><strong>Plan roasts:</strong> on a pantry bean, <strong>Plan roasts</strong> suggests sizes that fit your drum and divide a bag evenly (2.5 kg → 6 × 417 g, no runt).</li>
+                    <li><strong>Blends:</strong> in <strong>Bean Pantry → Blends</strong>, set ratios (e.g. 60/40), then <strong>Weigh out</strong> splits a batch into per-bean prep batches. Set each bean's optional <strong>density/size</strong> and a pre-blend warns if beans won't roast evenly together.</li>
                     <li><strong>Compare</strong> two batches and view <strong>Trends</strong> over time in Roast History.</li>
                     <li><strong>Back up regularly:</strong> Roast History → <strong>Data Backup → Export</strong>. Your data lives only in this browser, so keep backups.</li>
                 </ul>

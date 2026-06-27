@@ -8,6 +8,7 @@ import {
     getRoasters, addRoaster, deleteRoaster, getRoasterMode, saveRoasterMode,
     getActiveRoasterId, saveActiveRoasterId, getActiveRoaster
 } from './storage.js';
+import { roasterCapacity } from './planner.js';
 
 const MODEL_LABELS = { behmor: 'Behmor 2000AB Plus', kkto: 'KKTO' };
 
@@ -85,6 +86,11 @@ function openRoasterModal() {
                     <option value="behmor">Behmor 2000AB Plus</option>
                     <option value="kkto">KKTO</option>
                 </select>
+                <label style="font-size: 0.85rem; color: var(--text-muted);">Drum capacity (g) — used by the batch planner</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="newRoasterMin" placeholder="Min g" style="width: 50%;">
+                    <input type="number" id="newRoasterMax" placeholder="Max g" style="width: 50%;">
+                </div>
                 <button id="addRoasterBtn" type="button">Add roaster</button>
             </div>
             <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
@@ -110,15 +116,26 @@ function openRoasterModal() {
             rows.appendChild(row);
         });
 
+        // Prefill the capacity fields from the model's default, and update on model change.
+        const modelSel = modal.querySelector('#newRoasterModel');
+        const minIn = modal.querySelector('#newRoasterMin');
+        const maxIn = modal.querySelector('#newRoasterMax');
+        const fillCap = () => { const c = roasterCapacity(modelSel.value); minIn.placeholder = `Min ${c.min}`; maxIn.placeholder = `Max ${c.max}`; };
+        fillCap();
+        modelSel.addEventListener('change', fillCap);
+
         modal.querySelector('#multiToggle').addEventListener('change', (e) => {
             saveRoasterMode(e.target.checked ? 'multi' : 'single');
             announce();
         });
         modal.querySelector('#addRoasterBtn').addEventListener('click', () => {
             const name = modal.querySelector('#newRoasterName').value.trim();
-            const model = modal.querySelector('#newRoasterModel').value;
+            const model = modelSel.value;
             if (!name) { alert('Give the roaster a name.'); return; }
-            const r = addRoaster({ name, model });
+            const def = roasterCapacity(model);
+            const minG = parseFloat(minIn.value) || def.min;
+            const maxG = parseFloat(maxIn.value) || def.max;
+            const r = addRoaster({ name, model, minG, maxG });
             // Adding a second roaster implies multi-roaster use.
             if (getRoasters().length > 1) saveRoasterMode('multi');
             saveActiveRoasterId(r.id);

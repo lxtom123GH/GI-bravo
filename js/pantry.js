@@ -1,4 +1,6 @@
 import { getPantry, addBeanToPantry, deleteBeanFromPantry, adjustBeanQuantity } from './storage.js';
+import { greenAge, fifoBeanId } from './freshness.js';
+import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
 
@@ -15,13 +17,15 @@ export function initPantry() {
             const process = document.getElementById('beanProcess').value;
             const quantity = parseFloat(document.getElementById('beanQuantity').value) || 0;
             const costPerKg = parseFloat(document.getElementById('beanCost').value) || 0;
+            const density = document.getElementById('beanDensity')?.value || '';
+            const size = document.getElementById('beanSize')?.value || '';
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process, quantity, costPerKg };
+            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size };
             addBeanToPantry(newBean);
 
             pantryForm.reset();
@@ -47,6 +51,8 @@ export function renderPantryList() {
         pantryListDiv.innerHTML = '<p>Your pantry is empty. Add some beans to get started!</p>';
         return;
     }
+
+    const useFirstId = fifoBeanId(pantry); // oldest in-stock green → gentle FIFO nudge
 
     pantry.forEach(bean => {
         const beanCard = document.createElement('div');
@@ -84,12 +90,30 @@ export function renderPantryList() {
             details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg · stock value ${onHandValue.toFixed(2)}</small>`;
         }
 
+        // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
+        // oldest in-stock bean to roast first (FIFO).
+        const age = greenAge(bean.purchasedAt);
+        if (age) {
+            const ageColor = age.stale ? 'var(--danger)' : 'var(--text-muted)';
+            const staleNote = age.stale ? ' — old, roast soon' : '';
+            details += `<br><small style="color: ${ageColor};">🌱 bought ${age.text} ago${staleNote}</small>`;
+        }
+        if (qty > 0 && bean.id === useFirstId) {
+            details += `<br><small style="color: var(--accent);">⏳ oldest in stock — roast this first</small>`;
+        }
+
         const infoDiv = document.createElement('div');
         infoDiv.innerHTML = details;
 
         const btnGroup = document.createElement('div');
         btnGroup.style.display = 'flex';
         btnGroup.style.gap = '8px';
+
+        const planBtn = document.createElement('button');
+        planBtn.textContent = 'Plan roasts';
+        planBtn.style.padding = '5px 10px';
+        planBtn.setAttribute('data-hint', "Work out roast sizes that fit your roaster and divide this bag evenly (e.g. 2.5 kg → 6 × 417 g, no leftover).");
+        planBtn.addEventListener('click', () => openPlanModal(bean.name, Number(bean.quantity) || 0));
 
         const restockBtn = document.createElement('button');
         restockBtn.textContent = 'Restock';
@@ -116,6 +140,7 @@ export function renderPantryList() {
             }
         });
 
+        btnGroup.appendChild(planBtn);
         btnGroup.appendChild(restockBtn);
         btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);

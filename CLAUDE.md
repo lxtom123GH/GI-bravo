@@ -45,7 +45,14 @@ Do these **as a matter of course**, in the same change — not as a follow-up.
   `vite build`, so the committed `dist` hash won't match the live one (that's fine).
 
 ## Workflow notes
-- Build on top of an open PR's branch when your change touches the same files, to avoid the
-  recurring `index.html`/`dist` merge conflicts; tell the owner the merge order.
+- **Stacked PRs — the trap (learned 2026-06-27):** if you base a PR on another *feature* branch
+  (`base: feature/x`), clicking "merge" merges it **into that branch, not `main`**. Merging the
+  whole stack that way lands nothing in `main` except the PRs whose base is `main`. **Fix:** either
+  base every PR on `main` (rebase onto `main` so the diff is clean), OR before merging, **retarget
+  each stacked PR's base to `main`** and merge bottom-up. When you do stack, say so explicitly and
+  give the merge/retarget steps. Recovery if it happens: the top branch contains the whole stack —
+  merge it into `main` in one go.
+- Building on an open PR's branch avoids `index.html`/`dist` conflicts, but only helps `main` if
+  the above retarget/merge-order is followed.
 - After merging, the live bundle hash changes — verify features by checking the live page HTML +
   bundle, not by hash.

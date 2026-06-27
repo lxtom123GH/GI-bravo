@@ -61,6 +61,21 @@ and Gemini**._
 - Heavy multi-agent orchestration / fleet CI, org-wide policy frameworks — not worth it for a
   solo dev. Revisit only if the portfolio grows a team.
 
+### Corrections found this session — **Adopt**
+- **Behmor capacity was wrong:** we'd coded a 225 g minimum; the Behmor 2000AB Plus actually
+  roasts from ~**100 g** (¼ lb / ~113 g and ~100 g samples) up to **454 g**. Fixed the planner
+  default and made drum capacity **editable per roaster profile** (so KKTO/variants aren't guessed).
+  Source: [Sweet Maria's](https://www.sweetmarias.com/behmor-2000ab-plus-roaster.html).
+- **Pre-blend (co-roast) needs similar size + density:** added optional density/size to beans + a
+  pre-blend compatibility warning in the blend builder. Source:
+  [Perfect Daily Grind](https://perfectdailygrind.com/2024/12/multi-variety-coffee-blends-what-roasters-should-know/).
+
+### Process lesson — stacked-PR merge trap — **Adopt**
+- Merging PRs whose base is another *feature branch* merges them into that branch, **not `main`** —
+  the freshness/blends/planner stack all showed "merged" but never reached `main`. Recovered by
+  merging the top branch into `main`. Rule added to `CLAUDE.md`: base PRs on `main`, or retarget
+  each to `main` before merging.
+
 ---
 
 _Next: Radar #2 (weekly) and the first monthly retro — see the scheduled routines._
