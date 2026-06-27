@@ -406,9 +406,10 @@ function renderHistoryList() {
 
         const dateStr = new Date(roast.date).toLocaleString();
 
-        let roasterInfo = `<strong>Roaster:</strong> ${roast.roaster.toUpperCase()}`;
+        const roasterDisplay = roast.roasterName || (roast.roaster || '').toUpperCase();
+        let roasterInfo = `<strong>Roaster:</strong> ${roasterDisplay}`;
         if (roast.roaster === 'behmor' && roast.settings) {
-            roasterInfo += ` (${roast.settings.weight}lb, ${roast.settings.profile})`;
+            roasterInfo += ` (${weightLabel(roast.settings.weight, getWeightUnit())}, ${roast.settings.profile})`;
         }
         if (roast.greenWeightG) {
             roasterInfo += ` &middot; <strong>Green:</strong> ${roast.greenWeightG} g`;

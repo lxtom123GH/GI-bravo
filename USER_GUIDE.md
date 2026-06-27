@@ -21,9 +21,12 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    You can change this any time, or override it per feature.
 5. **Add your beans.** Go to **Bean Pantry → Add New Green Beans**, enter a name
    (and optionally origin, process, and how many grams you have), and **Add to Pantry**.
-6. **Set your roaster.** On **Active Roast**, choose **Behmor** or **KKTO**, and
-   (Behmor) your usual batch size — tap **Set as default** so it's pre-selected
-   next time. Switch grams/pounds with the unit dropdown.
+6. **Your roaster.** On **Active Roast** it shows your machine. If you only use one,
+   there's nothing to do. If you use more than one (your machine, a friend's, a
+   different Behmor/KKTO), tap **⚙ Manage roasters** → tick *"I use more than one
+   roaster"* and add them; pick the active one before each roast and it's tagged on
+   the saved roast. (Behmor) set your usual batch size with **Set as default**, and
+   switch grams/pounds with the unit dropdown.
 7. **Calibrate noise (optional, improves detection).** Tap **Calibrate Noise** and
    stay quiet for 3 seconds so the app learns your room's background noise.
 

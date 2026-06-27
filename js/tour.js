@@ -5,7 +5,7 @@
 const STEPS = [
     { sel: '.nav-links', sidebar: true, title: 'Navigation', text: 'Switch between Active Roast, Bean Pantry, Roast History and Help here.' },
     { sel: '#tierSelect', sidebar: true, title: 'Mode', text: 'Choose how much detail you want — Easy, Moderate or Expert. Change it any time.' },
-    { sel: '#roasterSelect', title: 'Roast setup', text: 'Pick your roaster and beans, then the batch settings.' },
+    { sel: '#roasterControl', title: 'Your roaster', text: 'This is your machine. Most people use one (no setup needed); tap “Manage roasters” if you use more than one (yours, a friend’s, a different model).' },
     { sel: '#startBtn', title: 'Start a roast', text: 'Tap to begin — the app listens through your mic and detects first & second crack automatically.' },
     { sel: '.demo-btn', title: 'Try a demo', text: 'New here? Watch a simulated roast — no microphone needed.' },
     { sel: '#roastCurve', title: 'Live roast curve', text: 'Your roast is drawn here in real time, with crack markers.' },

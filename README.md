@@ -10,7 +10,9 @@ and photos — all stored locally in your browser with no backend.
 📖 New here? See the **[User Guide](USER_GUIDE.md)** for a simple step-by-step walkthrough.
 
 Built for the **Behmor 2000AB Plus** and **KKTO** roasters, but the audio
-analysis and logging work with any roaster.
+analysis and logging work with any roaster. You can register **one roaster** (the
+frictionless default — no picker) or **several** (yours, a friend's, a different
+model) and each roast is tagged with the machine it was done on.
 
 ---
 
@@ -101,7 +103,8 @@ main.js             Entry point — initializes all modules, registers the servi
 style.css           Dark theme + responsive/tier styles
 js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
-  roast.js          Roast setup (roaster/bean selection, Behmor/KKTO controls, weight units)
+  roast.js          Roast setup (bean selection, Behmor/KKTO controls, weight units)
+  roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   pantry.js         Bean inventory (CRUD, quantities, restock)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
