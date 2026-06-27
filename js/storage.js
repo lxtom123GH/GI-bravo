@@ -66,7 +66,8 @@ export function deleteRoastFromHistory(id) {
 export const DEFAULT_DETECTION_SETTINGS = {
     thresholdMultiplier: 1.5, // spike must exceed baseline noise by this factor (lower = more sensitive)
     cracksRequired: 3,        // snaps within the cluster window needed to confirm a crack phase
-    secondCrackPitch: 0.5     // high-band energy share above which cracking reads as second crack
+    secondCrackPitch: 0.5,    // high-band energy share above which cracking reads as second crack
+    calibrationSeconds: 8     // how long Calibrate Noise samples the room (longer catches intermittent talking)
 };
 
 export function getDetectionSettings() {

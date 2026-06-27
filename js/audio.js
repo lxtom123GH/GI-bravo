@@ -191,9 +191,11 @@ function initDetectionSettingsUI() {
     const threshInput = document.getElementById('thresholdSetting');
     const cracksInput = document.getElementById('cracksSetting');
     const pitchInput = document.getElementById('pitchSetting');
+    const calibInput = document.getElementById('calibSetting');
     const threshVal = document.getElementById('thresholdValue');
     const cracksVal = document.getElementById('cracksValue');
     const pitchVal = document.getElementById('pitchValue');
+    const calibVal = document.getElementById('calibValue');
     const resetBtn = document.getElementById('resetDetectionBtn');
     if (!threshInput || !cracksInput) return;
 
@@ -201,9 +203,11 @@ function initDetectionSettingsUI() {
         threshInput.value = detectionSettings.thresholdMultiplier;
         cracksInput.value = detectionSettings.cracksRequired;
         if (pitchInput) pitchInput.value = detectionSettings.secondCrackPitch;
+        if (calibInput) calibInput.value = detectionSettings.calibrationSeconds;
         if (threshVal) threshVal.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
         if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
         if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+        if (calibVal) calibVal.textContent = (detectionSettings.calibrationSeconds || 8) + 's';
     };
 
     const persist = () => saveDetectionSettings(detectionSettings);
@@ -224,6 +228,14 @@ function initDetectionSettingsUI() {
         pitchInput.addEventListener('input', () => {
             detectionSettings.secondCrackPitch = parseFloat(pitchInput.value);
             if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+            persist();
+        });
+    }
+
+    if (calibInput) {
+        calibInput.addEventListener('input', () => {
+            detectionSettings.calibrationSeconds = parseInt(calibInput.value, 10);
+            if (calibVal) calibVal.textContent = detectionSettings.calibrationSeconds + 's';
             persist();
         });
     }
@@ -424,6 +436,11 @@ function syncSettingsInputs() {
     const pv = document.getElementById('pitchValue');
     if (p) p.value = detectionSettings.secondCrackPitch;
     if (pv) pv.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
+
+    const cal = document.getElementById('calibSetting');
+    const calv = document.getElementById('calibValue');
+    if (cal) cal.value = detectionSettings.calibrationSeconds || 8;
+    if (calv) calv.textContent = (detectionSettings.calibrationSeconds || 8) + 's';
 
     const tt = document.getElementById('targetTotalSetting');
     if (tt) tt.value = roastTargets.totalMinutes || '';
@@ -774,28 +791,41 @@ async function startCalibration() {
     const ready = await setupAudio();
     if (!ready) return;
 
+    const secs = Math.max(3, Math.min(30, detectionSettings.calibrationSeconds || 8));
     calibrateBtn.disabled = true;
     startBtn.disabled = true;
+    if (startManualBtn) startManualBtn.disabled = true;
     isCalibrating = true;
     calibrationSamples = [];
     isRecording = true;
 
-    updateStatus('Calibrating... Please stay quiet.');
+    // To handle INTERMITTENT talking, sample for several seconds and let normal room
+    // sounds happen — a short, silent sample sets the floor too low and chatter then
+    // trips detection. A live countdown tells the user how long to wait.
+    let remaining = secs;
+    const msg = () => updateStatus(`Calibrating ${remaining}s… let the room sound normal (talking is fine).`);
+    msg();
+    const tick = setInterval(() => { remaining -= 1; if (remaining > 0) msg(); }, 1000);
 
-    // Calibrate for 3 seconds
     setTimeout(() => {
+        clearInterval(tick);
         isCalibrating = false;
         isRecording = false;
 
         if (calibrationSamples.length > 0) {
-            baselineNoiseRMS = calibrationSamples.reduce((a, b) => a + b) / calibrationSamples.length;
+            // Use the 90th percentile, NOT the mean: with intermittent talking the mean
+            // sits near the quiet floor, so chatter exceeds it. The high percentile lifts
+            // the baseline to roughly the louder room level, rejecting voices.
+            const sorted = [...calibrationSamples].sort((a, b) => a - b);
+            baselineNoiseRMS = sorted[Math.min(sorted.length - 1, Math.floor(0.9 * sorted.length))];
         }
 
-        updateStatus(`Ready (Baseline RMS: ${baselineNoiseRMS.toFixed(3)})`);
+        updateStatus(`Ready — baseline set from ${secs}s of room noise (RMS ${baselineNoiseRMS.toFixed(3)}).`);
         calibrateBtn.disabled = false;
         startBtn.disabled = false;
-        alert('Calibration complete!');
-    }, 3000);
+        if (startManualBtn) startManualBtn.disabled = false;
+        alert(`Calibration complete (${secs}s). Detection will now ignore sounds up to your room's noise level.`);
+    }, secs * 1000);
 
     drawAndAnalyze();
 }

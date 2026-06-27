@@ -242,6 +242,13 @@
                             <input type="range" id="pitchSetting" min="0.3" max="0.8" step="0.05" value="0.5">
                             <small style="color: var(--text-muted);">High-frequency energy share above which cracking is read as second crack. Lower = detects 2nd crack more readily.</small>
                         </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="calibSetting">
+                                <strong>Calibration time:</strong> <span id="calibValue">8s</span>
+                            </label>
+                            <input type="range" id="calibSetting" min="3" max="20" step="1" value="8">
+                            <small style="color: var(--text-muted);">How long “Calibrate Noise” samples the room. Use a longer time in rooms with <strong>intermittent talking</strong>, and let normal sounds happen while it runs.</small>
+                        </div>
                         <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
                     </div>
                 </details>
