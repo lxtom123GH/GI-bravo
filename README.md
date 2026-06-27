@@ -45,6 +45,8 @@ model) and each roast is tagged with the machine it was done on.
 **Beans, history & analysis**
 - 🫘 **Bean pantry** with green-weight tracking, low-stock warnings, and
   per-roast weight deduction. Metric/imperial weights + a default batch size.
+- 📷 **Quick-add from receipt** — snap a receipt and add several beans at once (name, weight,
+  price); each lands in the pantry with the purchase date, and the photo is kept with the purchase.
 - 🌱 **Freshness & FIFO** — green-bean age with a "roast soon" flag for old lots and a
   "roast this first" nudge for the oldest in stock; each roast shows a resting/peak badge.
 - ⚖️ **Weigh-out prep batches** — portion beans into containers with a photo, then load a
@@ -132,6 +134,7 @@ js/
   planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)
   value.js          Tastiness-per-dollar — score ÷ cost-per-cup leaderboard (pure)
   tasting.js        Tasting-over-time — dated tasting log helpers (pure)
+  receipts.js       Receipt quick-add — multi-bean entry + purchase record/photo
   freshness.js      Green-bean age + roasted rest/peak + FIFO helpers (pure)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
   storage.js        localStorage persistence + JSON backup/restore + settings

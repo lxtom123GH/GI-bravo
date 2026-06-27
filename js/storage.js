@@ -384,6 +384,31 @@ export function deletePrepBatch(id) {
     savePrepBatches(getPrepBatches().filter(b => b.id !== id));
 }
 
+// --- Purchases (receipt/invoice quick-add) ---
+// Each: { id, date, total, items: [{ name, grams, costPerKg }], note }. An optional receipt
+// photo is stored in IndexedDB under photo id `purchase-<id>` (js/photos.js).
+
+export function getPurchases() {
+    const s = localStorage.getItem('purchases');
+    return s ? JSON.parse(s) : [];
+}
+
+export function savePurchases(list) {
+    localStorage.setItem('purchases', JSON.stringify(list));
+}
+
+export function addPurchase(p) {
+    const list = getPurchases();
+    p.id = p.id || ('p-' + Date.now().toString());
+    list.unshift(p); // newest first
+    savePurchases(list);
+    return p;
+}
+
+export function deletePurchase(id) {
+    savePurchases(getPurchases().filter(p => p.id !== id));
+}
+
 // --- Blend recipes ---
 // Each: { id, name, type: 'pre' | 'post', components: [{ beanId, beanName, pct }], note }.
 // "Weigh out" a blend turns the ratios into per-component prep batches.
@@ -422,6 +447,7 @@ export function exportAllData() {
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
         prepBatches: getPrepBatches(),
+        purchases: getPurchases(),
         blends: getBlends(),
         roasters: getRoasters(),
         roasterMode: getRoasterMode(),
@@ -460,6 +486,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.prepBatches)) {
         savePrepBatches(data.prepBatches);
+    }
+    if (Array.isArray(data.purchases)) {
+        savePurchases(data.purchases);
     }
     if (Array.isArray(data.blends)) {
         saveBlends(data.blends);
