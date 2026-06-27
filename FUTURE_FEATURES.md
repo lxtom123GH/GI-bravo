@@ -177,7 +177,10 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    per dollar (tasting score ÷ cost per cup) in Roast History; pure helpers, unit-tested.
 6.5 ✅ Tasting-over-time — done (`js/tasting.js`): each roast keeps a dated tasting log (coffee
    changes as it rests/ages); modal shows the history; `tastingNotes` stays = latest for back-compat.
-6. Receipt/invoice quick-add (+ photo); swipe-style personalisation; collective space.
+6. ✅ Receipt/invoice quick-add (+ photo) — done (`js/receipts.js`): snap a receipt and add
+   several beans in one go (name/grams/$ per kg), each landing in the pantry with the purchase
+   date; the photo + a purchase record are kept (Recent purchases list). Follow-up: OCR parsing.
+   Remaining: swipe-style personalisation; collective space.
 
 Open threads (see `HANDOFF.md` for detail):
 - **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.

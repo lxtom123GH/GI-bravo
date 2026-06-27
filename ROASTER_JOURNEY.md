@@ -228,7 +228,8 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 5. ✅ **Tastiness-per-dollar value leaderboard** — DONE (`js/value.js`): ranks roasts by cup
    quality per dollar (tasting score ÷ cost per cup), shown in Roast History. Cheap-but-tasty
    beats pricey-but-meh.
-6. **Receipt/invoice quick-add (+ photo) ** then later parsing — speeds pantry entry.
+6. ✅ **Receipt/invoice quick-add (+ photo)** — DONE (`js/receipts.js`): snap a receipt, add
+   several beans at once with the purchase date; photo + purchase record kept. Follow-up: OCR.
 7. ✅ **Tasting-over-time (multiple dated entries)** — DONE (`js/tasting.js`): each roast keeps a
    dated tasting log (coffee changes as it rests/ages); the modal shows the history and defaults to
    today; `tastingNotes` stays = the latest for back-compat. _(+ Behmor sub-model now stored on the
