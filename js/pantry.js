@@ -1,4 +1,5 @@
 import { getPantry, addBeanToPantry, deleteBeanFromPantry, adjustBeanQuantity } from './storage.js';
+import { greenAge, fifoBeanId } from './freshness.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
 
@@ -48,6 +49,8 @@ export function renderPantryList() {
         return;
     }
 
+    const useFirstId = fifoBeanId(pantry); // oldest in-stock green → gentle FIFO nudge
+
     pantry.forEach(bean => {
         const beanCard = document.createElement('div');
         beanCard.className = 'card bean-card';
@@ -82,6 +85,18 @@ export function renderPantryList() {
         if (cost > 0) {
             const onHandValue = (qty / 1000) * cost;
             details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg · stock value ${onHandValue.toFixed(2)}</small>`;
+        }
+
+        // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
+        // oldest in-stock bean to roast first (FIFO).
+        const age = greenAge(bean.purchasedAt);
+        if (age) {
+            const ageColor = age.stale ? 'var(--danger)' : 'var(--text-muted)';
+            const staleNote = age.stale ? ' — old, roast soon' : '';
+            details += `<br><small style="color: ${ageColor};">🌱 bought ${age.text} ago${staleNote}</small>`;
+        }
+        if (qty > 0 && bean.id === useFirstId) {
+            details += `<br><small style="color: var(--accent);">⏳ oldest in stock — roast this first</small>`;
         }
 
         const infoDiv = document.createElement('div');

@@ -158,7 +158,9 @@ Shipped:
 ## Roadmap (from `ROASTER_JOURNEY.md` — lifecycle walkthrough)
 See that doc for the full "day/week in the life" narrative. Next up, in order:
 1. ✅ Roaster profiles (single/multi) — done.
-2. Green-bean freshness + roasted rest/peak clocks + FIFO nudges.
+2. ✅ Green-bean freshness + roasted rest/peak clocks + FIFO nudges — done
+   (`js/freshness.js`): pantry shows green age + a "roast soon"/"roast this first" nudge;
+   history shows a resting/peak/past-peak badge per roast.
 3. Blend builder → weigh-out prep plan.
 4. Machine-faithful roaster control panel (pre-roast plan + live; Behmor first).
 5. Tastiness-per-dollar value leaderboard.

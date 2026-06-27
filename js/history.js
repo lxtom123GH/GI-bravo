@@ -1,5 +1,6 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getColorTargets, addColorTarget, deleteColorTarget, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
+import { roastRest } from './freshness.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
@@ -467,10 +468,19 @@ function renderHistoryList() {
         let notes = roast.tastingNotes || { flavors: [], text: '' };
         const flavorsHtml = tastingSummary(notes);
 
+        // Roasted rest/peak badge — how the beans are resting since this roast.
+        const rest = roastRest(new Date(roast.date).getTime());
+        let restBadge = '';
+        if (rest) {
+            const c = rest.phase === 'peak' ? 'var(--success)' : (rest.phase === 'past' ? 'var(--text-muted)' : 'var(--accent)');
+            const icon = rest.phase === 'peak' ? '☕' : (rest.phase === 'past' ? '·' : '⏳');
+            restBadge = `<div style="font-size: 0.8rem; color: ${c};">${icon} ${rest.text}</div>`;
+        }
+
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between;">
                 <h3>${bean.name}</h3>
-                <small>${dateStr}</small>
+                <div style="text-align: right;"><small>${dateStr}</small>${restBadge}</div>
             </div>
             <p>${roasterInfo}</p>
             <div style="margin: 10px 0;">

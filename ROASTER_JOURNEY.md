@@ -71,6 +71,11 @@ restock; low-stock warning; stock value; cost feeds the spend dashboard.
 **Today ✅:** pantry list with quantities, low-stock, cost, stock value; consumption & spend
 dashboard; backup/restore.
 
+**Shipped ✅ (freshness v1, `js/freshness.js`):** the pantry shows each lot's **green age**
+("bought 5 days ago"), flags lots over ~12 months ("roast soon"), and marks the **oldest
+in-stock** bean "roast this first" (FIFO). Each roast in History shows a **rest/peak badge**
+(resting → ready/peak → past peak). Still to come below: lots, roasted inventory.
+
 **Gaps / ideas ✨ (this is where freshness lives):**
 - **Two clocks, not one.** Green beans keep ~12 months+; **roasted** beans have a short arc
   (degas a few days, peak ~4–14 days, fade after). Track **green age** (purchased date) *and*,
@@ -200,8 +205,9 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 1. ✅ **Roaster profiles + per-roast machine tag, single-roaster by default** — DONE
    (`js/roasters.js`): single-roaster shows no picker; "I use more than one roaster" opts into a
    picker; each roast is tagged with its machine. _(+ swipe-style personalisation still to come.)_
-2. **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — directly answers "dates"
-   and "no old bins"; high daily value.
+2. ✅ **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — DONE
+   (`js/freshness.js`): green age + "roast soon"/"roast this first" in the pantry, rest/peak
+   badge per roast in History.
 3. **Blend builder → prep plan** — ratios into the weigh-out batches we already have; pairs with
    the blend research above.
 4. **Machine-faithful roaster control panel (pre-roast plan + live, Behmor first)** — the biggest,

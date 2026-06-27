@@ -88,6 +88,10 @@ an official Agtron number.
 
 ## Ongoing use
 
+- **Freshness & FIFO:** the **Bean Pantry** shows how long ago each bean was bought,
+  flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
+  In **Roast History**, each roast shows a freshness badge — *resting* for the first few
+  days, then *ready (peak)* for roughly 1–3 weeks, then *past peak*.
 - **Reproduce a good roast:** save it as a **Behmor template** (or pick it under
   *Follow reference roast*) so next time the app guides you with its curve and
   crack timing.

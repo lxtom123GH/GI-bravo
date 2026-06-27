@@ -12,6 +12,7 @@ export function savePantry(pantry) {
 export function addBeanToPantry(bean) {
     const pantry = getPantry();
     bean.id = Date.now().toString(); // simple unique ID
+    if (!bean.purchasedAt) bean.purchasedAt = Date.now(); // for green-bean age / FIFO
     pantry.push(bean);
     savePantry(pantry);
     return bean;
