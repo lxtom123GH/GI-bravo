@@ -1,6 +1,7 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getColorTargets, addColorTarget, deleteColorTarget, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { roastRest } from './freshness.js';
+import { buildLeaderboard } from './value.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
@@ -119,6 +120,40 @@ function renderStats() {
         ${lossN ? `<li><strong>Avg weight loss:</strong> ${(lossSum / lossN).toFixed(1)}%</li>` : ''}
         ${spend ? `<li><strong>Total green spend:</strong> ${spend.toFixed(2)}</li>` : ''}
     </ul>`;
+}
+
+function renderValueLeaderboard() {
+    const el = document.getElementById('valueLeaderboard');
+    if (!el) return;
+    const board = buildLeaderboard(getRoastHistory(), getPantry());
+    if (!board.length) {
+        el.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Add a <strong>tasting score</strong> to a roast and a <strong>cost per kg</strong> to its bean, and your best-value roasts will rank here.</p>';
+        return;
+    }
+    const rows = board.slice(0, 10).map((x, i) => {
+        const medal = ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
+        const when = x.roast.date ? new Date(x.roast.date).toLocaleDateString() : '';
+        return `<tr>
+            <td style="padding:4px 8px;white-space:nowrap;">${medal}</td>
+            <td style="padding:4px 8px;">${x.beanName}<br><small style="color:var(--text-muted);">${when}</small></td>
+            <td style="padding:4px 8px;text-align:right;">${x.tastiness.toFixed(0)}/100</td>
+            <td style="padding:4px 8px;text-align:right;">${x.costPerCup.toFixed(2)}/cup</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:bold;">${x.value.toFixed(1)}</td>
+        </tr>`;
+    }).join('');
+    el.innerHTML = `
+        <div style="overflow-x:auto;">
+        <table style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+            <thead><tr style="text-align:left;color:var(--text-muted);">
+                <th style="padding:4px 8px;">#</th><th style="padding:4px 8px;">Roast</th>
+                <th style="padding:4px 8px;text-align:right;">Score</th>
+                <th style="padding:4px 8px;text-align:right;">Cost</th>
+                <th style="padding:4px 8px;text-align:right;">Value</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        </div>
+        <small style="color:var(--text-muted);">Value = quality points per dollar per cup (higher is better, ~15 g/cup).</small>`;
 }
 
 function renderTrend() {
@@ -392,6 +427,7 @@ function renderHistoryList() {
     renderComparison();
     renderTrend();
     renderStats();
+    renderValueLeaderboard();
 
     if (history.length === 0) {
         historyContainer.innerHTML = '<p>No roasts yet — go to <strong>Active Roast</strong> and tap <strong>Start Roast &amp; Listening</strong>, or try the demo from the <strong>Help</strong> tab.</p>';

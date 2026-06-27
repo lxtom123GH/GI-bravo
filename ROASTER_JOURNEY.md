@@ -225,7 +225,9 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
    with before-vs-during button reference, **model-aware** (2000AB Plus / 2000AB / 1600 Plus),
    setup guide; **KKTO** heat/airflow + agitator guide with a roast-phase flow. Both log presses
    live. Follow-ups: Behmor sub-model on the roaster profile; fuller pre-roast simulation.
-5. **Tastiness-per-dollar value leaderboard** — small, motivating, uses existing score + cost.
+5. ✅ **Tastiness-per-dollar value leaderboard** — DONE (`js/value.js`): ranks roasts by cup
+   quality per dollar (tasting score ÷ cost per cup), shown in Roast History. Cheap-but-tasty
+   beats pricey-but-meh.
 6. **Receipt/invoice quick-add (+ photo) ** then later parsing — speeds pantry entry.
 7. **Tasting-over-time (multiple dated entries)** — small change, real insight.
 8. **Collective space (after the Firebase console steps)** — turns it into a group tool.

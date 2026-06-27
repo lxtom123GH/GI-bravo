@@ -117,6 +117,9 @@ an official Agtron number.
   and shows the numbers side by side.
 - **See your progress:** the **Trends** chart plots DTR, times, or roast colour
   across all your roasts.
+- **Find your best value:** **Roast History → Best value** ranks your roasts by cup
+  quality per dollar (your tasting score ÷ the bean's cost per cup) — a cheap, tasty
+  bean can out-rank an expensive one. Add a tasting score and a bean cost to see it.
 - **Back up your data (important!):** everything lives only in your browser. Use
   **Roast History → Data Backup → Export Backup** every so often to save a file
   (tick *Include photos* if you want them too). **Import** it to restore or to move
