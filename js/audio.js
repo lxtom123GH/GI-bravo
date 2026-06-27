@@ -25,6 +25,7 @@ const liveDtrDiv = document.getElementById('liveDtr');
 const liveRorDiv = document.getElementById('liveRor');
 
 const startBtn = document.getElementById('startBtn');
+const startManualBtn = document.getElementById('startManualBtn');
 const stopBtn = document.getElementById('stopBtn');
 const calibrateBtn = document.getElementById('calibrateBtn');
 const markDryEndBtn = document.getElementById('markDryEndBtn');
@@ -137,7 +138,8 @@ export function initAudioSystem() {
     applyBehmorTemplate(); // apply for the initial dashboard config
 
     calibrateBtn.addEventListener('click', startCalibration);
-    startBtn.addEventListener('click', startRoast);
+    startBtn.addEventListener('click', () => startRoast(false));
+    if (startManualBtn) startManualBtn.addEventListener('click', () => startRoast(true));
     stopBtn.addEventListener('click', stopRoast);
 
     if (markDryEndBtn) markDryEndBtn.addEventListener('click', () => markPhase('Dry End', 'dryEndTime'));
@@ -600,12 +602,25 @@ function notifyUser(message) {
 }
 
 async function setupAudio() {
-    if (audioContext) return;
+    if (audioContext) {
+        // Reuse an existing context, but iOS Safari often leaves it 'suspended' until
+        // a user gesture resumes it — without this, the analyser reads silence.
+        if (audioContext.state === 'suspended') { try { await audioContext.resume(); } catch {} }
+        return true;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        updateStatus('This browser can’t access the microphone. Use “Start (no mic)”, or open in Safari/Chrome over https.');
+        return false;
+    }
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // iOS Safari starts the AudioContext suspended; resume it within this gesture so
+        // crack detection actually receives audio.
+        if (audioContext.state === 'suspended') { try { await audioContext.resume(); } catch {} }
         analyser = audioContext.createAnalyser();
         microphone = audioContext.createMediaStreamSource(stream);
 
@@ -626,7 +641,21 @@ async function setupAudio() {
         return true;
     } catch (err) {
         console.error('Error accessing microphone:', err);
-        alert('Error accessing microphone. Please allow permissions.');
+        // Surface the real reason on-screen (helps diagnose iOS). Common cases:
+        // NotAllowedError = permission/standalone; NotFoundError = no mic;
+        // NotReadableError = mic in use by another app.
+        const standalone = (window.navigator.standalone === true);
+        let msg = `Microphone error (${err && err.name || 'unknown'}). `;
+        if (err && err.name === 'NotAllowedError') {
+            msg += standalone
+                ? 'On iPhone, open this in the Safari browser (not the home-screen icon) and allow the mic — or use “Start (no mic)”.'
+                : 'Allow the microphone (address-bar/site settings) — or use “Start (no mic)”.';
+        } else if (err && err.name === 'NotReadableError') {
+            msg += 'The mic is in use by another app. Close it, or use “Start (no mic)”.';
+        } else {
+            msg += 'Use “Start (no mic)” to roast without auto-detection.';
+        }
+        updateStatus(msg);
         return false;
     }
 }
@@ -661,12 +690,20 @@ async function startCalibration() {
     drawAndAnalyze();
 }
 
-async function startRoast() {
-    const ready = await setupAudio();
-    if (!ready) return;
+// Start a roast. manual=false (default) uses the microphone for automatic crack
+// detection; manual=true runs the timer + manual controls WITHOUT the mic. In BOTH
+// modes you can mark cracks yourself and log power changes (e.g. P5 → P3).
+async function startRoast(manual = false) {
+    if (!manual) {
+        // Immediate feedback — getUserMedia can take a moment, and previously the
+        // button looked like it "did nothing" while waiting.
+        updateStatus('Starting — please allow the microphone…');
+        const ready = await setupAudio();
+        if (!ready) return; // setupAudio already showed a specific on-screen reason
 
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
     }
 
     // Reset State
@@ -677,6 +714,7 @@ async function startRoast() {
         secondCrackTime: null,
         endTime: null,
         phase: 'Heating',
+        manualMode: manual,
         logs: [],
         curve: [],
         temps: [],
@@ -702,6 +740,7 @@ async function startRoast() {
     // requestAnimationFrame, which the browser pauses if the screen locks.
     acquireWakeLock();
     startBtn.disabled = true;
+    if (startManualBtn) startManualBtn.disabled = true;
     calibrateBtn.disabled = true;
     stopBtn.disabled = false;
     if (markDryEndBtn) markDryEndBtn.disabled = false;
@@ -713,9 +752,21 @@ async function startRoast() {
     manualPowerBtns.forEach(b => b.disabled = false);
     if (manualPowerStatus) manualPowerStatus.textContent = '';
 
-    updateStatus('Listening - Phase: Heating');
+    // Reveal the power-logging buttons for any active Behmor roast (not just Expert),
+    // so power changes like P5 → P3 can be logged in a normal mic roast too.
+    const powerRow = document.querySelector('#behmorControls .tier-expert');
+    if (powerRow) powerRow.style.display = 'flex';
 
-    drawAndAnalyze();
+    if (manual) {
+        updateStatus('Manual roast — no auto-detection. Use “Manual: Mark” for cracks and the power buttons.');
+        // No mic/audio loop in manual mode: clear the scope and draw the marker curve;
+        // the timer below keeps it refreshed.
+        if (canvasCtx) { canvasCtx.fillStyle = '#121212'; canvasCtx.fillRect(0, 0, canvas.width, canvas.height); }
+        renderLiveCurve(0);
+    } else {
+        updateStatus('Listening - Phase: Heating');
+        drawAndAnalyze();
+    }
 
     // Start live timer display
     if (timerInterval) clearInterval(timerInterval);
@@ -742,6 +793,10 @@ async function startRoast() {
 
         checkTargetAlarms(elapsed, metrics);
         checkReferenceCues(Date.now() - roastState.startTime);
+
+        // Manual mode has no animation-frame loop, so refresh the curve here (picks up
+        // manually-marked cracks, the reference overlay, and any temperature readings).
+        if (roastState.manualMode) renderLiveCurve(Date.now() - roastState.startTime);
     }, 1000);
 }
 
@@ -755,6 +810,7 @@ function stopRoast() {
     logMessage('Roast Stopped.');
 
     startBtn.disabled = false;
+    if (startManualBtn) startManualBtn.disabled = false;
     calibrateBtn.disabled = false;
     stopBtn.disabled = true;
     if (markDryEndBtn) markDryEndBtn.disabled = true;
@@ -763,6 +819,9 @@ function stopRoast() {
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
+    // Revert the power-row reveal back to tier control.
+    const powerRow = document.querySelector('#behmorControls .tier-expert');
+    if (powerRow) powerRow.style.display = '';
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
