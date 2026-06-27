@@ -173,7 +173,8 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    (charge → drying → first crack → drop). Both have a **live mode** (auto on roast start) logging
    timestamped actions onto the roast. Follow-up: capture the Behmor sub-model on the roaster
    profile; a fuller pre-roast "what will happen" simulation.
-5. Tastiness-per-dollar value leaderboard.
+5. ✅ Tastiness-per-dollar value leaderboard — done (`js/value.js`): ranks roasts by cup quality
+   per dollar (tasting score ÷ cost per cup) in Roast History; pure helpers, unit-tested.
 6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.
 
 Open threads (see `HANDOFF.md` for detail):

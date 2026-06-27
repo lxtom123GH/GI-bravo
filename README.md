@@ -57,6 +57,8 @@ model) and each roast is tagged with the machine it was done on.
 - 🔀 **Co-roast compatibility** — optional bean density/size; a pre-blend warns when beans differ
   too much to roast evenly together.
 - ⚖️ **Yield** — log roasted (post-cool) weight to get weight-loss %.
+- 💲 **Tastiness-per-dollar leaderboard** — ranks your roasts by cup quality per dollar (tasting
+  score ÷ cost per cup), so a cheap-but-tasty bean can beat a pricey one.
 - 📚 **Roast history** with timelines, logs, and tasting notes.
 - 👅 **Tiered tasting & cupping** — emoji → SCA flavor wheel → **official
   SCA 100-point cupping** + brew log, depending on your chosen mode.
@@ -126,6 +128,7 @@ js/
   prep.js           Weigh-out prep batches (bean + weight + photo)
   blends.js         Blend recipes → per-component weigh-out prep batches
   planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)
+  value.js          Tastiness-per-dollar — score ÷ cost-per-cup leaderboard (pure)
   freshness.js      Green-bean age + roasted rest/peak + FIFO helpers (pure)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
   storage.js        localStorage persistence + JSON backup/restore + settings
