@@ -150,13 +150,26 @@ export function saveWeightUnit(unit) {
     localStorage.setItem('weightUnit', unit === 'imperial' ? 'imperial' : 'metric');
 }
 
-// Default Behmor batch size, stored as the machine setting key ('1/4' | '1/2' | '1').
+// Default Behmor batch size, stored as the machine setting key ('100' | '200' | '400').
+// Falls back to 400 (and migrates older '1/4'|'1/2'|'1' values that no longer exist).
 export function getDefaultWeight() {
-    return localStorage.getItem('defaultWeight') || '1';
+    const w = localStorage.getItem('defaultWeight');
+    return ['100', '200', '400'].includes(w) ? w : '400';
 }
 
 export function saveDefaultWeight(w) {
     localStorage.setItem('defaultWeight', w);
+}
+
+// Remember the last green weight entered (e.g. a usual 450 g roast) so it prefills
+// next time and isn't wiped when a batch-size button is tapped.
+export function getLastGreenWeight() {
+    const g = parseFloat(localStorage.getItem('lastGreenWeight'));
+    return isNaN(g) || g <= 0 ? null : g;
+}
+
+export function saveLastGreenWeight(g) {
+    if (g > 0) localStorage.setItem('lastGreenWeight', String(g));
 }
 
 // --- Behmor profile reference templates (keyed by "profile|weight") ---

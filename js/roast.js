@@ -1,4 +1,4 @@
-import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight } from './storage.js';
+import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight, getLastGreenWeight, saveLastGreenWeight } from './storage.js';
 import { BEHMOR_GRAMS, weightLabel } from './metrics.js';
 
 // Notify other modules (audio.js) that the Behmor roaster/profile/weight changed,
@@ -42,7 +42,9 @@ export function initRoastDashboard() {
 
     const selectWeight = (weight, { prefill = true } = {}) => {
         weightBtns.forEach(b => b.classList.toggle('active', b.dataset.weight === weight));
-        if (prefill && greenWeightInput) {
+        // Only prefill the green weight if it's empty, so tapping a batch-size button
+        // doesn't wipe a value the user set (e.g. a 450 g roast on the 400 g setting).
+        if (prefill && greenWeightInput && !greenWeightInput.value) {
             const grams = BEHMOR_GRAMS[weight];
             if (grams) greenWeightInput.value = grams;
         }
@@ -50,6 +52,17 @@ export function initRoastDashboard() {
 
     relabelWeights();
     selectWeight(getDefaultWeight(), { prefill: false });
+
+    // Prefill the green weight with the last value used (her usual roast size), and
+    // remember it whenever she changes it.
+    if (greenWeightInput) {
+        const last = getLastGreenWeight();
+        if (last && !greenWeightInput.value) greenWeightInput.value = last;
+        greenWeightInput.addEventListener('change', () => {
+            const g = parseFloat(greenWeightInput.value);
+            if (g > 0) saveLastGreenWeight(g);
+        });
+    }
 
     weightBtns.forEach(btn => {
         btn.addEventListener('click', () => { selectWeight(btn.dataset.weight); notifyConfigChanged(); });
