@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Roasting Tracker</title>
+    <meta name="theme-color" content="#ff9800">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Roast Tracker">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-192.png">
+  <script type="module" crossorigin src="/assets/index-ByaZlwBN.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DgArmMS7.css">
+</head>
+<body>
+    <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Roast Tracker</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active" data-target="dashboard">Active Roast</li>
+            <li data-target="pantry">Bean Pantry</li>
+            <li data-target="history">Roast History</li>
+            <li data-target="help">Help</li>
+        </ul>
+        <div class="sidebar-footer" style="padding: 15px 25px; border-top: 1px solid var(--border-color);">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                <input type="checkbox" id="hintsToggle" style="width: auto; margin: 0;"> 💡 Show hints
+            </label>
+            <label for="tierSelect" style="font-size: 0.85rem; color: var(--text-muted);">Mode</label>
+            <select id="tierSelect" style="margin-bottom: 0;" data-hint="How much detail the app shows. Moderate is a good start.">
+                <option value="easy">Easy</option>
+                <option value="moderate">Moderate</option>
+                <option value="expert">Expert</option>
+            </select>
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-muted);">Per-feature mode</summary>
+                <label for="dashboardTierSelect" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; display: block;">Dashboard</label>
+                <select id="dashboardTierSelect" style="margin-bottom: 8px;">
+                    <option value="">Inherit global</option>
+                    <option value="easy">Easy</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="expert">Expert</option>
+                </select>
+                <label for="tastingTierSelect" style="font-size: 0.8rem; color: var(--text-muted); display: block;">Tasting / cupping</label>
+                <select id="tastingTierSelect" style="margin-bottom: 0;">
+                    <option value="">Inherit global</option>
+                    <option value="easy">Easy</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </details>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Active Roast Dashboard -->
+        <div id="dashboard" class="tab-pane active">
+            <h1>Active Roast Dashboard</h1>
+
+            <details id="customisePanel" style="margin-bottom: 15px;">
+                <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">⚙️ Customise this screen — hide things you don't use</summary>
+                <div id="customiseOptions" style="padding: 10px 5px 0; display: flex; flex-direction: column; gap: 8px;"></div>
+                <small style="display: block; padding: 8px 5px 0; color: var(--text-muted);">Tip: the <strong>Mode</strong> selector (bottom-left) also switches between Easy, Moderate and Expert detail.</small>
+            </details>
+
+            <div class="card">
+                <h3>Roast Setup</h3>
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label for="roasterSelect"><strong>Roaster</strong></label>
+                        <select id="roasterSelect" data-hint="Choose your roaster; the controls below adapt to it.">
+                            <option value="behmor">Behmor 2000AB Plus</option>
+                            <option value="kkto">KKTO</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="beanSelect"><strong>Beans</strong></label>
+                        <select id="beanSelect">
+                            <option value="">Select beans from pantry...</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="greenWeightInput"><strong>Green weight (g)</strong></label>
+                        <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 454">
+                    </div>
+                </div>
+
+                <div id="prepBatchRow" style="display: none; margin-bottom: 15px;">
+                    <label for="prepBatchSelect"><strong>Use a prepped batch</strong></label>
+                    <select id="prepBatchSelect" data-hint="Load a batch you weighed out in the Bean Pantry — fills the bean and green weight, and shows your photo."><option value="">None</option></select>
+                    <img id="prepBatchThumb" alt="Prepped batch photo" style="display: none; max-height: 120px; border-radius: 6px; margin-top: 8px;">
+                </div>
+
+                <!-- Behmor Controls -->
+                <div id="behmorControls" style="border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <h4>Behmor Settings</h4>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap;">
+                        <label>Weight:</label>
+                        <button class="behmor-weight" data-weight="1/4"></button>
+                        <button class="behmor-weight" data-weight="1/2"></button>
+                        <button class="behmor-weight" data-weight="1"></button>
+                        <select id="weightUnitSelect" style="width: auto; margin-bottom: 0;">
+                            <option value="metric">Metric (g)</option>
+                            <option value="imperial">Imperial (lb)</option>
+                        </select>
+                        <button id="setDefaultWeightBtn" type="button" style="font-size: 0.8rem; padding: 5px 10px;">Set as default</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
+                        <label>Profile:</label>
+                        <button class="behmor-profile active" data-profile="P1">P1</button>
+                        <button class="behmor-profile" data-profile="P2">P2</button>
+                        <button class="behmor-profile" data-profile="P3">P3</button>
+                        <button class="behmor-profile" data-profile="P4">P4</button>
+                        <button class="behmor-profile" data-profile="P5">P5</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;" data-section="logactions">
+                        <label>Log Actions:</label>
+                        <button class="behmor-action" data-action="Prog A">Prog A</button>
+                        <button class="behmor-action" data-action="Prog B">Prog B</button>
+                        <button class="behmor-action" data-action="Prog C (Reset Time)">Prog C</button>
+                        <button class="behmor-action" data-action="Prog D (Drum Speed)">Prog D</button>
+                    </div>
+                    <div class="tier-expert" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px;">
+                        <label>Manual power:</label>
+                        <button class="manual-power" data-power="0" disabled>0% (P1)</button>
+                        <button class="manual-power" data-power="25" disabled>25% (P2)</button>
+                        <button class="manual-power" data-power="50" disabled>50% (P3)</button>
+                        <button class="manual-power" data-power="75" disabled>75% (P4)</button>
+                        <button class="manual-power" data-power="100" disabled>100% (P5)</button>
+                        <span id="manualPowerStatus" style="color: var(--text-muted); font-size: 0.85rem;"></span>
+                    </div>
+                </div>
+
+                <!-- KKTO Controls -->
+                <div id="kktoControls" style="display: none; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <h4>KKTO Actions</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="kkto-action" data-action="Heat Up">Heat Up</button>
+                        <button class="kkto-action" data-action="Heat Down">Heat Down</button>
+                        <button class="kkto-action" data-action="Fan Up">Fan Up</button>
+                        <button class="kkto-action" data-action="Fan Down">Fan Down</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="analyzer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Audio Analyzer & Timeline</h3>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div id="liveTimer" style="font-size: 1.5rem; font-weight: bold; font-family: monospace; color: var(--text-main);">00:00</div>
+                        <div id="liveDtr" style="font-size: 1rem; font-family: monospace; color: var(--text-muted);">DTR --</div>
+                        <div class="status-indicator" id="status" style="margin-bottom: 0;">Status: Ready</div>
+                    </div>
+                </div>
+
+                <!-- First-crack alarm acknowledge: appears (and rings) when a crack is auto-detected -->
+                <button id="ackAlarmBtn" type="button" style="display: none; width: 100%; margin-bottom: 12px; padding: 14px; font-size: 1.1rem; background-color: #e53935; box-shadow: 0 0 8px #e53935;">🔔 Crack detected — tap to silence</button>
+
+                <div class="roast-controls">
+                    <button id="calibrateBtn" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
+                    <button id="startBtn" data-hint="Start the roast and listen for first and second crack automatically. You can still mark cracks and log power yourself.">Start Roast & Listening</button>
+                    <button id="startManualBtn" data-hint="Start the roast timer WITHOUT the microphone — no automatic crack detection. Mark first/second crack yourself and log power changes. Use this if the mic won't work.">Start (no mic)</button>
+                    <button id="stopBtn" disabled class="danger">Stop Roast</button>
+                    <button class="demo-btn" type="button">Try a demo (no mic)</button>
+                </div>
+
+                <details style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">🔔 Alarm sound</summary>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 5px 0;">
+                        <label for="alarmToneSelect" style="margin: 0;">Crack alarm tone</label>
+                        <select id="alarmToneSelect" style="width: auto; margin: 0;" data-hint="The sound that repeats when a crack is detected, until you tap to silence it.">
+                            <option value="chime">Chime</option>
+                            <option value="beep">Beep</option>
+                            <option value="bell">Bell</option>
+                            <option value="buzzer">Buzzer</option>
+                        </select>
+                        <button id="testAlarmBtn" type="button" style="font-size: 0.85rem; padding: 6px 12px;">Test</button>
+                        <small style="color: var(--text-muted);">Repeats until you tap “silence”.</small>
+                    </div>
+                </details>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <button id="markDryEndBtn" style="flex: 1; min-width: 120px; background-color: #8d6e63;" disabled data-hint="Tap when the beans turn yellow (end of drying). Splits the roast into drying / Maillard / development phases.">Mark: Dry End</button>
+                    <button id="markFirstCrackBtn" style="flex: 1; min-width: 120px; background-color: #2196F3;" disabled>Manual: Mark 1st Crack</button>
+                    <button id="markSecondCrackBtn" style="flex: 1; min-width: 120px; background-color: #9C27B0;" disabled>Manual: Mark 2nd Crack</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button id="undoFirstCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="False alarm? Clear the recorded first crack and keep listening for the real one.">✗ Clear 1st crack</button>
+                    <button id="undoSecondCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="Clear a wrongly-detected second crack and keep listening.">✗ Clear 2nd crack</button>
+                </div>
+
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                    <input type="number" id="tempInput" placeholder="Bean temp" step="1" style="flex: 1; margin-bottom: 0;" data-hint="Type a bean temperature reading to track Rate of Rise (RoR).">
+                    <select id="tempUnit" style="width: auto; margin-bottom: 0;">
+                        <option value="C">°C</option>
+                        <option value="F">°F</option>
+                    </select>
+                    <button id="logTempBtn" disabled>Log Temp</button>
+                    <div id="liveRor" style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">RoR --</div>
+                </div>
+
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                    <input type="number" id="envTempInput" placeholder="Environment temp (ET)" step="1" style="flex: 1; margin-bottom: 0;">
+                    <button id="logEnvTempBtn" disabled>Log ET</button>
+                </div>
+
+                <div class="tier-expert" data-section="temp" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                    <button id="connectProbeBtn" type="button" data-hint="Connect a DIY Bluetooth thermocouple to log temperature automatically.">Connect probe (Bluetooth)</button>
+                    <button id="connectSerialBtn" type="button" data-hint="Connect a USB thermocouple (one Celsius reading per line) to log temperature automatically.">Connect probe (USB)</button>
+                    <span id="probeStatus" style="color: var(--text-muted); font-size: 0.9rem;">Probe: not connected</span>
+                </div>
+
+                <div class="tier-moderate" data-section="reference" style="margin-bottom: 15px;">
+                    <label for="referenceSelect"><strong>Follow reference roast</strong></label>
+                    <select id="referenceSelect" data-hint="Overlay a past roast or template and get a heads-up before its cracks." ><option value="">None</option></select>
+                    <small style="color: var(--text-muted);">Overlays a past roast's curve and warns ~10s before its cracks.</small>
+                </div>
+
+                <details class="tier-moderate" data-section="detection" style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Detection Settings</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="thresholdSetting">
+                                <strong>Sensitivity threshold:</strong> <span id="thresholdValue">1.5×</span>
+                            </label>
+                            <input type="range" id="thresholdSetting" min="1.1" max="3" step="0.1" value="1.5">
+                            <small style="color: var(--text-muted);">Lower = more sensitive (detects quieter snaps); higher = ignores faint noise.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="cracksSetting">
+                                <strong>Snaps to confirm a crack:</strong> <span id="cracksValue">3</span>
+                            </label>
+                            <input type="range" id="cracksSetting" min="1" max="6" step="1" value="3">
+                            <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="pitchSetting">
+                                <strong>Second-crack pitch threshold:</strong> <span id="pitchValue">50%</span>
+                            </label>
+                            <input type="range" id="pitchSetting" min="0.3" max="0.8" step="0.05" value="0.5">
+                            <small style="color: var(--text-muted);">High-frequency energy share above which cracking is read as second crack. Lower = detects 2nd crack more readily.</small>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="calibSetting">
+                                <strong>Calibration time:</strong> <span id="calibValue">8s</span>
+                            </label>
+                            <input type="range" id="calibSetting" min="3" max="20" step="1" value="8">
+                            <small style="color: var(--text-muted);">How long “Calibrate Noise” samples the room. Use a longer time in rooms with <strong>intermittent talking</strong>, and let normal sounds happen while it runs.</small>
+                        </div>
+                        <button id="resetDetectionBtn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Defaults</button>
+                    </div>
+                </details>
+
+                <details class="tier-expert" style="margin-bottom: 15px;">
+                    <summary style="cursor: pointer;">Roast Targets (alarms)</summary>
+                    <div style="padding: 15px 5px 5px;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+                            Get a beep + notification when the roast reaches a target. Leave blank or 0 to disable.
+                        </p>
+                        <div class="setup-row" style="display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label for="targetTotalSetting"><strong>Target total time (min)</strong></label>
+                                <input type="number" id="targetTotalSetting" min="0" step="0.5" placeholder="e.g. 12">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="targetDtrSetting"><strong>Target DTR (%)</strong></label>
+                                <input type="number" id="targetDtrSetting" min="0" max="50" step="0.5" placeholder="e.g. 20">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <canvas id="oscilloscope"></canvas>
+
+                <h4 style="margin-top: 10px;">Roast Curve (audio energy over time)</h4>
+                <canvas id="roastCurve"></canvas>
+
+                <h3>Timeline & Logs</h3>
+                <div id="logArea"></div>
+            </div>
+        </div>
+
+        <!-- Bean Pantry -->
+        <div id="pantry" class="tab-pane">
+            <h1>Bean Pantry</h1>
+            <div class="card">
+                <h3>Add New Green Beans</h3>
+                <form id="addBeanForm">
+                    <input type="text" id="beanName" placeholder="Bean Name / Blend Name (Required)" required data-hint="Add green beans here so you can pick them when roasting.">
+                    <input type="text" id="beanCountry" placeholder="Country of Origin (e.g., Ethiopia)">
+                    <input type="text" id="beanRegion" placeholder="Region (e.g., Yirgacheffe)">
+                    <input type="text" id="beanFarm" placeholder="Farm / Producer">
+                    <select id="beanProcess">
+                        <option value="">Select Process...</option>
+                        <option value="Washed">Washed</option>
+                        <option value="Natural">Natural</option>
+                        <option value="Honey">Honey</option>
+                        <option value="Wet-Hulled">Wet-Hulled</option>
+                        <option value="Anaerobic">Anaerobic</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="beanQuantity" placeholder="Quantity on hand (grams)" min="0" step="1">
+                    <input type="number" id="beanCost" placeholder="Cost per kg (optional)" min="0" step="0.01">
+                    <button type="submit">Add to Pantry</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Roast prep — weigh-out</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    Weigh beans into containers and snap a photo so you remember which is which.
+                    Then load one onto <strong>Active Roast</strong> in a single tap.
+                </p>
+                <button id="newPrepBatchBtn" data-hint="Portion out a batch: pick the bean, enter the weight, and photograph the container.">＋ Weigh out a batch</button>
+                <div id="prepList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;"></div>
+            </div>
+
+            <div id="pantryList">
+                <!-- Bean items will be listed here -->
+            </div>
+        </div>
+
+        <!-- Roast History -->
+        <div id="history" class="tab-pane">
+            <h1>Roast History</h1>
+            <div class="card">
+                <h3>Summary</h3>
+                <div id="statsSummary"></div>
+            </div>
+            <div class="card">
+                <h3>Data Backup</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                    All beans and roasts are stored only in this browser. Export a backup to keep them safe.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <button id="exportBackupBtn" data-hint="Save all your data to a file. Your data lives only in this browser, so back up regularly.">Export Backup (JSON)</button>
+                    <button id="importBackupBtn">Import Backup</button>
+                    <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
+                    <button id="importSharedBtn" data-hint="Import a single roast that someone shared as a file (added to your history without replacing anything).">Import shared roast</button>
+                    <input type="file" id="importSharedInput" accept="application/json,.json" style="display: none;">
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--text-muted); margin: 0;">
+                        <input type="checkbox" id="includePhotosCheck" style="width: auto; margin: 0;"> Include photos (larger file)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Cloud Sync (opt-in) — filled in by js/sync-ui.js -->
+            <div class="card" id="cloudSyncCard"></div>
+
+            <div class="card" id="trendsCard">
+                <h3>Trends</h3>
+                <label for="trendMetric"><strong>Metric over time</strong></label>
+                <select id="trendMetric" data-hint="Track a metric across all your roasts over time.">
+                    <option value="dtr">Development Ratio (DTR %)</option>
+                    <option value="total">Total time (min)</option>
+                    <option value="fc">Time to first crack (min)</option>
+                    <option value="color">Roast colour (brightness)</option>
+                </select>
+                <canvas id="trendCanvas" style="height: 180px;"></canvas>
+            </div>
+
+            <div class="card" id="compareCard">
+                <h3>Compare Roasts</h3>
+                <div class="setup-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label for="compareSelectA"><strong style="color: #ff9800;">Roast A</strong></label>
+                        <select id="compareSelectA" data-hint="Pick two roasts to compare their curves and numbers side by side."><option value="">Select a roast...</option></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="compareSelectB"><strong style="color: #2196f3;">Roast B</strong></label>
+                        <select id="compareSelectB"><option value="">Select a roast...</option></select>
+                    </div>
+                </div>
+                <canvas id="compareCanvas" style="height: 180px;"></canvas>
+                <div id="compareMetrics"></div>
+            </div>
+
+            <div id="historyContainer">
+                <!-- History cards will go here -->
+            </div>
+        </div>
+
+        <!-- Help / User Guide -->
+        <div id="help" class="tab-pane">
+            <h1>Help &amp; Guide</h1>
+
+            <div class="card">
+                <h3>See it in action</h3>
+                <p>New here? Watch a simulated roast — no microphone or beans needed — or take a quick guided tour of the screen.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="demo-btn" type="button">▶ Run the interactive demo</button>
+                    <button class="tour-btn" type="button">🧭 Take a guided tour</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>First-time setup</h3>
+                <ol>
+                    <li>Use <strong>Chrome</strong> or <strong>Edge</strong> (needed for the microphone and Bluetooth).</li>
+                    <li><strong>Install the app</strong> (optional): address-bar install icon, or <em>Share → Add to Home Screen</em> on a phone. It then works offline.</li>
+                    <li><strong>Allow the microphone</strong> when asked (first time you start a roast).</li>
+                    <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
+                    <li>Add beans in <strong>Bean Pantry</strong>, then set your roaster on <strong>Active Roast</strong>.</li>
+                    <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Doing a roast</h3>
+                <ol>
+                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings.</li>
+                    <li>Optional: pick a <strong>Follow reference roast</strong> to overlay a past curve with pre-crack cues.</li>
+                    <li>Tap <strong>Start Roast &amp; Listening</strong> and <strong>allow the microphone</strong> — cracks are detected automatically (beep + timeline), and you can also press <strong>Manual: Mark</strong> and log power changes (P5 → P3) during the roast. If the mic won't work, tap <strong>Start (no mic)</strong> to run the timer and mark everything yourself.</li>
+                    <li><strong>On iPhone/iPad:</strong> open the app in <strong>Safari</strong> (the browser) and allow the microphone when asked. Mic access can be unreliable when launched from a home-screen icon — if Start can't get the mic, the status bar tells you why, and <strong>Start (no mic)</strong> always works.</li>
+                    <li>Watch the live timer and DTR. (Expert) log bean temps for Rate of Rise, or connect a Bluetooth probe.</li>
+                    <li>Tap <strong>Stop Roast</strong> to drop — it's saved to history automatically.</li>
+                </ol>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">📱 The app <strong>keeps your screen awake</strong> during a roast so crack detection keeps running. Leave it on this screen — if you manually lock the phone or switch to another app, listening pauses until you come back.</p>
+            </div>
+
+            <div class="card">
+                <h3>After the roast</h3>
+                <p>In <strong>Roast History</strong>: <strong>Log Roasted Weight</strong> for weight-loss %, <strong>Edit Notes</strong> for tasting/cupping, add a <strong>colour photo</strong> to track how dark each batch is (see below), and <strong>Export</strong> a summary or CSV.</p>
+            </div>
+
+            <div class="card">
+                <h3>📷 Roast-colour photos</h3>
+                <p>Photos let you compare how dark your roasts are over time. Because room lighting
+                changes the colours your camera sees, the app can <strong>colour-correct</strong> a
+                photo so the reading is comparable batch to batch. Pick the option that suits you —
+                each gives a roast-colour number (lower = darker):</p>
+                <ul>
+                    <li><strong>Add Photo</strong> — just a picture, no correction. Fine for a quick visual record.</li>
+                    <li><strong>Add Colour-Corrected Photo</strong> — <em>easiest and recommended.</em>
+                        Under the same light, photograph a plain <strong>grey or white card</strong>,
+                        then the beans. That's it. A neutral grey card works best.</li>
+                    <li><strong>Add ColorChecker Photo</strong> — <em>most accurate.</em> If you happen to
+                        own a 24-patch ColorChecker card, photograph it with the beans and tap its 4
+                        corners. Overkill for most home roasters.</li>
+                    <li><strong>Add Custom-Target Photo</strong> — a budget DIY version of the
+                        ColorChecker (see how-to below).</li>
+                </ul>
+                <details>
+                    <summary style="cursor: pointer;"><strong>Make a cheap DIY colour target</strong></summary>
+                    <p style="margin-top: 8px;">Stick <strong>4–6 paint swatches</strong> on a card —
+                    a grey ramp (white → light grey → mid grey → near-black) is most reliable; add a
+                    warm and a cool chip for better colour. Then, under <strong>Add Custom-Target Photo</strong>:</p>
+                    <ol>
+                        <li>Choose <strong>“＋ Calibrate new target…”</strong>, name it, set the grid
+                            (columns × rows), photograph the card in <strong>good daylight</strong>, and
+                            tap the 4 corner patches. You only do this once — it saves the card's colours
+                            as a baseline.</li>
+                        <li>After that, pick your saved target, <strong>re-photograph the card next to
+                            your beans</strong> in whatever light you have, tap the 4 corners, add the
+                            beans photo, and press <strong>Process</strong>.</li>
+                    </ol>
+                    <p>The reading is <strong>relative but repeatable</strong> — great for comparing your
+                    own roasts (it isn't an official Agtron number).</p>
+                </details>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Tip: turn on <strong>💡 Show hints</strong>
+                (bottom-left) and tap the ⓘ next to any button for a quick explanation.</p>
+            </div>
+
+            <div class="card">
+                <h3>Ongoing use</h3>
+                <ul>
+                    <li><strong>Reproduce a roast:</strong> save it as a Behmor template, or follow it as a reference.</li>
+                    <li><strong>Compare</strong> two batches and view <strong>Trends</strong> over time in Roast History.</li>
+                    <li><strong>Back up regularly:</strong> Roast History → <strong>Data Backup → Export</strong>. Your data lives only in this browser, so keep backups.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Troubleshooting</h3>
+                <ul>
+                    <li><strong>“Start” seems to do nothing / mic error:</strong> the status bar now shows the reason. On iPhone/iPad use <strong>Safari</strong> and allow the mic (not the home-screen icon); on desktop use Chrome/Edge over the https link. Either way, <strong>Start (no mic)</strong> lets you roast without auto-detection.</li>
+                    <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise.</li>
+                    <li><strong>Screen dims or roast seems to pause:</strong> the app keeps the screen awake automatically, but if you locked the phone or switched apps, detection pauses. Stay on the roast screen; use <strong>Manual: Mark</strong> for any crack missed while away.</li>
+                    <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
+                </ul>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Full guide and developer docs are in the project repository (USER_GUIDE.md, README.md, HARDWARE_GUIDE.md).</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
