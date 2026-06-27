@@ -70,6 +70,14 @@ and Gemini**._
   pre-blend compatibility warning in the blend builder. Source:
   [Perfect Daily Grind](https://perfectdailygrind.com/2024/12/multi-variety-coffee-blends-what-roasters-should-know/).
 
+### Behmor models differ — **Adopt**
+- The 1600 Plus / 2000AB / 2000AB Plus aren't identical: the **1600 has no A/B temperature
+  readouts** (added on the 2000AB) and drum **8/16 rpm**; the **2000AB** blinks (no beep) at the
+  75% safety check while the **2000AB Plus** adds an **audible beep**; 2000AB(+) drum **16/32 rpm**.
+  The control panel is now model-aware (`js/roaster-panel.js`). Source:
+  [Sweet Maria's](https://library.sweetmarias.com/behmor-2000-ab-plus-new-model-for-2020/).
+  Follow-up: store the Behmor sub-model on the roaster profile.
+
 ### Process lesson — stacked-PR merge trap — **Adopt**
 - Merging PRs whose base is another *feature branch* merges them into that branch, **not `main`** —
   the freshness/blends/planner stack all showed "merged" but never reached `main`. Recovered by
