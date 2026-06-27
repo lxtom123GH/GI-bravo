@@ -11,6 +11,7 @@ import { initCustomise } from './js/customise.js';
 import { initPrep } from './js/prep.js';
 import { initRoasters } from './js/roasters.js';
 import { initBlends } from './js/blends.js';
+import { initRoasterPanel } from './js/roaster-panel.js';
 
 // Cloud sync is OPT-IN and pulls in Firebase (~large), so load it lazily after the app
 // is interactive — the signed-out first paint stays as lean as before.
@@ -27,6 +28,7 @@ function init() {
     initTabs();
     initRoasters();
     initRoastDashboard();
+    initRoasterPanel();
     initAudioSystem();
     initPantry();
     initPrep();

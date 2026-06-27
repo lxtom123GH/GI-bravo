@@ -131,7 +131,14 @@ false-positive clear; repeating first-crack alarm with tones; phase breakdown (d
 development) + DTR; follow a reference roast with a first-crack ETA; temp/probe (BT/USB) logging;
 "Start (no mic)" manual mode; keep-screen-awake.
 
-**The big idea ✨ — a machine-faithful "Roaster control panel".**
+**Shipped ✅ (`js/roaster-panel.js`):** a model-aware Behmor panel — a before-vs-during button
+reference (the manual's gotcha), a Behmor-model selector (2000AB Plus / 2000AB / 1600 Plus
+differ: beep vs blink, drum rpm, A/B temp readouts), a setup-sequence guide, and a live mode
+(auto on roast start) that logs button presses onto the roast. Follow-ups: store the Behmor
+sub-model on the roaster profile; a faithful KKTO panel; a fuller pre-roast "what will happen"
+simulation.
+
+**The original idea ✨ — a machine-faithful "Roaster control panel".**
 The Behmor manual is genuinely confusing, and *buttons change meaning before vs during a roast*.
 So:
 - A **roaster "skin"** that visually mirrors the real machine (a Behmor that looks like a Behmor),
@@ -212,8 +219,10 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
    prep batches; pre/post-blend recorded.
 3.5 ✅ **Batch planner** — DONE (`js/planner.js`): "Plan roasts" suggests drum-fitting sizes that
    divide a bag evenly (2.5 kg → 6 × 417 g, no runt) + shows the leftover the usual size leaves.
-4. **Machine-faithful roaster control panel (pre-roast plan + live, Behmor first)** — the biggest,
-   most differentiating piece; tames the manual. Build after profiles exist.
+4. ✅ **Machine-faithful roaster control panel** — DONE (`js/roaster-panel.js`): Behmor panel
+   with before-vs-during button reference, **model-aware** (2000AB Plus / 2000AB / 1600 Plus),
+   setup guide, and a live mode that logs button presses onto the roast. Follow-ups: Behmor
+   sub-model on the roaster profile; KKTO panel.
 5. **Tastiness-per-dollar value leaderboard** — small, motivating, uses existing score + cost.
 6. **Receipt/invoice quick-add (+ photo) ** then later parsing — speeds pantry entry.
 7. **Tasting-over-time (multiple dated entries)** — small change, real insight.

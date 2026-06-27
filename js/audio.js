@@ -148,6 +148,10 @@ export function initAudioSystem() {
     stopBtn.addEventListener('click', stopRoast);
 
     if (markDryEndBtn) markDryEndBtn.addEventListener('click', () => markPhase('Dry End', 'dryEndTime'));
+    // Log Behmor control-panel button presses onto the roast timeline (live mode).
+    window.addEventListener('logRoasterAction', (e) => {
+        if (isRecording && typeof e.detail === 'string') logMessage('🎛️ ' + e.detail);
+    });
     markFirstCrackBtn.addEventListener('click', () => markPhase('First Crack (Manual)', 'firstCrackTime'));
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
     if (undoFirstCrackBtn) undoFirstCrackBtn.addEventListener('click', () => clearCrack('firstCrackTime'));
@@ -876,6 +880,7 @@ async function startRoast(manual = false) {
     logMessage('Roast Started.');
 
     isRecording = true;
+    window.dispatchEvent(new Event('roastStarted')); // switch the Behmor panel to live mode
     // Keep the screen awake for the whole roast — crack detection runs in
     // requestAnimationFrame, which the browser pauses if the screen locks.
     acquireWakeLock();
@@ -944,6 +949,7 @@ async function startRoast(manual = false) {
 
 function stopRoast() {
     isRecording = false;
+    window.dispatchEvent(new Event('roastStopped')); // Behmor panel back to setup mode
     releaseWakeLock();
     stopCrackAlarm();
 
