@@ -98,8 +98,13 @@ Read a bean-probe thermocouple via **Web Bluetooth** (Chrome/Edge) for automatic
 
 ### B4. Multi-patch colour calibration (ColorChecker) — ✅ Done
 Shipped: an "Add ColorChecker Photo" flow fits a 3×4 affine colour-correction matrix by least squares over the 24 published patch sRGB references (`js/colorcheck.js`), applies it to the bean photo, and stores a roast-colour index (counted alongside the single-patch flow). The user taps the 4 corner patches to locate the grid (bilinear interpolation + per-patch averaging).
-- *Caveat:* fitting is in gamma-encoded sRGB (pragmatic, browser-only) — a relative roast-colour index, not full linear-light colorimetry/Agtron.
-- *Possible follow-up:* linearize before fitting; auto-detect the chart.
+- *Caveat:* a relative roast-colour index, not full linear-light colorimetry/Agtron.
+- *Follow-up shipped:* linear-light fitting; a **DIY custom-target** mode (below) that fits the same CCM to N self-calibrated patches.
+- *Possible follow-up:* auto-detect the chart.
+
+### B4b. DIY custom colour target — ✅ Done
+Shipped: an "Add Custom-Target Photo" flow for a cheap home-made swatch card (4–6 paint chips). `computeCCM`/`sampleChart` were generalized to N patches and arbitrary cols×rows grids (the 24-patch ColorChecker is now just the default). Because paint swatches have no published sRGB, the target is **self-calibrated once** under daylight — each patch's measured colour is stored as the baseline (`colorTargets` in `storage.js`, included in backup) — and future photos are corrected back to that baseline. Re-shoot the card next to the beans, tap the 4 corners, and the same least-squares CCM (`js/colorcheck.js`) is fit and applied; result stored as a `customtarget` roast-colour index.
+- *Why it works:* ≥4 patches with good spread (a grey ramp + a warm/cool chip) condition the 3×4 fit; the deltas between patches drive the matrix.
 
 ### B5. Behmor P1–P5 reference profile templates
 **Phase 1 — ✅ Done:** save a finished Behmor roast as a template keyed by **profile + weight**; selecting that profile/weight on the dashboard auto-loads it as the follow reference (exact match, else profile-only fallback). Added a **weight-unit toggle** (metric default / imperial) that relabels the Behmor weight buttons, and a **default batch size** preference that pre-selects the weight on load. Templates, unit, and default weight are persisted and included in backup.
@@ -143,11 +148,11 @@ Shipped:
 - **B3 follow-up — Web Serial probe** — ✅ a USB temperature-probe path alongside Bluetooth (`js/serial.js`).
 - **B3 follow-up — dedicated RoR trace** — ✅ the live curve overlays a °/min Rate-of-Rise line.
 - **B4 follow-up — linearized fit** — ✅ the ColorChecker matrix is fit/applied in linear light.
+- **B4 follow-up — DIY custom target** — ✅ self-calibrated N-patch swatch card as a budget ColorChecker (see B4b).
 - **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
 
 Open threads (see `HANDOFF.md` for detail):
 - **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.
-- **Multi-swatch DIY colour target** — 4–6 paint swatches (grey ramp) as a budget ColorChecker; fit the existing least-squares CCM to N self-calibrated patches (the deltas between patches condition the matrix). Reuses `colorcheck.js`.
 
 Deliberately not built (rationale):
 - **Bluetooth scales / water-mineral brew profiles** (Beanconqueror-style) — per-device BLE protocols can't be built/verified without the hardware; water profiles are consumer-brew scope creep with low value for a roasting-focused app.

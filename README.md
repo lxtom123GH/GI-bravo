@@ -47,8 +47,8 @@ analysis and logging work with any roaster.
 - 📊 **Roast Trends** — track DTR / time / first crack / roast colour across
   batches over time.
 - 📸 **Roast photos** with optional colour correction — **reference-card white
-  balance** or a **multi-patch ColorChecker** fit — producing a
-  lighting-normalized **roast-colour index**.
+  balance**, a **multi-patch ColorChecker** fit, or a self-calibrated **DIY
+  custom target** — producing a lighting-normalized **roast-colour index**.
 - 📤 **Export** — per-roast CSV (time, energy, temp, RoR, ET, power, events) and
   a clipboard summary.
 - 💾 **JSON backup/restore** of all beans, roasts, and settings (photos optional).
@@ -110,7 +110,7 @@ js/
   metrics.js        DTR, RoR, weight-loss, weight units, time formatting
   flavors.js        SCA flavor-wheel data
   photos.js         IndexedDB photo storage + reference-card white balance
-  colorcheck.js     Multi-patch ColorChecker colour-correction matrix
+  colorcheck.js     N-patch colour-correction matrix (ColorChecker or DIY target)
   bluetooth.js      Web Bluetooth connection to a DIY temperature probe
 public/             PWA manifest, icons, service worker (copied to dist/ on build)
 HARDWARE_GUIDE.md   DIY Bluetooth thermocouple build (ESP32 + MAX31855) + firmware
@@ -133,7 +133,7 @@ Everything is stored **locally in your browser** — there is no server or accou
 
 ## Roast-colour measurement
 
-Two photo colour-correction options normalize lighting so roast darkness is
+Three photo colour-correction options normalize lighting so roast darkness is
 comparable across batches:
 
 - **Reference-card white balance** — quickest; use a **neutral grey/white-balance
@@ -141,6 +141,11 @@ comparable across batches:
   can clip and may contain optical brighteners.
 - **ColorChecker (24-patch)** — more accurate; tap the 4 corner patches to fit a
   full colour-correction matrix.
+- **Custom target (DIY multi-patch)** — a cheap home-made swatch card (e.g. 4–6
+  paint chips on card). Calibrate it once under good daylight (the app stores each
+  patch's measured colour as the baseline), then re-shoot it with your beans under
+  any light to fit the same full matrix. A neutral grey ramp is most reliable; add
+  a warm and a cool chip for better colour.
 
 Either way the result is a **relative** roast-colour index, not an official
 Agtron score (which needs an NIR colorimeter and ceramic tiles).
