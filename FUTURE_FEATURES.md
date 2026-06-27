@@ -166,12 +166,13 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
 3.5 ✅ Batch planner — done (`js/planner.js`): "Plan roasts" on a pantry bean suggests roast
    sizes that fit the roaster's drum and divide the bag evenly (2.5 kg → 6 × 417 g, no runt),
    and shows the leftover your usual size leaves. Freshness caveat included.
-4. ✅ Machine-faithful roaster control panel — done (`js/roaster-panel.js`): a Behmor panel
-   showing each button's **before-roast vs during-roast** function (the manual's big gotcha),
-   **model-aware** (2000AB Plus / 2000AB / 1600 Plus differ — beep vs blink, drum rpm, A/B temp
-   readouts), a setup-sequence guide, and a **live mode** (auto on roast start) whose buttons log
+4. ✅ Machine-faithful roaster control panel — done (`js/roaster-panel.js`). **Behmor:** each
+   button's **before-roast vs during-roast** function (the manual's big gotcha), **model-aware**
+   (2000AB Plus / 2000AB / 1600 Plus differ — beep vs blink, drum rpm, A/B temp readouts), a
+   setup-sequence guide. **KKTO:** a manual heat/airflow + agitator guide and a roast-phase flow
+   (charge → drying → first crack → drop). Both have a **live mode** (auto on roast start) logging
    timestamped actions onto the roast. Follow-up: capture the Behmor sub-model on the roaster
-   profile; a faithful KKTO panel.
+   profile; a fuller pre-roast "what will happen" simulation.
 5. Tastiness-per-dollar value leaderboard.
 6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.
 

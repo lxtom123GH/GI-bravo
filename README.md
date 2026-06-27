@@ -37,9 +37,10 @@ model) and each roast is tagged with the machine it was done on.
   profile + weight; it auto-loads when you pick that profile. Plus **manual
   power profiles** (P1–P5 = 0/25/50/75/100%) that replay timed power cues.
 - 🔔 Audio + desktop notifications on crack detection.
-- 🎛️ **Behmor control panel** — a model-aware guide (2000AB Plus / 2000AB / 1600 Plus) showing
-  each button's **before-roast vs during-roast** function (the manual's big gotcha), with a live
-  mode that logs your button presses onto the roast timeline.
+- 🎛️ **Roaster control panel** — a guided panel for your machine. **Behmor:** model-aware
+  (2000AB Plus / 2000AB / 1600 Plus) showing each button's **before-roast vs during-roast**
+  function (the manual's big gotcha). **KKTO:** a manual heat/airflow control guide + roast-phase
+  flow. Both have a **live mode** that logs your changes onto the roast timeline.
 
 **Beans, history & analysis**
 - 🫘 **Bean pantry** with green-weight tracking, low-stock warnings, and
@@ -119,7 +120,7 @@ js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
   roast.js          Roast setup (bean selection, Behmor/KKTO controls, weight units)
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
-  roaster-panel.js  Model-aware Behmor control panel (before/during button guide + live log)
+  roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   pantry.js         Bean inventory (CRUD, quantities, restock, green age/FIFO)
   prep.js           Weigh-out prep batches (bean + weight + photo)

@@ -78,11 +78,23 @@ and Gemini**._
   [Sweet Maria's](https://library.sweetmarias.com/behmor-2000-ab-plus-new-model-for-2020/).
   Follow-up: store the Behmor sub-model on the roaster profile.
 
+### KKTO = Koffee Kosmo Turbo Oven — **Adopt**
+- A DIY drum/agitator roaster (turbo oven for heat); **manual** heat + airflow, no fixed programs;
+  ~**300–700 g** (sweet spot 500–650). Corrected the planner's KKTO capacity guess (250–1000) →
+  **300–800**, and the control panel gives KKTO a heat/airflow + phase guide (not a button decode).
+  Source: [Koffee Kosmo](http://koffeekosmo.blogspot.com/). Builds vary → capacity is per-profile.
+
 ### Process lesson — stacked-PR merge trap — **Adopt**
 - Merging PRs whose base is another *feature branch* merges them into that branch, **not `main`** —
   the freshness/blends/planner stack all showed "merged" but never reached `main`. Recovered by
   merging the top branch into `main`. Rule added to `CLAUDE.md`: base PRs on `main`, or retarget
   each to `main` before merging.
+
+### Process lesson — pushes after a merge are stranded — **Adopt**
+- A merged PR is closed, so a commit pushed to that branch afterwards has **no open PR** and the
+  owner can't see it (the KKTO panel push landed after #59 was merged → needed a fresh PR #60).
+  Rule in `CLAUDE.md`: per PR, tell the owner **"don't merge yet — more coming"** vs **"safe to
+  merge now"**; if a push is stranded, open a new branch/PR off the current tip.
 
 ---
 

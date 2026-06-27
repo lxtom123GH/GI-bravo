@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BEHMOR_BUTTONS, buttonHelp, behmorPanel, BEHMOR_MODELS } from '../../js/roaster-panel.js';
+import { BEHMOR_BUTTONS, buttonHelp, behmorPanel, BEHMOR_MODELS, KKTO_CONTROLS, KKTO_PHASES } from '../../js/roaster-panel.js';
 
 describe('Behmor button reference', () => {
     it('covers the key controls with both phases', () => {
@@ -40,5 +40,20 @@ describe('behmorPanel — model variants', () => {
     it('exposes a model list including the common Behmors', () => {
         expect(BEHMOR_MODELS).toContain('2000AB Plus');
         expect(BEHMOR_MODELS).toContain('1600 Plus');
+    });
+});
+
+describe('KKTO guide', () => {
+    it('explains heat, airflow and the agitator', () => {
+        const labels = KKTO_CONTROLS.map(c => c.label.toLowerCase()).join(' ');
+        expect(labels).toMatch(/heat/);
+        expect(labels).toMatch(/airflow|fan/);
+        expect(labels).toMatch(/agitator|drum/);
+        KKTO_CONTROLS.forEach(c => expect(c.does).toBeTruthy());
+    });
+    it('has a roast-phase flow from charge to drop', () => {
+        expect(KKTO_PHASES.length).toBeGreaterThanOrEqual(4);
+        expect(KKTO_PHASES[0].toLowerCase()).toMatch(/charge/);
+        expect(KKTO_PHASES[KKTO_PHASES.length - 1].toLowerCase()).toMatch(/drop/);
     });
 });
