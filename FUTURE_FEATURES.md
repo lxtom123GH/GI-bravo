@@ -163,6 +163,9 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    history shows a resting/peak/past-peak badge per roast.
 3. ✅ Blend builder → weigh-out prep plan — done (`js/blends.js`): recipe (components + %),
    "Weigh out" splits a batch into per-component prep batches; pre/post-blend recorded.
+3.5 ✅ Batch planner — done (`js/planner.js`): "Plan roasts" on a pantry bean suggests roast
+   sizes that fit the roaster's drum and divide the bag evenly (2.5 kg → 6 × 417 g, no runt),
+   and shows the leftover your usual size leaves. Freshness caveat included.
 4. Machine-faithful roaster control panel (pre-roast plan + live; Behmor first).
 5. Tastiness-per-dollar value leaderboard.
 6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.

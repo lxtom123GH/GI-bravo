@@ -1,5 +1,6 @@
 import { getPantry, addBeanToPantry, deleteBeanFromPantry, adjustBeanQuantity } from './storage.js';
 import { greenAge, fifoBeanId } from './freshness.js';
+import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
 
@@ -106,6 +107,12 @@ export function renderPantryList() {
         btnGroup.style.display = 'flex';
         btnGroup.style.gap = '8px';
 
+        const planBtn = document.createElement('button');
+        planBtn.textContent = 'Plan roasts';
+        planBtn.style.padding = '5px 10px';
+        planBtn.setAttribute('data-hint', "Work out roast sizes that fit your roaster and divide this bag evenly (e.g. 2.5 kg → 6 × 417 g, no leftover).");
+        planBtn.addEventListener('click', () => openPlanModal(bean.name, Number(bean.quantity) || 0));
+
         const restockBtn = document.createElement('button');
         restockBtn.textContent = 'Restock';
         restockBtn.style.padding = '5px 10px';
@@ -131,6 +138,7 @@ export function renderPantryList() {
             }
         });
 
+        btnGroup.appendChild(planBtn);
         btnGroup.appendChild(restockBtn);
         btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);

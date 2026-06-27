@@ -210,6 +210,8 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
    badge per roast in History.
 3. ✅ **Blend builder → prep plan** — DONE (`js/blends.js`): ratios → per-component weigh-out
    prep batches; pre/post-blend recorded.
+3.5 ✅ **Batch planner** — DONE (`js/planner.js`): "Plan roasts" suggests drum-fitting sizes that
+   divide a bag evenly (2.5 kg → 6 × 417 g, no runt) + shows the leftover the usual size leaves.
 4. **Machine-faithful roaster control panel (pre-roast plan + live, Behmor first)** — the biggest,
    most differentiating piece; tames the manual. Build after profiles exist.
 5. **Tastiness-per-dollar value leaderboard** — small, motivating, uses existing score + cost.

@@ -92,6 +92,10 @@ an official Agtron number.
   flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
   In **Roast History**, each roast shows a freshness badge — *resting* for the first few
   days, then *ready (peak)* for roughly 1–3 weeks, then *past peak*.
+- **Plan your roasts:** on a bean in the **Bean Pantry**, tap **Plan roasts** — it suggests
+  roast sizes that fit your roaster's drum *and* divide your bag evenly (e.g. a 2.5 kg bag →
+  6 × 417 g with nothing left over), and shows the leftover your usual size would leave. Roast
+  about what you'll drink in ~2 weeks.
 - **Blends:** in **Bean Pantry → Blends**, build a recipe (e.g. 60% Colombia · 40% Brazil),
   choose *pre-blend* (roast together) or *post-blend* (roast each, combine after), then
   **Weigh out** a batch — the app splits it into per-bean prep batches ready to roast.

@@ -47,6 +47,8 @@ model) and each roast is tagged with the machine it was done on.
   batch (bean + weight + photo) onto Active Roast in one tap.
 - 🧪 **Blend builder** — define a recipe (e.g. 60% Colombia · 40% Brazil), pre- or post-blend,
   then "weigh out" a batch into per-component prep batches.
+- 🧮 **Batch planner** — "Plan roasts" suggests roast sizes that fit your drum and divide a bag
+  evenly (2.5 kg → 6 × 417 g, no runt) and shows the leftover your usual size leaves.
 - ⚖️ **Yield** — log roasted (post-cool) weight to get weight-loss %.
 - 📚 **Roast history** with timelines, logs, and tasting notes.
 - 👅 **Tiered tasting & cupping** — emoji → SCA flavor wheel → **official
@@ -115,6 +117,7 @@ js/
   pantry.js         Bean inventory (CRUD, quantities, restock, green age/FIFO)
   prep.js           Weigh-out prep batches (bean + weight + photo)
   blends.js         Blend recipes → per-component weigh-out prep batches
+  planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)
   freshness.js      Green-bean age + roasted rest/peak + FIFO helpers (pure)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
   storage.js        localStorage persistence + JSON backup/restore + settings
