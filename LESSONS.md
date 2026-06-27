@@ -78,6 +78,12 @@ and Gemini**._
   [Sweet Maria's](https://library.sweetmarias.com/behmor-2000-ab-plus-new-model-for-2020/).
   Follow-up: store the Behmor sub-model on the roaster profile.
 
+### KKTO = Koffee Kosmo Turbo Oven — **Adopt**
+- A DIY drum/agitator roaster (turbo oven for heat); **manual** heat + airflow, no fixed programs;
+  ~**300–700 g** (sweet spot 500–650). Corrected the planner's KKTO capacity guess (250–1000) →
+  **300–800**, and the control panel gives KKTO a heat/airflow + phase guide (not a button decode).
+  Source: [Koffee Kosmo](http://koffeekosmo.blogspot.com/). Builds vary → capacity is per-profile.
+
 ### Process lesson — stacked-PR merge trap — **Adopt**
 - Merging PRs whose base is another *feature branch* merges them into that branch, **not `main`** —
   the freshness/blends/planner stack all showed "merged" but never reached `main`. Recovered by

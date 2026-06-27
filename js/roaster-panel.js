@@ -91,12 +91,16 @@ export function initRoasterPanel() {
 
 function renderPanel(mount) {
     const roaster = getActiveRoaster() || { model: 'behmor' };
+    if (roaster.model === 'kkto') { renderKktoPanel(mount); return; }
     if (roaster.model !== 'behmor') {
         mount.innerHTML = `<details><summary style="cursor:pointer;color:var(--text-muted);">🎛️ Roaster control panel</summary>
-            <p style="color:var(--text-muted);font-size:0.9rem;padding-top:8px;">A faithful guided panel exists for the Behmor so far. For ${roaster.model.toUpperCase()}, use the controls above and Manual: Mark for cracks.</p></details>`;
+            <p style="color:var(--text-muted);font-size:0.9rem;padding-top:8px;">Guided panels exist for the Behmor and KKTO so far. For ${roaster.model.toUpperCase()}, use the controls above and Manual: Mark for cracks.</p></details>`;
         return;
     }
+    renderBehmorPanel(mount);
+}
 
+function renderBehmorPanel(mount) {
     const variant = getBehmorModel();
     const { buttons, safety, uncertain } = behmorPanel(variant);
     const modelOptions = BEHMOR_MODELS.map(m => `<option value="${m}" ${m === variant ? 'selected' : ''}>Behmor ${m}</option>`).join('');
@@ -145,9 +149,79 @@ function renderPanel(mount) {
     const modelSel = mount.querySelector('#rpModel');
     if (modelSel) modelSel.addEventListener('change', () => { saveBehmorModel(modelSel.value); renderPanel(mount); });
 
+    bindLive(mount);
+}
+
+// Shared: live-mode buttons log a timestamped action onto the roast.
+function bindLive(mount) {
     mount.querySelectorAll('.rp-live').forEach(btn => {
         btn.addEventListener('click', () => {
             window.dispatchEvent(new CustomEvent('logRoasterAction', { detail: btn.dataset.log }));
         });
     });
+}
+
+// --- KKTO (Koffee Kosmo Turbo Oven): a DIY drum/agitator roaster. No fixed buttons/programs
+// like the Behmor — you control HEAT and AIRFLOW (the turbo oven) by hand over the roast, with
+// the agitator keeping beans moving. Builds vary, so this is a control + phase guide, not a
+// button decode. Capacity ~300–700 g (sweet spot 500–650).
+
+export const KKTO_CONTROLS = [
+    { label: 'Heat', does: 'The turbo oven element drives the temperature / Rate of Rise. Start high to charge, then ease it back into and after first crack to control development.' },
+    { label: 'Airflow (fan)', does: 'Convection + chaff. More airflow = more even convective heat and clears chaff; too much can strip heat and stall the rise. Adjust to steer the curve.' },
+    { label: 'Agitator / drum', does: 'Keeps the beans tumbling for an even roast — run it throughout.' }
+];
+
+export const KKTO_PHASES = [
+    'Charge — preheat, then load (sweet spot 500–650 g)',
+    'Drying — steady heat until the beans turn yellow',
+    'Maillard — browning; watch the Rate of Rise',
+    'First crack — ease the heat back to control development',
+    'Development — hold to taste',
+    'Drop — cut heat, maximise airflow / tip out to cool'
+];
+
+const KKTO_LIVE = [
+    { label: 'Heat ↑', log: 'Heat increased' },
+    { label: 'Heat ↓', log: 'Heat reduced' },
+    { label: 'Airflow ↑', log: 'Airflow increased' },
+    { label: 'Airflow ↓', log: 'Airflow reduced' },
+    { label: 'Drop', log: 'Dropped — cooling' }
+];
+
+function renderKktoPanel(mount) {
+    const refRows = KKTO_CONTROLS.map(c => `
+        <tr>
+            <td style="padding:4px 8px;font-weight:bold;white-space:nowrap;">${c.label}</td>
+            <td style="padding:4px 8px;">${c.does}</td>
+        </tr>`).join('');
+
+    const phaseList = KKTO_PHASES.map(p => `<li>${p}</li>`).join('');
+
+    const liveControls = mode === 'live' ? `
+        <div style="margin-top:10px;">
+            <strong>Log a change (live):</strong>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+                ${KKTO_LIVE.map(a => `<button class="rp-live" data-log="${a.log}" style="font-size:0.8rem;padding:6px 10px;">${a.label}</button>`).join('')}
+            </div>
+            <small style="color:var(--text-muted);">Each is timestamped onto the roast log.</small>
+        </div>` : `
+        <p style="margin:6px 0;"><strong>Roast flow:</strong></p><ol style="margin-top:0;">${phaseList}</ol>`;
+
+    mount.innerHTML = `
+        <div class="card" style="margin:0;">
+            <h3>🎛️ KKTO control guide <span style="font-weight:normal;font-size:0.8rem;color:var(--text-muted);">— ${mode === 'live' ? 'live' : 'setup'}</span></h3>
+            <p style="color:var(--text-muted);font-size:0.85rem;">The KKTO is a manual DIY roaster — you steer the roast with <strong>heat</strong> and <strong>airflow</strong> (turbo oven), with the agitator keeping beans moving. There are no fixed programs; builds vary, so set your drum capacity under ⚙ Manage roasters.</p>
+            ${mode === 'live' ? '<p style="margin:6px 0;color:var(--success);"><strong>● Live roast</strong> — log your heat/airflow changes below.</p>' : ''}
+            <div style="overflow-x:auto;">
+            <table style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+                <thead><tr style="text-align:left;color:var(--text-muted);"><th style="padding:4px 8px;">Control</th><th style="padding:4px 8px;">What it does</th></tr></thead>
+                <tbody>${refRows}</tbody>
+            </table>
+            </div>
+            <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;">Capacity ~300–700 g (sweet spot 500–650 g). Heat/airflow controls depend on your build.</p>
+            ${liveControls}
+        </div>`;
+
+    bindLive(mount);
 }

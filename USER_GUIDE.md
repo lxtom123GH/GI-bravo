@@ -104,10 +104,12 @@ an official Agtron number.
 - **Roaster capacity:** each roaster has a drum min/max (Behmor ≈ 100–454 g) used by **Plan
   roasts**. Set your own under **⚙ Manage roasters** when adding a machine (a KKTO build, a
   friend's roaster, etc.).
-- **Behmor control panel:** on **Active Roast**, the 🎛️ panel shows what each Behmor button does
-  *before* vs *during* a roast (they change!) — pick your model (2000AB Plus / 2000AB / 1600 Plus)
-  as they differ slightly. Once a roast starts it switches to **live mode**: tap the buttons you
-  press (heat P1–P5, add-time C, drum D, Cool) and they're logged onto the roast with timestamps.
+- **Control panel (your machine):** on **Active Roast**, the 🎛️ panel guides your roaster. For a
+  **Behmor** it shows what each button does *before* vs *during* a roast (they change!) — pick your
+  model (2000AB Plus / 2000AB / 1600 Plus) as they differ. For a **KKTO** it explains heat, airflow
+  and the agitator plus a roast-phase flow (charge → drying → first crack → drop), since the KKTO is
+  manual. Once a roast starts both switch to **live mode**: tap what you change (Behmor: heat P1–P5,
+  add-time C, drum D, Cool / KKTO: heat ↑↓, airflow ↑↓, drop) and it's logged with timestamps.
 - **Reproduce a good roast:** save it as a **Behmor template** (or pick it under
   *Follow reference roast*) so next time the app guides you with its curve and
   crack timing.

@@ -11,7 +11,7 @@ import { getActiveRoaster, getLastGreenWeight } from './storage.js';
 // its value as an editable estimate (set per profile).
 const CAPACITY = {
     behmor: { min: 100, max: 454 },
-    kkto: { min: 250, max: 1000 }
+    kkto: { min: 300, max: 800 } // Koffee Kosmo Turbo Oven: 300–700 g (sweet spot 500–650), ~800 g advanced
 };
 export function roasterCapacity(model) {
     return CAPACITY[model] || { min: 100, max: 1000 };
