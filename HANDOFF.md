@@ -17,20 +17,34 @@ A browser-only PWA coffee-roasting tracker, fully featured and shipped to `main`
 tab for usage, `HARDWARE_GUIDE.md` for the DIY probe. The entire roadmap is done
 except the two open threads below.
 
-## Open thread 1 — Portfolio backend decision (was B8)
-"No backend" was the *inherited* starting point, not a deliberate choice. Worth
-reconsidering **across the whole app portfolio**, not just GI-bravo:
-- The repos `GI-alpha / GI-bravo / GI-charlie`, `golf-handicap-tracker`, `tempovibes`
-  are consumer apps that would benefit from **accounts + cross-device sync + (opt-in) community**.
-- A **single shared backend** (one Supabase project: Postgres + auth + storage + row-level
-  security) gives **single sign-on across all apps**, per-app data namespaces, and one free
-  tier — the cost/ops amortize across the portfolio, which is the main argument *for* adding one.
-- Recommended approach: **local-first + opt-in cloud sync**, GI-bravo as the pilot, then reuse
-  the auth/sync module in the other apps. Keep every app fully usable offline if not signed in.
-- Trade-offs: ongoing ops (auth/security/backups), privacy shifts from 100% local (so opt-in),
-  community content needs light moderation, and provider keys + Vercel env setup are required.
-- Decision still needed: shared vs per-app vs stay-local; which apps are in scope; provider
-  (Supabase recommended; Firebase or Vercel Postgres are alternatives).
+## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, pilot pending
+**Decided 2026-06-27: standardize the portfolio on Firebase**, local-first + opt-in cloud
+sync, GI-bravo as the pilot. Full plan in **`PORTFOLIO_AUTH_SYNC.md`** (the reusable auth+sync
+module contract, data model, and rollout).
+
+A portfolio-wide survey corrected the original premise: it is **not** "no backend everywhere."
+Firebase is already the incumbent in three repos — `golf-handicap-tracker` already ships the
+exact accounts + cloud-sync pattern this proposes (Firebase Auth + Firestore + Storage +
+Functions), and `aps-agency-comparator` + `aps-mobility-engine` share one Firebase project
+(reference data, no user accounts). So Supabase was dropped to avoid fragmenting from existing
+investment; `golf-handicap-tracker` is the pattern reference and migrates **last** (it has live
+data). `GI-charlie` is an empty repo.
+
+Locked decisions for the pilot:
+- **Provider:** one shared Firebase project as the identity hub (placeholder id `lx-apps-hub`);
+  per-app data namespaced under `/apps/{appId}/...`.
+- **Auth:** email/password + optional Google sign-in.
+- **Local-first / cloud-optional:** every app stays 100% usable with no account; sign-in is
+  opt-in; local data merges up on first sign-in.
+- **Collaboration is first-class:** data can be owned by a user OR a shared **space** (members
+  map `{uid: role}`) — e.g. a shared green-bean pantry/roaster (coffee) or a round with
+  participants (golf).
+- **Conflict policy:** union-by-id + last-write-wins by `updatedAt` (per-collection override).
+- **Cost:** stay on the free tier — **no Cloud Functions** in the pilot (Functions need Blaze);
+  revisit billing before adding server-side features.
+
+Rollout order: GI-bravo (pilot) → GI-alpha → tempovibes → migrate golf-handicap-tracker last.
+The APS pair stays out of identity scope unless it adds personalization.
 
 ## Open thread 2 — Multi-swatch DIY colour target — ✅ Done
 Shipped as **"Add Custom-Target Photo"** in History. `js/colorcheck.js`
