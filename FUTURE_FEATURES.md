@@ -120,6 +120,21 @@ Shipped: an Expert-tier "Log ET" input records timestamped environment-temperatu
 
 ---
 
+## Competitive landscape research (2026-06)
+
+Surveyed Artisan, RoasTime/Roast.World (Aillio), Cropster, RoastLog/RoastPATH, and Beanconqueror.
+Field direction: AI predictions (Cropster Smart Predictions), the SCA **CVA 2024** cupping form,
+cloud + community profile sharing, and linked inventory↔production↔cupping. Opportunities found
+that fit a browser-only app were all built (below); the big remaining differentiator others have
+is **cloud/community**, which needs a backend (B8).
+
+Shipped from the research:
+- **Roast phase breakdown** — ✅ Dry End marker → drying / Maillard / development time + %.
+- **First-crack ETA** — ✅ countdown to the followed reference's first crack.
+- **Consumption & spend dashboard** — ✅ Summary card (roasts, kg, avg loss, spend).
+- **Shareable roast file** — ✅ export/import a single roast (backend-free sharing).
+- **SCA CVA (2024) cupping form** — ✅ selectable alongside the classic 100-point form.
+
 ## Smaller ideas / nice-to-haves
 
 Shipped:
@@ -131,6 +146,8 @@ Shipped:
 - **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
 
 Deliberately not built (rationale):
+- **Bluetooth scales / water-mineral brew profiles** (Beanconqueror-style) — per-device BLE protocols can't be built/verified without the hardware; water profiles are consumer-brew scope creep with low value for a roasting-focused app.
+- **Production scheduling** (Cropster) — aimed at commercial roasteries; low value for the home/hobby focus.
 - **Artisan interoperability** — deferred. Artisan's importer expects specific CSV/`.alog` schemas that can't be validated here; the existing generic CSV (time, energy, temp, RoR, ET, power, events) already serves spreadsheet analysis. Revisit only with a real Artisan round-trip test.
 - **B4 — auto-detect the ColorChecker** — won't-do for now. Reliable chart detection needs real computer vision; the 4-corner tap is a pragmatic, dependency-free alternative.
 - **B8 — cloud sync / community comparison** — parked; needs a backend, which conflicts with the browser-only design.
