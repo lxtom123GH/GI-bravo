@@ -8,6 +8,16 @@ import { initAudioSystem } from './js/audio.js';
 import { initPantry } from './js/pantry.js';
 import { initHistory } from './js/history.js';
 
+// Cloud sync is OPT-IN and pulls in Firebase (~large), so load it lazily after the app
+// is interactive — the signed-out first paint stays as lean as before.
+function initSyncLazy() {
+    const go = () => import('./js/sync-ui.js')
+        .then((m) => m.initSync())
+        .catch((e) => console.warn('[sync] module failed to load:', e?.message || e));
+    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 3000 });
+    else setTimeout(go, 1200);
+}
+
 function init() {
     initTier();
     initTabs();
@@ -18,6 +28,7 @@ function init() {
     initDemo();
     initTour();
     initHints();
+    initSyncLazy();
 }
 
 if (document.readyState === 'loading') {
