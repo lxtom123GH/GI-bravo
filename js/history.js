@@ -318,6 +318,9 @@ function renderHistoryList() {
 
         let timelineHtml = `<ul><li><strong>Total Time:</strong> ${formatMs(m.totalMs)}</li>`;
 
+        if (m.dryEndMs != null) {
+            timelineHtml += `<li><strong>Dry End:</strong> ${formatMs(m.dryEndMs)}</li>`;
+        }
         if (m.timeToFirstCrackMs != null) {
             timelineHtml += `<li><strong>First Crack:</strong> ${formatMs(m.timeToFirstCrackMs)}</li>`;
         }
@@ -327,6 +330,9 @@ function renderHistoryList() {
         if (m.developmentTimeMs != null) {
             timelineHtml += `<li><strong>Development Time:</strong> ${formatMs(m.developmentTimeMs)}</li>`;
             timelineHtml += `<li><strong>Development Ratio (DTR):</strong> ${formatDtr(m.dtr)}</li>`;
+        }
+        if (m.dryingPct != null && m.maillardPct != null && m.developmentPct != null) {
+            timelineHtml += `<li><strong>Phases (dry/Maillard/dev):</strong> ${m.dryingPct.toFixed(0)}% / ${m.maillardPct.toFixed(0)}% / ${m.developmentPct.toFixed(0)}%</li>`;
         }
         const temps = roast.timeline.temps || [];
         if (temps.length > 0) {
@@ -1054,6 +1060,7 @@ function exportRoastCsv(id) {
         rows.push({ t: p.t / 1000, rms: '', temp: p.temp, ror: p.ror, event: '' });
     });
     (roast.timeline.temps || []).slice(0, 1).forEach(p => rows.push({ t: p.t / 1000, rms: '', temp: p.temp, ror: '', event: '' }));
+    if (roast.timeline.dryEndTime) rows.push({ t: (roast.timeline.dryEndTime - start) / 1000, rms: '', temp: '', ror: '', event: 'Dry End' });
     if (roast.timeline.firstCrackTime) rows.push({ t: (roast.timeline.firstCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'First Crack' });
     if (roast.timeline.secondCrackTime) rows.push({ t: (roast.timeline.secondCrackTime - start) / 1000, rms: '', temp: '', ror: '', event: 'Second Crack' });
     if (roast.timeline.endTime) rows.push({ t: (roast.timeline.endTime - start) / 1000, rms: '', temp: '', ror: '', event: 'End' });
@@ -1114,12 +1121,16 @@ function exportRoast(id) {
     text += `\n\nTimeline:\n`;
 
     const m = computeRoastMetrics(roast.timeline);
+    if (m.dryEndMs != null) text += `- Dry End: ${formatMs(m.dryEndMs)}\n`;
     if (m.timeToFirstCrackMs != null) text += `- First Crack: ${formatMs(m.timeToFirstCrackMs)}\n`;
     if (m.secondCrackMs != null) text += `- Second Crack: ${formatMs(m.secondCrackMs)}\n`;
     text += `- Total Time: ${formatMs(m.totalMs)}\n`;
     if (m.developmentTimeMs != null) {
         text += `- Development Time: ${formatMs(m.developmentTimeMs)}\n`;
         text += `- Development Ratio (DTR): ${formatDtr(m.dtr)}\n`;
+    }
+    if (m.dryingPct != null && m.maillardPct != null && m.developmentPct != null) {
+        text += `- Phases (dry/Maillard/dev): ${m.dryingPct.toFixed(0)}% / ${m.maillardPct.toFixed(0)}% / ${m.developmentPct.toFixed(0)}%\n`;
     }
 
     if (roast.tastingNotes) {

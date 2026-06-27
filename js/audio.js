@@ -26,6 +26,7 @@ const liveRorDiv = document.getElementById('liveRor');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const calibrateBtn = document.getElementById('calibrateBtn');
+const markDryEndBtn = document.getElementById('markDryEndBtn');
 const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
 const logTempBtn = document.getElementById('logTempBtn');
@@ -50,6 +51,7 @@ let powerAnnounced = new Set();
 // State for Roast and Detection
 let roastState = {
     startTime: null,
+    dryEndTime: null,
     firstCrackTime: null,
     secondCrackTime: null,
     endTime: null,
@@ -137,6 +139,7 @@ export function initAudioSystem() {
     startBtn.addEventListener('click', startRoast);
     stopBtn.addEventListener('click', stopRoast);
 
+    if (markDryEndBtn) markDryEndBtn.addEventListener('click', () => markPhase('Dry End', 'dryEndTime'));
     markFirstCrackBtn.addEventListener('click', () => markPhase('First Crack (Manual)', 'firstCrackTime'));
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
 
@@ -668,6 +671,7 @@ async function startRoast() {
     // Reset State
     roastState = {
         startTime: Date.now(),
+        dryEndTime: null,
         firstCrackTime: null,
         secondCrackTime: null,
         endTime: null,
@@ -696,6 +700,7 @@ async function startRoast() {
     startBtn.disabled = true;
     calibrateBtn.disabled = true;
     stopBtn.disabled = false;
+    if (markDryEndBtn) markDryEndBtn.disabled = false;
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
     if (logTempBtn) logTempBtn.disabled = false;
@@ -743,6 +748,7 @@ function stopRoast() {
     startBtn.disabled = false;
     calibrateBtn.disabled = false;
     stopBtn.disabled = true;
+    if (markDryEndBtn) markDryEndBtn.disabled = true;
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
     if (logTempBtn) logTempBtn.disabled = true;
