@@ -24,6 +24,7 @@ const liveDtrDiv = document.getElementById('liveDtr');
 const liveRorDiv = document.getElementById('liveRor');
 
 const startBtn = document.getElementById('startBtn');
+const startManualBtn = document.getElementById('startManualBtn');
 const stopBtn = document.getElementById('stopBtn');
 const calibrateBtn = document.getElementById('calibrateBtn');
 const markDryEndBtn = document.getElementById('markDryEndBtn');
@@ -136,7 +137,8 @@ export function initAudioSystem() {
     applyBehmorTemplate(); // apply for the initial dashboard config
 
     calibrateBtn.addEventListener('click', startCalibration);
-    startBtn.addEventListener('click', startRoast);
+    startBtn.addEventListener('click', () => startRoast(false));
+    if (startManualBtn) startManualBtn.addEventListener('click', () => startRoast(true));
     stopBtn.addEventListener('click', stopRoast);
 
     if (markDryEndBtn) markDryEndBtn.addEventListener('click', () => markPhase('Dry End', 'dryEndTime'));
@@ -660,12 +662,24 @@ async function startCalibration() {
     drawAndAnalyze();
 }
 
-async function startRoast() {
-    const ready = await setupAudio();
-    if (!ready) return;
-
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+// Start a roast. With manual=false (default) the microphone is used for automatic
+// crack detection. With manual=true the roast runs WITHOUT the mic — the timer and
+// manual controls (Mark crack, power log) still work, but there's no auto-detection.
+// This keeps the app usable when the mic is blocked/unavailable and suits a hands-on
+// manual Behmor roast.
+async function startRoast(manual = false) {
+    if (!manual) {
+        // Give immediate feedback — getUserMedia can take a moment or hang on a
+        // permission prompt, and previously the button looked like it "did nothing".
+        updateStatus('Starting — please allow the microphone…');
+        const ready = await setupAudio();
+        if (!ready) {
+            updateStatus('Microphone unavailable. Tap “Start (no mic)” to roast without auto crack-detection.');
+            return;
+        }
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
     }
 
     // Reset State
@@ -676,6 +690,7 @@ async function startRoast() {
         secondCrackTime: null,
         endTime: null,
         phase: 'Heating',
+        manualMode: manual,
         logs: [],
         curve: [],
         temps: [],
@@ -698,6 +713,7 @@ async function startRoast() {
 
     isRecording = true;
     startBtn.disabled = true;
+    if (startManualBtn) startManualBtn.disabled = true;
     calibrateBtn.disabled = true;
     stopBtn.disabled = false;
     if (markDryEndBtn) markDryEndBtn.disabled = false;
@@ -709,9 +725,24 @@ async function startRoast() {
     manualPowerBtns.forEach(b => b.disabled = false);
     if (manualPowerStatus) manualPowerStatus.textContent = '';
 
-    updateStatus('Listening - Phase: Heating');
+    // In a manual roast, reveal the power-logging buttons even outside Expert mode —
+    // logging power changes (e.g. P5 → P3 at first crack) is the point of manual mode.
+    const powerRow = document.querySelector('#behmorControls .tier-expert');
+    if (manual && powerRow) powerRow.style.display = 'flex';
 
-    drawAndAnalyze();
+    if (manual) {
+        updateStatus('Manual roast — no auto-detection. Use “Manual: Mark” for cracks and the power buttons.');
+        // No mic/audio loop in manual mode: clear the scope canvas and draw the
+        // (marker/reference/temperature) curve. The timer below keeps it refreshed.
+        if (canvasCtx) {
+            canvasCtx.fillStyle = '#121212';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        renderLiveCurve(0);
+    } else {
+        updateStatus('Listening - Phase: Heating');
+        drawAndAnalyze();
+    }
 
     // Start live timer display
     if (timerInterval) clearInterval(timerInterval);
@@ -738,6 +769,10 @@ async function startRoast() {
 
         checkTargetAlarms(elapsed, metrics);
         checkReferenceCues(Date.now() - roastState.startTime);
+
+        // In manual mode there's no animation-frame loop, so refresh the curve here
+        // (picks up manually-marked cracks, the reference overlay, and temp readings).
+        if (roastState.manualMode) renderLiveCurve(Date.now() - roastState.startTime);
     }, 1000);
 }
 
@@ -750,6 +785,7 @@ function stopRoast() {
     logMessage('Roast Stopped.');
 
     startBtn.disabled = false;
+    if (startManualBtn) startManualBtn.disabled = false;
     calibrateBtn.disabled = false;
     stopBtn.disabled = true;
     if (markDryEndBtn) markDryEndBtn.disabled = true;
@@ -758,6 +794,9 @@ function stopRoast() {
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
+    // Revert the manual-mode power-row reveal back to tier control.
+    const powerRow = document.querySelector('#behmorControls .tier-expert');
+    if (powerRow) powerRow.style.display = '';
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);

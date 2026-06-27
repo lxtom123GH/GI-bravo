@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-BC4J4drK.js"></script>
+  <script type="module" crossorigin src="/assets/index-BF86aH9O.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-RQDvBsqv.css">
 </head>
 <body>
@@ -147,6 +147,7 @@
                 <div class="roast-controls">
                     <button id="calibrateBtn" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
                     <button id="startBtn" data-hint="Start the roast and listen for first and second crack automatically.">Start Roast & Listening</button>
+                    <button id="startManualBtn" data-hint="Start the roast timer WITHOUT the microphone — no automatic crack detection. Mark first/second crack yourself and log power changes. Best for a hands-on manual roast.">Start (no mic)</button>
                     <button id="stopBtn" disabled class="danger">Stop Roast</button>
                     <button class="demo-btn" type="button">Try a demo (no mic)</button>
                 </div>
@@ -361,7 +362,7 @@
                 <ol>
                     <li>On <strong>Active Roast</strong>, choose the beans and roaster settings.</li>
                     <li>Optional: pick a <strong>Follow reference roast</strong> to overlay a past curve with pre-crack cues.</li>
-                    <li>Tap <strong>Start Roast &amp; Listening</strong>. Cracks are detected automatically (beep + timeline); use the <strong>Manual: Mark</strong> buttons if one is missed.</li>
+                    <li>Tap <strong>Start Roast &amp; Listening</strong> (allow the microphone) — cracks are detected automatically (beep + timeline); use the <strong>Manual: Mark</strong> buttons if one is missed. No microphone, or doing a hands-on manual roast? Tap <strong>Start (no mic)</strong> to run the timer and mark cracks/power yourself.</li>
                     <li>Watch the live timer and DTR. (Expert) log bean temps for Rate of Rise, or connect a Bluetooth probe.</li>
                     <li>Tap <strong>Stop Roast</strong> to drop — it's saved to history automatically.</li>
                 </ol>
@@ -422,6 +423,7 @@
             <div class="card">
                 <h3>Troubleshooting</h3>
                 <ul>
+                    <li><strong>“Start” seems to do nothing:</strong> it's waiting on the microphone. Allow it when prompted (or check the address-bar 🔒 → Microphone), or just tap <strong>Start (no mic)</strong> to roast without auto crack-detection.</li>
                     <li><strong>Mic error:</strong> use Chrome/Edge over the https link and allow the microphone.</li>
                     <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise.</li>
                     <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
