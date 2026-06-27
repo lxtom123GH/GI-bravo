@@ -149,8 +149,25 @@ input:focus, select:focus, textarea:focus {
 /* Specific to Roast Dashboard */
 .roast-controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
+}
+
+/* Keep the Behmor button rows (weight / profile P1–P5 / actions / manual power)
+   from overflowing narrow phone screens — they wrap and stay compact. */
+.behmor-weight, .behmor-profile, .behmor-action, .manual-power {
+    padding: 8px 14px;
+}
+
+@media (max-width: 600px) {
+    button { padding: 9px 14px; font-size: 0.95rem; }
+    .behmor-weight, .behmor-profile, .behmor-action, .manual-power {
+        padding: 8px 12px;
+        flex: 0 0 auto;
+    }
+    /* The mark-crack row stacks instead of squeezing 3 wide buttons side by side. */
+    .roast-controls { gap: 8px; }
 }
 
 canvas {

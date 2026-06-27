@@ -31,6 +31,11 @@ const calibrateBtn = document.getElementById('calibrateBtn');
 const markDryEndBtn = document.getElementById('markDryEndBtn');
 const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
+const undoFirstCrackBtn = document.getElementById('undoFirstCrackBtn');
+const undoSecondCrackBtn = document.getElementById('undoSecondCrackBtn');
+const ackAlarmBtn = document.getElementById('ackAlarmBtn');
+const alarmToneSelect = document.getElementById('alarmToneSelect');
+const testAlarmBtn = document.getElementById('testAlarmBtn');
 const logTempBtn = document.getElementById('logTempBtn');
 const tempInput = document.getElementById('tempInput');
 const tempUnitSelect = document.getElementById('tempUnit');
@@ -145,6 +150,16 @@ export function initAudioSystem() {
     if (markDryEndBtn) markDryEndBtn.addEventListener('click', () => markPhase('Dry End', 'dryEndTime'));
     markFirstCrackBtn.addEventListener('click', () => markPhase('First Crack (Manual)', 'firstCrackTime'));
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
+    if (undoFirstCrackBtn) undoFirstCrackBtn.addEventListener('click', () => clearCrack('firstCrackTime'));
+    if (undoSecondCrackBtn) undoSecondCrackBtn.addEventListener('click', () => clearCrack('secondCrackTime'));
+
+    // Alarm: tone selection (persisted), test preview, and acknowledge.
+    if (alarmToneSelect) {
+        alarmToneSelect.value = getAlarmTone();
+        alarmToneSelect.addEventListener('change', () => localStorage.setItem(ALARM_KEY, alarmToneSelect.value));
+    }
+    if (testAlarmBtn) testAlarmBtn.addEventListener('click', () => playTone(alarmToneSelect ? alarmToneSelect.value : getAlarmTone()));
+    if (ackAlarmBtn) ackAlarmBtn.addEventListener('click', stopCrackAlarm);
 
     if (logTempBtn) logTempBtn.addEventListener('click', logTemperature);
     if (tempInput) tempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') logTemperature(); });
@@ -463,9 +478,34 @@ function markPhase(phaseName, stateKey) {
     if (roastState[stateKey]) return; // Already marked
 
     roastState[stateKey] = Date.now();
+    // Enable the matching "clear" (false-positive) button now that a crack is recorded.
+    if (stateKey === 'firstCrackTime' && undoFirstCrackBtn) undoFirstCrackBtn.disabled = false;
+    if (stateKey === 'secondCrackTime' && undoSecondCrackBtn) undoSecondCrackBtn.disabled = false;
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
     notifyUser(`${phaseName} recorded!`);
+}
+
+// Clear a wrongly-recorded crack (false positive) and resume detection.
+function clearCrack(stateKey) {
+    if (!roastState[stateKey]) return;
+    roastState[stateKey] = null;
+    const label = stateKey === 'firstCrackTime' ? 'First crack' : 'Second crack';
+    // Clearing first crack also clears second (2C can't precede 1C).
+    if (stateKey === 'firstCrackTime') {
+        roastState.secondCrackTime = null;
+        if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
+        if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;
+    } else if (undoSecondCrackBtn) {
+        undoSecondCrackBtn.disabled = true;
+    }
+    // Reset detection so the real crack can still be found.
+    transientClusterCount = 0;
+    recentRatios = [];
+    stopCrackAlarm(); // silence any ongoing first-crack alarm
+    logMessage(`✗ ${label} cleared (false alarm). Still listening.`);
+    updateStatus(`${label} cleared — watching again.`);
+    renderLiveCurve(Date.now() - roastState.startTime); // remove the marker immediately
 }
 
 // Record a manual bean-temperature reading and update the live Rate of Rise.
@@ -599,6 +639,76 @@ function notifyUser(message) {
         // Allow the beep to fully decay before resuming detection
         setTimeout(() => { isNotifying = false; }, 200);
     }, 600);
+}
+
+// --- First-crack alarm: repeats until acknowledged, with selectable tones ---------
+const ALARM_KEY = 'alarmTone';
+const ALARM_REPEAT_MS = 1800;
+// Each tone is a short sequence of notes: { f: Hz, type, d: seconds }.
+const ALARM_TONES = {
+    chime:  [{ f: 880, type: 'sine', d: 0.18 }, { f: 1320, type: 'sine', d: 0.24 }],
+    beep:   [{ f: 1000, type: 'square', d: 0.25 }],
+    bell:   [{ f: 1568, type: 'sine', d: 0.55 }],
+    buzzer: [{ f: 220, type: 'sawtooth', d: 0.18 }, { f: 220, type: 'sawtooth', d: 0.18 }]
+};
+let alarmCtx = null;
+let alarmInterval = null;
+
+export function getAlarmTone() {
+    const t = localStorage.getItem(ALARM_KEY);
+    return ALARM_TONES[t] ? t : 'chime';
+}
+
+// An output-only AudioContext (works even in no-mic manual mode).
+function outputCtx() {
+    if (audioContext) return audioContext;
+    if (!alarmCtx) {
+        try { alarmCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+    }
+    if (alarmCtx.state === 'suspended') alarmCtx.resume().catch(() => {});
+    return alarmCtx;
+}
+
+function playTone(toneKey) {
+    const ctx = outputCtx();
+    if (!ctx) return;
+    const seq = ALARM_TONES[toneKey] || ALARM_TONES.chime;
+    let t = ctx.currentTime + 0.01;
+    for (const note of seq) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = note.type;
+        osc.frequency.setValueAtTime(note.f, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + note.d);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + note.d + 0.02);
+        t += note.d + 0.06;
+    }
+}
+
+// Play the alarm once, suppressing crack detection during the tone so the speaker
+// sound isn't itself picked up as a crack.
+function alarmRing() {
+    isNotifying = true;
+    playTone(getAlarmTone());
+    if (navigator.vibrate) { try { navigator.vibrate([250, 120, 250]); } catch {} }
+    setTimeout(() => { isNotifying = false; }, 900);
+}
+
+// Start the repeating alarm and show the Acknowledge button. Idempotent.
+function startCrackAlarm() {
+    if (alarmInterval) return;
+    alarmRing();
+    alarmInterval = setInterval(alarmRing, ALARM_REPEAT_MS);
+    if (ackAlarmBtn) ackAlarmBtn.style.display = 'block';
+}
+
+function stopCrackAlarm() {
+    if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+    if (navigator.vibrate) { try { navigator.vibrate(0); } catch {} }
+    if (ackAlarmBtn) ackAlarmBtn.style.display = 'none';
 }
 
 async function setupAudio() {
@@ -746,6 +856,8 @@ async function startRoast(manual = false) {
     if (markDryEndBtn) markDryEndBtn.disabled = false;
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
+    if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;  // nothing to clear yet
+    if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
     if (logTempBtn) logTempBtn.disabled = false;
     if (logEnvTempBtn) logEnvTempBtn.disabled = false;
     if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
@@ -803,6 +915,7 @@ async function startRoast(manual = false) {
 function stopRoast() {
     isRecording = false;
     releaseWakeLock();
+    stopCrackAlarm();
 
     if (timerInterval) clearInterval(timerInterval);
 
@@ -816,6 +929,8 @@ function stopRoast() {
     if (markDryEndBtn) markDryEndBtn.disabled = true;
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
+    if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;
+    if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
@@ -938,6 +1053,7 @@ function detectTransient(rms) {
         // The first sustained burst of cracking is first crack.
         if (transientClusterCount >= detectionSettings.cracksRequired) {
             markPhase('First Crack (Auto)', 'firstCrackTime');
+            startCrackAlarm(); // repeats until acknowledged so it isn't missed
             const pitch = ratio >= detectionSettings.secondCrackPitch ? 'higher-pitched' : 'lower-pitched';
             logMessage(`Auto-detected ${pitch} cracking (high-band ${(ratio * 100).toFixed(0)}%).`);
         }
@@ -947,6 +1063,7 @@ function detectTransient(rms) {
                ratio >= detectionSettings.secondCrackPitch) {
         // Faster, higher-pitched cracking after first crack reads as second crack.
         markPhase('Second Crack (Auto)', 'secondCrackTime');
+        startCrackAlarm(); // repeats until acknowledged
         logMessage(`Higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%).`);
     }
 }
