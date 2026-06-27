@@ -60,9 +60,26 @@ Go to **Roast History** and find the roast (newest first):
 2. **Edit Notes** – record how it tasted. Depending on your Mode this is a simple
    👍/😐/🙁, the flavour wheel, or full cupping scores + brew details.
 3. **Add Photo** – snap the roasted beans. For a colour reading you can compare
-   between batches, use **Add Colour-Corrected Photo** (with a grey card) or
-   **Add ColorChecker Photo**.
+   between batches, use **Add Colour-Corrected Photo** (with a grey card),
+   **Add ColorChecker Photo**, or **Add Custom-Target Photo** (a cheap DIY swatch
+   card you calibrate once under daylight — see below).
 4. **Export** – copy a summary to the clipboard, or export a **CSV** for spreadsheets.
+
+### DIY custom colour target
+
+Don't have a ColorChecker? Make a swatch card with **4–6 paint chips** (a neutral
+grey ramp — white, light grey, mid grey, near-black — is most reliable; add a warm
+and a cool chip for better colour). Then in **Add Custom-Target Photo**:
+
+1. Choose **＋ Calibrate new target…**, name it, set the grid (columns × rows), shoot
+   the card under **good neutral daylight**, and tap the 4 corner patches. This stores
+   each patch's colour as the baseline — do it once.
+2. From then on, pick your saved target, **re-shoot the card next to your beans** under
+   whatever light you have, tap the 4 corners, add the beans photo, and **Process**.
+   The app corrects the beans back to the daylight baseline.
+
+The reading is **relative but repeatable** — great for comparing your own roasts, not
+an official Agtron number.
 
 ---
 

@@ -1,8 +1,8 @@
-import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
+import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getColorTargets, addColorTarget, deleteColorTarget, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
-import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto } from './photos.js';
+import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -501,6 +501,7 @@ function renderHistoryList() {
                 <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
                 <button class="add-calibrated-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
                 <button class="add-colorchecker-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add ColorChecker Photo</button>
+                <button class="add-customtarget-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Custom-Target Photo</button>
                 <input type="file" class="photo-input" data-id="${roast.id}" accept="image/*" capture="environment" style="display: none;">
             </div>
 
@@ -563,6 +564,10 @@ function renderHistoryList() {
 
     document.querySelectorAll('.add-colorchecker-btn').forEach(btn => {
         btn.addEventListener('click', (e) => openColorCheckerModal(e.target.dataset.id));
+    });
+
+    document.querySelectorAll('.add-customtarget-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => openCustomTargetModal(e.target.dataset.id));
     });
 
     document.querySelectorAll('.export-btn').forEach(btn => {
@@ -642,7 +647,8 @@ async function renderPhotos(roastId, container) {
         if (p.meta && p.meta.brightness != null) {
             const cap = document.createElement('figcaption');
             cap.style.cssText = 'font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;';
-            cap.textContent = `${p.meta.type === 'colorchecker' ? 'CC' : 'WB'} · ${p.meta.brightness}`;
+            const typeLabel = { colorchecker: 'CC', customtarget: 'CT' }[p.meta.type] || 'WB';
+            cap.textContent = `${typeLabel} · ${p.meta.brightness}`;
             fig.appendChild(cap);
         }
 
@@ -857,6 +863,197 @@ function openColorCheckerModal(roastId) {
             renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));
         } catch (err) {
             alert(`Could not process photos: ${err.message}`);
+        }
+    });
+}
+
+function openCustomTargetModal(roastId) {
+    const modalBg = document.createElement('div');
+    modalBg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 460px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3>Custom Target Photo</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Use a cheap DIY swatch card (e.g. 4–6 paint chips on card). Calibrate it once under
+            good neutral daylight, then re-shoot it next to your beans under any light to colour-correct
+            them. A neutral grey ramp (white → mid grey → near-black) is most reliable; add a warm and a
+            cool chip for better colour. You need at least 4 patches with good spread.
+        </p>
+
+        <label><strong>Target</strong></label>
+        <select id="ctTarget"></select>
+
+        <div id="ctNewFields" style="display: none; margin-top: 6px;">
+            <label style="font-size: 0.85rem;">Name</label>
+            <input type="text" id="ctName" placeholder="e.g. Bunnings grey ramp">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label style="font-size: 0.85rem;">Columns</label><input type="number" id="ctCols" min="1" max="12" value="4"></div>
+                <div style="flex: 1;"><label style="font-size: 0.85rem;">Rows</label><input type="number" id="ctRows" min="1" max="12" value="1"></div>
+            </div>
+        </div>
+
+        <label><strong>1. Target photo</strong> <span id="ctChartHint" style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;"></span></label>
+        <input type="file" id="ctChartInput" accept="image/*" capture="environment">
+        <div id="ctCanvasWrap" style="display: none; margin-bottom: 10px;">
+            <p style="font-size: 0.85rem;">Tap the centre of the 4 corner patches in order:
+            <strong>1)</strong> top-left, <strong>2)</strong> top-right, <strong>3)</strong> bottom-right, <strong>4)</strong> bottom-left.
+            <button id="ctReset" type="button" style="font-size: 0.75rem; padding: 3px 8px;">Reset taps</button></p>
+            <canvas id="ctCanvas" style="width: 100%; border: 1px solid var(--border-color); cursor: crosshair; height: auto;"></canvas>
+            <small id="ctTapStatus" style="color: var(--text-muted);">0 / 4 corners tapped</small>
+        </div>
+
+        <div id="ctBeanRow">
+            <label><strong>2. Beans photo</strong></label>
+            <input type="file" id="ctBeanInput" accept="image/*" capture="environment">
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+            <button id="ctDelete" class="danger" style="font-size: 0.8rem; display: none;">Delete target</button>
+            <div style="display: flex; gap: 10px; margin-left: auto;">
+                <button id="ctCancel" class="danger">Cancel</button>
+                <button id="ctSave" style="background-color: var(--accent); display: none;">Save calibration</button>
+                <button id="ctProcess" style="background-color: var(--success);">Process</button>
+            </div>
+        </div>
+    `;
+
+    modalBg.appendChild(modal);
+    document.body.appendChild(modalBg);
+
+    const close = () => document.body.removeChild(modalBg);
+    modal.querySelector('#ctCancel').addEventListener('click', close);
+
+    const targetSelect = modal.querySelector('#ctTarget');
+    const newFields = modal.querySelector('#ctNewFields');
+    const beanRow = modal.querySelector('#ctBeanRow');
+    const chartHint = modal.querySelector('#ctChartHint');
+    const saveBtn = modal.querySelector('#ctSave');
+    const processBtn = modal.querySelector('#ctProcess');
+    const deleteBtn = modal.querySelector('#ctDelete');
+
+    const chartInput = modal.querySelector('#ctChartInput');
+    const canvasWrap = modal.querySelector('#ctCanvasWrap');
+    const canvas = modal.querySelector('#ctCanvas');
+    const tapStatus = modal.querySelector('#ctTapStatus');
+    const ctx = canvas.getContext('2d');
+    let chartImg = null;
+    let corners = []; // {x, y} fractions 0..1
+
+    const populateTargets = (selectId) => {
+        const targets = getColorTargets();
+        targetSelect.innerHTML =
+            targets.map(t => `<option value="${t.id}">${t.name} (${t.cols}×${t.rows})</option>`).join('') +
+            '<option value="new">＋ Calibrate new target…</option>';
+        targetSelect.value = selectId || (targets.length ? targets[0].id : 'new');
+        syncMode();
+    };
+
+    // Toggle between "calibrate a new target" and "use a saved target".
+    const syncMode = () => {
+        const isNew = targetSelect.value === 'new';
+        newFields.style.display = isNew ? 'block' : 'none';
+        beanRow.style.display = isNew ? 'none' : 'block';
+        saveBtn.style.display = isNew ? 'inline-block' : 'none';
+        processBtn.style.display = isNew ? 'none' : 'inline-block';
+        deleteBtn.style.display = isNew ? 'none' : 'inline-block';
+        chartHint.textContent = isNew ? '(shoot under good daylight)' : '(re-shoot under your beans’ light)';
+    };
+
+    targetSelect.addEventListener('change', syncMode);
+    populateTargets();
+
+    const redraw = () => {
+        if (!chartImg) return;
+        ctx.drawImage(chartImg, 0, 0, canvas.width, canvas.height);
+        corners.forEach((c, i) => {
+            const x = c.x * canvas.width, y = c.y * canvas.height;
+            ctx.fillStyle = '#ff9800';
+            ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(String(i + 1), x, y);
+        });
+        tapStatus.textContent = `${corners.length} / 4 corners tapped`;
+    };
+
+    chartInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                chartImg = img;
+                const w = Math.min(360, img.width);
+                canvas.width = w;
+                canvas.height = Math.round(img.height * (w / img.width));
+                corners = [];
+                canvasWrap.style.display = 'block';
+                redraw();
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener('click', (e) => {
+        if (corners.length >= 4) return;
+        const rect = canvas.getBoundingClientRect();
+        corners.push({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height });
+        redraw();
+    });
+
+    modal.querySelector('#ctReset').addEventListener('click', () => { corners = []; redraw(); });
+
+    // Calibrate and save a new target from the daylight photo.
+    saveBtn.addEventListener('click', async () => {
+        const name = modal.querySelector('#ctName').value.trim();
+        const cols = parseInt(modal.querySelector('#ctCols').value, 10);
+        const rows = parseInt(modal.querySelector('#ctRows').value, 10);
+        const chartFile = chartInput.files[0];
+        if (!name) { alert('Give the target a name.'); return; }
+        if (!(cols >= 1) || !(rows >= 1) || cols * rows < 4) { alert('Use at least 4 patches in total (e.g. 4 columns × 1 row).'); return; }
+        if (!chartFile) { alert('Add a photo of the target.'); return; }
+        if (corners.length !== 4) { alert('Tap all 4 corner patches on the target.'); return; }
+        try {
+            const [tl, tr, br, bl] = corners;
+            const { reference } = await calibrateCustomTarget(chartFile, { tl, tr, br, bl }, cols, rows);
+            const saved = addColorTarget({ name, cols, rows, reference });
+            chartImg = null; corners = []; chartInput.value = ''; canvasWrap.style.display = 'none';
+            populateTargets(saved.id);
+            alert(`Calibrated "${name}" (${cols}×${rows}, ${reference.length} patches). Now re-shoot it with your beans to colour-correct.`);
+        } catch (err) {
+            alert(`Could not calibrate target: ${err.message}`);
+        }
+    });
+
+    // Correct a bean photo using a saved target re-shot under the current light.
+    processBtn.addEventListener('click', async () => {
+        const target = getColorTargets().find(t => t.id === targetSelect.value);
+        if (!target) { alert('Select a saved target, or calibrate a new one first.'); return; }
+        const chartFile = chartInput.files[0];
+        const beanFile = modal.querySelector('#ctBeanInput').files[0];
+        if (!chartFile || !beanFile) { alert('Provide both a photo of the target and a beans photo.'); return; }
+        if (corners.length !== 4) { alert('Tap all 4 corner patches on the target.'); return; }
+        try {
+            const [tl, tr, br, bl] = corners;
+            const { dataURL, meta } = await createCustomTargetPhoto(chartFile, beanFile, { tl, tr, br, bl }, target);
+            await addPhoto(roastId, dataURL, meta);
+            close();
+            renderPhotos(roastId, document.querySelector(`.roast-photos[data-id="${roastId}"]`));
+        } catch (err) {
+            alert(`Could not process photos: ${err.message}`);
+        }
+    });
+
+    deleteBtn.addEventListener('click', () => {
+        const target = getColorTargets().find(t => t.id === targetSelect.value);
+        if (!target) return;
+        if (confirm(`Delete the saved target "${target.name}"?`)) {
+            deleteColorTarget(target.id);
+            populateTargets();
         }
     });
 }

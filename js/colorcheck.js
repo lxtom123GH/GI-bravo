@@ -26,8 +26,6 @@ function linearToSrgb(l) {
     const c = l <= 0.0031308 ? 12.92 * l : 1.055 * Math.pow(l, 1 / 2.4) - 0.055;
     return c * 255;
 }
-const REFERENCE_LINEAR = REFERENCE_SRGB.map(p => p.map(srgbToLinear));
-
 // Solve a small linear system Ax = b (n x n) by Gaussian elimination with partial pivoting.
 function solve(A, b) {
     const n = b.length;
@@ -47,17 +45,19 @@ function solve(A, b) {
     return M.map((row, i) => row[n] / (M[i][i] || 1));
 }
 
-// Compute the 3x4 affine CCM from measured patch RGBs (24x3, 0..255 sRGB) against
-// the reference, fitting in linear light. Returns A (4x3) so that, in linear light,
-// out = [r,g,b,1] · A.
-export function computeCCM(measured) {
+// Compute the 3x4 affine CCM from measured patch RGBs (Nx3, 0..255 sRGB) against
+// a reference (Nx3 sRGB; defaults to the 24-patch ColorChecker), fitting in linear
+// light. Returns A (4x3) so that, in linear light, out = [r,g,b,1] · A.
+// At least 4 well-spread patches are needed to condition the 3x4 fit.
+export function computeCCM(measured, referenceSrgb = REFERENCE_SRGB) {
+    const referenceLinear = referenceSrgb.map(p => p.map(srgbToLinear));
     // Design matrix rows in linear light: [r, g, b, 1]
     const X = measured.map(p => [srgbToLinear(p[0]), srgbToLinear(p[1]), srgbToLinear(p[2]), 1]);
     // Normal equations XtX (4x4) and XtY (4x3)
     const XtX = Array.from({ length: 4 }, () => new Array(4).fill(0));
     const XtY = Array.from({ length: 4 }, () => new Array(3).fill(0));
     for (let i = 0; i < X.length; i++) {
-        const ref = REFERENCE_LINEAR[i];
+        const ref = referenceLinear[i];
         for (let a = 0; a < 4; a++) {
             for (let b = 0; b < 4; b++) XtX[a][b] += X[i][a] * X[i][b];
             for (let c = 0; c < 3; c++) XtY[a][c] += X[i][a] * ref[c];
@@ -88,16 +88,18 @@ function sampleAt(data, w, h, x, y, radius = 4) {
     return n ? [r / n, g / n, b / n] : [0, 0, 0];
 }
 
-// Sample 24 patch colours from the chart pixel data given the 4 corner centres
-// (fractions 0..1 of the image): tl=patch1, tr=patch6, br=patch24, bl=patch19.
-export function sampleChart(data, w, h, corners) {
+// Sample a cols×rows grid of patch colours from the chart pixel data given the 4
+// corner centres (fractions 0..1 of the image): tl=first patch, tr=top-right,
+// br=last patch, bl=bottom-left. Defaults to the 24-patch ColorChecker layout, so
+// patch1=tl, patch6=tr, patch24=br, patch19=bl. Returns patches in row-major order.
+export function sampleChart(data, w, h, corners, cols = CHECKER_COLS, rows = CHECKER_ROWS) {
     const { tl, tr, br, bl } = corners;
     const radius = Math.max(2, Math.round(Math.min(w, h) * 0.01));
     const out = [];
-    for (let row = 0; row < CHECKER_ROWS; row++) {
-        for (let col = 0; col < CHECKER_COLS; col++) {
-            const u = CHECKER_COLS === 1 ? 0 : col / (CHECKER_COLS - 1);
-            const v = CHECKER_ROWS === 1 ? 0 : row / (CHECKER_ROWS - 1);
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const u = cols === 1 ? 0 : col / (cols - 1);
+            const v = rows === 1 ? 0 : row / (rows - 1);
             const top = { x: tl.x + (tr.x - tl.x) * u, y: tl.y + (tr.y - tl.y) * u };
             const bot = { x: bl.x + (br.x - bl.x) * u, y: bl.y + (br.y - bl.y) * u };
             const x = (top.x + (bot.x - top.x) * v) * w;

@@ -89,7 +89,7 @@ export async function replaceAllPhotos(records) {
 export async function getRoastColorIndex(roastId) {
     const photos = await getPhotos(roastId);
     const calibrated = photos
-        .filter(p => p.meta && p.meta.brightness != null && (p.meta.type === 'calibrated' || p.meta.type === 'colorchecker'))
+        .filter(p => p.meta && p.meta.brightness != null && (p.meta.type === 'calibrated' || p.meta.type === 'colorchecker' || p.meta.type === 'customtarget'))
         .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     if (calibrated.length === 0) return null;
     return { brightness: calibrated[0].meta.brightness, color: calibrated[0].meta.color, count: calibrated.length };
@@ -129,6 +129,59 @@ export async function createColorCheckerPhoto(chartFile, beanFile, corners, maxD
         dataURL: c.toDataURL('image/jpeg', quality),
         meta: {
             type: 'colorchecker',
+            color: rounded,
+            brightness: Math.round(luminance(rounded))
+        }
+    };
+}
+
+// --- Custom DIY multi-patch target calibration (thread 2) ---
+
+// Sample a cols×rows grid of patch colours (sRGB 0..255, row-major) from a chart
+// image file, given the 4 corner-patch centres as fractions (0..1) of the image.
+async function sampleChartFile(chartFile, corners, cols, rows) {
+    const chartImg = await loadImageFromFile(chartFile);
+    const cc = document.createElement('canvas');
+    cc.width = chartImg.width; cc.height = chartImg.height;
+    const cctx = cc.getContext('2d');
+    cctx.drawImage(chartImg, 0, 0);
+    const data = cctx.getImageData(0, 0, cc.width, cc.height).data;
+    const measured = sampleChart(data, cc.width, cc.height, corners, cols, rows);
+    return measured.map(p => [Math.round(p[0]), Math.round(p[1]), Math.round(p[2])]);
+}
+
+// Self-calibrate a DIY target: measure its patches once (under good daylight) and
+// return them as the stored reference baseline. Returns { reference: [[r,g,b], ...] }.
+export async function calibrateCustomTarget(chartFile, corners, cols, rows) {
+    const reference = await sampleChartFile(chartFile, corners, cols, rows);
+    return { reference };
+}
+
+// Build a colour-corrected bean photo using a self-calibrated DIY target. The target
+// is re-shot under the current light; its patches are corrected back to the stored
+// baseline (target.reference) via a full CCM, then that CCM is applied to the beans.
+// target: { cols, rows, reference }. corners: { tl, tr, br, bl } fractions of the chart.
+export async function createCustomTargetPhoto(chartFile, beanFile, corners, target, maxDim = 1024, quality = 0.8) {
+    const { cols, rows, reference } = target;
+    const measured = await sampleChartFile(chartFile, corners, cols, rows);
+    const ccm = computeCCM(measured, reference);
+
+    const beanImg = await loadImageFromFile(beanFile);
+    const scale = Math.min(1, maxDim / Math.max(beanImg.width, beanImg.height));
+    const w = Math.round(beanImg.width * scale);
+    const h = Math.round(beanImg.height * scale);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(beanImg, 0, 0, w, h);
+    applyCCM(ctx, w, h, ccm);
+
+    const color = averageCenterColor(ctx, w, h);
+    const rounded = { r: Math.round(color.r), g: Math.round(color.g), b: Math.round(color.b) };
+    return {
+        dataURL: c.toDataURL('image/jpeg', quality),
+        meta: {
+            type: 'customtarget',
             color: rounded,
             brightness: Math.round(luminance(rounded))
         }

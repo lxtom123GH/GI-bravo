@@ -247,6 +247,33 @@ export function deleteReferenceSample(id) {
     saveReferenceSamples(getReferenceSamples().filter(s => s.id !== id));
 }
 
+// --- Custom colour-correction targets (self-calibrated DIY multi-patch charts) ---
+// Each target: { id, name, cols, rows, reference: [[r,g,b], ...] } where reference
+// holds the patch colours (sRGB 0..255) measured once under good daylight, in
+// row-major order (length === cols * rows). Used to fit a full CCM against a cheap
+// DIY swatch card that has no published reference values.
+
+export function getColorTargets() {
+    const s = localStorage.getItem('colorTargets');
+    return s ? JSON.parse(s) : [];
+}
+
+export function saveColorTargets(list) {
+    localStorage.setItem('colorTargets', JSON.stringify(list));
+}
+
+export function addColorTarget(target) {
+    const list = getColorTargets();
+    target.id = Date.now().toString();
+    list.push(target);
+    saveColorTargets(list);
+    return target;
+}
+
+export function deleteColorTarget(id) {
+    saveColorTargets(getColorTargets().filter(t => t.id !== id));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {
@@ -258,6 +285,7 @@ export function exportAllData() {
         detectionSettings: getDetectionSettings(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
+        colorTargets: getColorTargets(),
         tempUnit: getTempUnit(),
         complexityTier: getTier(),
         featureTiers: getFeatureTiers(),
@@ -286,6 +314,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.referenceSamples)) {
         saveReferenceSamples(data.referenceSamples);
+    }
+    if (Array.isArray(data.colorTargets)) {
+        saveColorTargets(data.colorTargets);
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);

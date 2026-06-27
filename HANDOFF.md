@@ -32,18 +32,13 @@ reconsidering **across the whole app portfolio**, not just GI-bravo:
 - Decision still needed: shared vs per-app vs stay-local; which apps are in scope; provider
   (Supabase recommended; Firebase or Vercel Postgres are alternatives).
 
-## Open thread 2 — Multi-swatch DIY colour target
-Extend photo colour correction beyond the current single-patch white balance and
-the 24-patch ColorChecker with a **cheap DIY multi-patch target** (e.g. 4–6
-Bunnings paint swatches mounted on card).
-- **Why:** one grey patch only fixes white balance; **≥4 patches with good spread** let the
-  existing least-squares fit solve a full 3×3 (+offset). The **deltas between patches** are what
-  condition the matrix — exactly the intuition behind this idea.
-- **The catch + fix:** paint swatches have no reliable published sRGB. Solution: **self-calibrate
-  the target once** under good daylight (store each patch's measured colour as its reference) and
-  correct future photos to that baseline — relative but repeatable. Extends the existing
-  self-calibrated-sample feature.
-- **Recommended swatches:** a neutral grey ramp (white / light grey / mid grey / near-black) for
-  reliability; optionally add a warm + a cool saturated chip for better chroma.
-- **Implementation:** a "custom target" mode reusing `js/colorcheck.js` `computeCCM`/`applyCCM`
-  with N patches instead of 24, plus a self-calibration step and an N-cell grid sampler.
+## Open thread 2 — Multi-swatch DIY colour target — ✅ Done
+Shipped as **"Add Custom-Target Photo"** in History. `js/colorcheck.js`
+(`computeCCM`/`sampleChart`) was generalized to N patches and arbitrary cols×rows
+grids (the 24-patch ColorChecker is now the default). A DIY swatch card (4–6 paint
+chips) is **self-calibrated once** under daylight — each patch's measured colour is
+stored as the baseline (`colorTargets` in `js/storage.js`, included in backup) — and
+future photos are corrected back to it via the same least-squares CCM. New photo
+helpers `calibrateCustomTarget` / `createCustomTargetPhoto` (`js/photos.js`) and a
+modal `openCustomTargetModal` (`js/history.js`). Result stored as a `customtarget`
+roast-colour index. See `FUTURE_FEATURES.md` §B4b. _Only thread 1 remains open._
