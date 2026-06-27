@@ -723,10 +723,14 @@ async function startRoast() {
 
         const metrics = computeRoastMetrics(roastState);
 
-        // Live development time / DTR once first crack is recorded.
+        // Live development time / DTR once first crack is recorded; before that,
+        // show an ETA to first crack when following a reference roast.
         if (liveDtrDiv) {
             if (roastState.firstCrackTime) {
                 liveDtrDiv.textContent = `Dev ${formatMs(metrics.developmentTimeMs)} | DTR ${formatDtr(metrics.dtr)}`;
+            } else if (referenceCurve && referenceMarkers.firstCrackMs != null) {
+                const remain = referenceMarkers.firstCrackMs - (Date.now() - roastState.startTime);
+                liveDtrDiv.textContent = remain > 0 ? `FC in ~${formatMs(remain)} (ref)` : 'FC due (ref)';
             } else {
                 liveDtrDiv.textContent = 'DTR --';
             }
