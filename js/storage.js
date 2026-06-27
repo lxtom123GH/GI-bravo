@@ -274,6 +274,33 @@ export function deleteColorTarget(id) {
     saveColorTargets(getColorTargets().filter(t => t.id !== id));
 }
 
+// --- Roast prep batches (weighed-out portions with a photo) ---
+// Each batch: { id, beanId, beanName, grams, photo (downscaled dataURL), note, createdAt }.
+// Lets the user portion green beans into containers, snap a photo to tell them apart,
+// then load the bean + weight onto the Active Roast screen in one tap.
+
+export function getPrepBatches() {
+    const s = localStorage.getItem('prepBatches');
+    return s ? JSON.parse(s) : [];
+}
+
+export function savePrepBatches(list) {
+    localStorage.setItem('prepBatches', JSON.stringify(list));
+}
+
+export function addPrepBatch(batch) {
+    const list = getPrepBatches();
+    batch.id = Date.now().toString();
+    batch.createdAt = Date.now();
+    list.push(batch);
+    savePrepBatches(list);
+    return batch;
+}
+
+export function deletePrepBatch(id) {
+    savePrepBatches(getPrepBatches().filter(b => b.id !== id));
+}
+
 // --- Backup / Restore ---
 
 export function exportAllData() {
@@ -286,6 +313,7 @@ export function exportAllData() {
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
+        prepBatches: getPrepBatches(),
         tempUnit: getTempUnit(),
         complexityTier: getTier(),
         featureTiers: getFeatureTiers(),
@@ -317,6 +345,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.colorTargets)) {
         saveColorTargets(data.colorTargets);
+    }
+    if (Array.isArray(data.prepBatches)) {
+        savePrepBatches(data.prepBatches);
     }
     if (data.tempUnit) saveTempUnit(data.tempUnit);
     if (data.complexityTier) saveTier(data.complexityTier);

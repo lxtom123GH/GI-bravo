@@ -8,6 +8,7 @@ import { initAudioSystem } from './js/audio.js';
 import { initPantry } from './js/pantry.js';
 import { initHistory } from './js/history.js';
 import { initCustomise } from './js/customise.js';
+import { initPrep } from './js/prep.js';
 
 // Cloud sync is OPT-IN and pulls in Firebase (~large), so load it lazily after the app
 // is interactive — the signed-out first paint stays as lean as before.
@@ -25,6 +26,7 @@ function init() {
     initRoastDashboard();
     initAudioSystem();
     initPantry();
+    initPrep();
     initHistory();
     initDemo();
     initTour();
