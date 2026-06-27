@@ -498,20 +498,20 @@ function renderHistoryList() {
             <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
                 <h4>Photos <span class="roast-color-index" data-id="${roast.id}" style="font-weight: normal; font-size: 0.8rem; color: var(--text-muted);"></span></h4>
                 <div class="roast-photos" data-id="${roast.id}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;"></div>
-                <button class="add-photo-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
-                <button class="add-calibrated-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
-                <button class="add-colorchecker-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add ColorChecker Photo</button>
-                <button class="add-customtarget-btn" data-id="${roast.id}" style="font-size: 0.8rem; padding: 5px 10px;">Add Custom-Target Photo</button>
+                <button class="add-photo-btn" data-id="${roast.id}" data-hint="Just snap a quick photo of the roasted beans. No colour correction — good for a visual record." style="font-size: 0.8rem; padding: 5px 10px;">Add Photo</button>
+                <button class="add-calibrated-btn" data-id="${roast.id}" data-hint="Easiest colour reading: photograph a plain grey or white card, then the beans, under the same light. The app evens out the lighting and gives a roast-colour number you can compare between batches." style="font-size: 0.8rem; padding: 5px 10px;">Add Colour-Corrected Photo</button>
+                <button class="add-colorchecker-btn" data-id="${roast.id}" data-hint="Most accurate: if you own a 24-patch ColorChecker card, photograph it with the beans and tap its 4 corners. Overkill for most home roasters." style="font-size: 0.8rem; padding: 5px 10px;">Add ColorChecker Photo</button>
+                <button class="add-customtarget-btn" data-id="${roast.id}" data-hint="Make a cheap DIY card from a few paint swatches, calibrate it once in daylight, then reuse it to colour-correct future photos. See Help → Roast-colour photos." style="font-size: 0.8rem; padding: 5px 10px;">Add Custom-Target Photo</button>
                 <input type="file" class="photo-input" data-id="${roast.id}" accept="image/*" capture="environment" style="display: none;">
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-                <button class="log-yield-btn" data-id="${roast.id}">Log Roasted Weight</button>
+                <button class="log-yield-btn" data-id="${roast.id}" data-hint="Weigh the cooled beans and enter the grams to get your weight-loss % — a key consistency number (usually 12–20%).">Log Roasted Weight</button>
                 ${roast.roaster === 'behmor' && roast.timeline.curve && roast.timeline.curve.length >= 2 ? `<button class="save-template-btn" data-id="${roast.id}">Save as Behmor template</button>` : ''}
                 ${roast.timeline.powerLog && roast.timeline.powerLog.length ? `<button class="save-manual-btn" data-id="${roast.id}">Save manual profile</button>` : ''}
                 <button class="export-btn" data-id="${roast.id}">Export to Clipboard</button>
                 <button class="export-csv-btn" data-id="${roast.id}">Export CSV</button>
-                <button class="share-roast-btn" data-id="${roast.id}">Share (file)</button>
+                <button class="share-roast-btn" data-id="${roast.id}" data-hint="Save this single roast as a file you can send to someone — they import it without affecting their own history.">Share (file)</button>
                 <button class="delete-roast-btn danger" data-id="${roast.id}">Delete Roast</button>
             </div>
         `;
