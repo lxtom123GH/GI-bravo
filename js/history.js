@@ -70,6 +70,40 @@ function initTrends() {
     renderTrend();
 }
 
+function renderStats() {
+    const el = document.getElementById('statsSummary');
+    if (!el) return;
+    const history = getRoastHistory();
+    const pantry = getPantry();
+    if (!history.length) {
+        el.innerHTML = '<p style="color: var(--text-muted);">No roasts yet.</p>';
+        return;
+    }
+
+    const DAY = 86400000;
+    const now = Date.now();
+    let greenKg = 0, roastedKg = 0, spend = 0, lossSum = 0, lossN = 0, last30 = 0;
+    history.forEach(r => {
+        const g = Number(r.greenWeightG) || 0;
+        const ro = Number(r.roastedWeightG) || 0;
+        greenKg += g / 1000;
+        roastedKg += ro / 1000;
+        const bean = pantry.find(b => b.id === r.beanId);
+        if (bean && bean.costPerKg && g) spend += (g / 1000) * bean.costPerKg;
+        const loss = computeWeightLoss(g, ro);
+        if (loss != null) { lossSum += loss; lossN++; }
+        if (now - new Date(r.date).getTime() <= 30 * DAY) last30++;
+    });
+
+    el.innerHTML = `<ul>
+        <li><strong>Roasts:</strong> ${history.length} (${last30} in last 30 days)</li>
+        <li><strong>Green roasted:</strong> ${greenKg.toFixed(2)} kg</li>
+        ${roastedKg ? `<li><strong>Roasted output:</strong> ${roastedKg.toFixed(2)} kg</li>` : ''}
+        ${lossN ? `<li><strong>Avg weight loss:</strong> ${(lossSum / lossN).toFixed(1)}%</li>` : ''}
+        ${spend ? `<li><strong>Total green spend:</strong> ${spend.toFixed(2)}</li>` : ''}
+    </ul>`;
+}
+
 function renderTrend() {
     const canvas = document.getElementById('trendCanvas');
     const metricSel = document.getElementById('trendMetric');
@@ -274,10 +308,11 @@ function renderHistoryList() {
 
     historyContainer.innerHTML = '';
 
-    // Keep the comparison dropdowns and trend chart in sync with the current history.
+    // Keep the comparison dropdowns, trend chart and summary in sync.
     populateCompareSelects();
     renderComparison();
     renderTrend();
+    renderStats();
 
     if (history.length === 0) {
         historyContainer.innerHTML = '<p>No roasts yet — go to <strong>Active Roast</strong> and tap <strong>Start Roast &amp; Listening</strong>, or try the demo from the <strong>Help</strong> tab.</p>';
