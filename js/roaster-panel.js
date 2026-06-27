@@ -9,7 +9,7 @@
 //           C = add time (Rosetta), D = drum speed, P1–P5 = change heat, Cool = drop.
 //   Safety: at ~75% it beeps — press Start to continue or it goes to Cool.
 
-import { getActiveRoaster } from './storage.js';
+import { getActiveRoaster, updateRoaster } from './storage.js';
 
 // PURE, testable description of each control in both phases.
 export const BEHMOR_BUTTONS = [
@@ -58,12 +58,20 @@ export function behmorPanel(variant) {
     return { buttons, safety, uncertain: !SAFETY[variant] };
 }
 
+// The Behmor sub-model is stored on the roaster PROFILE (so each machine — Mum's, Stuart's —
+// remembers its own), with the old global localStorage value as a fallback for existing setups.
 const MODEL_KEY = 'behmorModel';
 export function getBehmorModel() {
+    const r = getActiveRoaster();
+    if (r && BEHMOR_MODELS.includes(r.behmorModel)) return r.behmorModel;
     const m = localStorage.getItem(MODEL_KEY);
     return BEHMOR_MODELS.includes(m) ? m : '2000AB Plus';
 }
-function saveBehmorModel(m) { localStorage.setItem(MODEL_KEY, m); }
+function saveBehmorModel(m) {
+    const r = getActiveRoaster();
+    if (r && r.id) updateRoaster(r.id, { behmorModel: m });
+    localStorage.setItem(MODEL_KEY, m); // keep a fallback default for new/unsaved roasters
+}
 
 // Live quick-log controls (the during-roast actions worth recording on the timeline).
 const LIVE_ACTIONS = [

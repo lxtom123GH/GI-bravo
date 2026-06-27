@@ -323,6 +323,16 @@ export function deleteRoaster(id) {
     if (getActiveRoasterId() === id) saveActiveRoasterId(list[0] ? list[0].id : null);
 }
 
+// Patch a roaster's fields by id (e.g. its Behmor sub-model, capacity).
+export function updateRoaster(id, patch) {
+    const list = getRoasters();
+    const r = list.find(x => x.id === id);
+    if (!r) return null;
+    Object.assign(r, patch);
+    saveRoasters(list);
+    return r;
+}
+
 export function getRoasterMode() {
     return localStorage.getItem('roasterMode') === 'multi' ? 'multi' : 'single';
 }

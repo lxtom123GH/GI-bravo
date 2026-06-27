@@ -120,6 +120,12 @@ an official Agtron number.
 - **Find your best value:** **Roast History → Best value** ranks your roasts by cup
   quality per dollar (your tasting score ÷ the bean's cost per cup) — a cheap, tasty
   bean can out-rank an expensive one. Add a tasting score and a bean cost to see it.
+- **Tasting over time:** in a roast's **Edit Notes**, the **Tasting date** defaults to today —
+  taste again a week or two later and save with the new date to build a little timeline of how
+  the coffee changes as it rests. The card shows “📈 N tastings over time”.
+- **Your Behmor model:** when you add a Behmor under **⚙ Manage roasters** you can pick the exact
+  model (2000AB Plus / 2000AB / 1600 Plus); each machine remembers its own, so the control panel
+  shows the right button behaviour.
 - **Back up your data (important!):** everything lives only in your browser. Use
   **Roast History → Data Backup → Export Backup** every so often to save a file
   (tick *Include photos* if you want them too). **Import** it to restore or to move

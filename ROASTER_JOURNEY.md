@@ -224,12 +224,15 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 4. ✅ **Machine-faithful roaster control panel** — DONE (`js/roaster-panel.js`): Behmor panel
    with before-vs-during button reference, **model-aware** (2000AB Plus / 2000AB / 1600 Plus),
    setup guide; **KKTO** heat/airflow + agitator guide with a roast-phase flow. Both log presses
-   live. Follow-ups: Behmor sub-model on the roaster profile; fuller pre-roast simulation.
+   live. ✅ Behmor sub-model now stored per roaster profile. Follow-up: fuller pre-roast simulation.
 5. ✅ **Tastiness-per-dollar value leaderboard** — DONE (`js/value.js`): ranks roasts by cup
    quality per dollar (tasting score ÷ cost per cup), shown in Roast History. Cheap-but-tasty
    beats pricey-but-meh.
 6. **Receipt/invoice quick-add (+ photo) ** then later parsing — speeds pantry entry.
-7. **Tasting-over-time (multiple dated entries)** — small change, real insight.
+7. ✅ **Tasting-over-time (multiple dated entries)** — DONE (`js/tasting.js`): each roast keeps a
+   dated tasting log (coffee changes as it rests/ages); the modal shows the history and defaults to
+   today; `tastingNotes` stays = the latest for back-compat. _(+ Behmor sub-model now stored on the
+   roaster profile — the #4 follow-up.)_
 8. **Collective space (after the Firebase console steps)** — turns it into a group tool.
 
 Most of 1–3, 5, 7 are local-first and need no backend; 8 builds on the sync pilot.
