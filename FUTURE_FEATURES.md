@@ -145,6 +145,10 @@ Shipped:
 - **B4 follow-up — linearized fit** — ✅ the ColorChecker matrix is fit/applied in linear light.
 - **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
 
+Open threads (see `HANDOFF.md` for detail):
+- **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.
+- **Multi-swatch DIY colour target** — 4–6 paint swatches (grey ramp) as a budget ColorChecker; fit the existing least-squares CCM to N self-calibrated patches (the deltas between patches condition the matrix). Reuses `colorcheck.js`.
+
 Deliberately not built (rationale):
 - **Bluetooth scales / water-mineral brew profiles** (Beanconqueror-style) — per-device BLE protocols can't be built/verified without the hardware; water profiles are consumer-brew scope creep with low value for a roasting-focused app.
 - **Production scheduling** (Cropster) — aimed at commercial roasteries; low value for the home/hobby focus.
