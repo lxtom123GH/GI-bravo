@@ -110,14 +110,14 @@ You asked "what blends, where to look, can you find them?" — yes:
 - *Pre-blend* — mix greens, roast together (simple, one roast).
 - *Post-blend* — roast each component to its own ideal, then combine (more control, more work).
 
-**Today ◐:** the pantry holds the components; nothing models a blend.
-**Ideas ✨:**
-- **Blend builder** — pick components + ratios (e.g. 60/40), name it, save as a recipe. It can
-  generate a **prep plan** (weigh 270 g Colombian + 180 g Brazil for a 450 g pre-blend) that flows
-  straight into the weigh-out batches we just built.
+**Shipped ✅ (blend builder, `js/blends.js`):** define a recipe (components + %), pre- or
+post-blend; **"Weigh out"** splits a chosen batch weight into per-component **prep batches**
+(60/40 of 450 g → 270 g + 180 g) that load onto Active Roast. Classic starting points shown.
+**Ideas ✨ (still to come):**
 - **Suggested blends** — given what's in your pantry, surface 2–3 classic ratios you *can* make
   right now, with the source links above.
-- Track **pre- vs post-blend** on the roast so tasting notes know what they're describing.
+- Track **pre- vs post-blend** on the *roast record* so tasting notes know what they're describing
+  (the blend recipe already records it; carry it onto the roast).
 
 ---
 
@@ -208,8 +208,8 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
 2. ✅ **Green-bean freshness + roasted rest/peak clocks + FIFO nudges** — DONE
    (`js/freshness.js`): green age + "roast soon"/"roast this first" in the pantry, rest/peak
    badge per roast in History.
-3. **Blend builder → prep plan** — ratios into the weigh-out batches we already have; pairs with
-   the blend research above.
+3. ✅ **Blend builder → prep plan** — DONE (`js/blends.js`): ratios → per-component weigh-out
+   prep batches; pre/post-blend recorded.
 4. **Machine-faithful roaster control panel (pre-roast plan + live, Behmor first)** — the biggest,
    most differentiating piece; tames the manual. Build after profiles exist.
 5. **Tastiness-per-dollar value leaderboard** — small, motivating, uses existing score + cost.

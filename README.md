@@ -45,6 +45,8 @@ model) and each roast is tagged with the machine it was done on.
   "roast this first" nudge for the oldest in stock; each roast shows a resting/peak badge.
 - ⚖️ **Weigh-out prep batches** — portion beans into containers with a photo, then load a
   batch (bean + weight + photo) onto Active Roast in one tap.
+- 🧪 **Blend builder** — define a recipe (e.g. 60% Colombia · 40% Brazil), pre- or post-blend,
+  then "weigh out" a batch into per-component prep batches.
 - ⚖️ **Yield** — log roasted (post-cool) weight to get weight-loss %.
 - 📚 **Roast history** with timelines, logs, and tasting notes.
 - 👅 **Tiered tasting & cupping** — emoji → SCA flavor wheel → **official
@@ -112,6 +114,7 @@ js/
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   pantry.js         Bean inventory (CRUD, quantities, restock, green age/FIFO)
   prep.js           Weigh-out prep batches (bean + weight + photo)
+  blends.js         Blend recipes → per-component weigh-out prep batches
   freshness.js      Green-bean age + roasted rest/peak + FIFO helpers (pure)
   history.js        Roast history, comparison, trends, tasting/cupping, photos, exports
   storage.js        localStorage persistence + JSON backup/restore + settings

@@ -161,7 +161,8 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
 2. ✅ Green-bean freshness + roasted rest/peak clocks + FIFO nudges — done
    (`js/freshness.js`): pantry shows green age + a "roast soon"/"roast this first" nudge;
    history shows a resting/peak/past-peak badge per roast.
-3. Blend builder → weigh-out prep plan.
+3. ✅ Blend builder → weigh-out prep plan — done (`js/blends.js`): recipe (components + %),
+   "Weigh out" splits a batch into per-component prep batches; pre/post-blend recorded.
 4. Machine-faithful roaster control panel (pre-roast plan + live; Behmor first).
 5. Tastiness-per-dollar value leaderboard.
 6. Receipt/invoice quick-add (+ photo); tasting-over-time; swipe-style personalisation; collective space.
