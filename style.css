@@ -91,6 +91,12 @@ h1, h2, h3 {
     margin-bottom: 15px;
 }
 
+/* Looser line-height for body copy makes the (information-dense) helper text and
+   lists easier to read; headings and controls keep their own tighter spacing. */
+p, li {
+    line-height: 1.55;
+}
+
 .card {
     background-color: var(--card-bg);
     border-radius: 8px;
@@ -142,6 +148,21 @@ button.secondary:hover {
     background-color: var(--border-color);
     border-color: var(--accent);
     color: #fff;
+}
+
+/* Roast-history and pantry cards carry several small utility actions and no single
+   primary, so render them all as low-emphasis ghosts — only Delete (danger) keeps a
+   fill. This calms the wall of orange buttons on every card. */
+.roast-card button:not(.danger):not(.active),
+.bean-card button:not(.danger):not(.active) {
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+.roast-card button:not(.danger):not(.active):hover,
+.bean-card button:not(.danger):not(.active):hover {
+    background-color: var(--border-color);
+    border-color: var(--accent);
 }
 
 input, select, textarea {
