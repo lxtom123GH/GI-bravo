@@ -125,25 +125,44 @@ Shipped: an Expert-tier "Log ET" input records timestamped environment-temperatu
 
 ---
 
-### Detector tuning via two-device live labelling (proposed, 2026-06-28)
-Idea (owner): while roasting, label the crack detector's events as **false positive**, **true
-positive**, or **missed** to build ground truth and tune thresholds — using **two devices at once**
-(not two app versions on one device, which is unworkable to operate mid-roast). The shipped cloud
-sync makes this natural:
-- **Roasting device** runs the roast and streams each detection *candidate* — timestamp + the
-  features the detector already computes (band-energy ratio, transient-cluster count, 1C/2C pitch
-  band) — into a synced "debug session" collection.
-- **Companion device** (phone/tablet) subscribes live (Firestore `onSnapshot`, the same near-real-
-  time path we verified cross-device) and shows each event with one-tap **✗ false / ✓ true /
-  ＋ missed** buttons; labels sync back.
-- **Payoff:** an exported labelled dataset (CSV/JSON) to tune `sensitivity` / `clusterSize` /
-  second-crack pitch — and later an auto-suggested threshold set. Note: the live roast already has
-  manual **Clear** (false-positive) and **Manual: Mark** (missed) controls (`js/audio.js`); this
-  reuses those signals but captures the *features* and supports a hands-free second screen.
-- *MVP without a second device:* a "detection debug" mode that records candidates+features locally,
-  then a post-roast review screen to label and export — the two-device live view is the v2.
-- *Build notes:* new synced collection (space- or user-scoped, fits existing rules); a lightweight
-  companion view; opt-in/Expert-tier so it never clutters the casual path.
+### Detector tuning / learning from user labels (proposed, 2026-06-28; research-grounded)
+Owner's idea: label crack events as **false positive / true / missed** to make the detector improve.
+Web research (2026-06) confirms this is exactly **human-in-the-loop active learning** — a validated
+pattern, not naive — and shows where the real leverage is. Two big findings shape the design:
+
+1. **Features matter more than the loop.** State-of-the-art coffee first-crack detection uses
+   **MFCCs** (spectral *timbre* of the fracture), which carry **>73%** of the discriminative power —
+   a Random Forest on MFCCs hits **95.7%** accuracy / 0.992 ROC-AUC. Our current detector keys off
+   time/frequency **band-energy ratios + transient clustering** (`js/audio.js`), i.e. mostly
+   loudness. **Upgrading the features to MFCCs is likely a bigger win than any learning loop.**
+2. **Learn only from *explicit* labels.** Self-training on pseudo-labels/confidence thresholds is
+   known to reinforce errors — so drive learning from the user's real ✗/✓/＋ taps, not guesses.
+
+**How the app actually "learns" — tiered, all browser-feasible (no backend ML required):**
+- **v1 — adaptive per-machine thresholds.** Each label nudges `sensitivity`/`clusterSize`/2C-pitch
+  for *that roaster profile* (false positive → raise; missed → lower). Simple rule/1-D calibration,
+  no ML lib. Immediate, explainable.
+- **v2 — on-device personalised classifier.** Capture a feature vector (add **MFCCs**) at each
+  candidate; from the user's labelled events fit a small **logistic-regression / prototype (k-NN)**
+  model **in the browser** (pure JS). Personalises to the user's machine acoustics — the "it learns
+  from my clicks" they want. Store the model locally; include in backup.
+- **v3 — pooled/community model.** Use the shipped **cloud sync** to aggregate labelled feature
+  vectors across users/sessions, train a Random-Forest/NN **offline**, ship it as a static client
+  model (TinyML-style). This is where the two-device labelling + sync pays off — it builds the
+  dataset. Prior art to align with: **RoastLearner** (ML audio classifier for Artisan) and the
+  emerging open coffee-roasting first-crack **audio datasets**.
+
+**Capture UX — two devices (owner's preference; avoids juggling apps on one device):** roasting
+device streams each *candidate* (timestamp + feature vector) into a synced "debug session"; a
+**companion** phone/tablet subscribes live (Firestore `onSnapshot`, the path we verified) with
+one-tap ✗/✓/＋ that sync back. The live roast already has **Clear** (false +) and **Manual: Mark**
+(missed) in `js/audio.js`; this reuses those signals but *captures the features* and adds the
+hands-free second screen. *Single-device MVP:* record candidates+features during the roast, label
+on a post-roast review screen, export CSV/JSON. Opt-in / Expert-tier so the casual path stays clean.
+
+Sources: ScienceDirect *Acoustic-Based Crack Detection* (MFCC/Random Forest); ResearchGate NN
+first-crack ID; interactiveaudiolab *Human-in-the-Loop Sound Event Detection*; arXiv self-learning /
+continual on-device audio classification; GitHub *RoastLearner*.
 
 ## Competitive landscape research (2026-06)
 
