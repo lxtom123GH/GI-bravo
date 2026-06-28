@@ -1,4 +1,5 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor } from './storage.js';
+import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
@@ -104,6 +105,10 @@ let recentRatios = [];            // high-band share of recent snaps
 
 // User-tunable detection settings (persisted), loaded on init.
 let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+// The settings actually used by the detector = base settings + the active
+// roaster's learned offset (when auto-tune is on). Recomputed on init, when
+// settings change, on roast start, and after each learning nudge.
+let effectiveDetection = { ...DEFAULT_DETECTION_SETTINGS };
 
 // Roast target alarms (persisted), loaded on init.
 let roastTargets = { ...DEFAULT_ROAST_TARGETS };
@@ -126,6 +131,10 @@ export function initAudioSystem() {
 
     detectionSettings = getDetectionSettings();
     initDetectionSettingsUI();
+    recomputeEffectiveDetection();
+    // Follow the active roaster: re-tune + refresh the readout when it changes.
+    window.addEventListener('behmorConfigChanged', () => { recomputeEffectiveDetection(); updateLearningReadout(); });
+    window.addEventListener('roasterChanged', () => { recomputeEffectiveDetection(); updateLearningReadout(); });
 
     roastTargets = getRoastTargets();
     initTargetsUI();
@@ -214,7 +223,7 @@ function initDetectionSettingsUI() {
         if (calibVal) calibVal.textContent = (detectionSettings.calibrationSeconds || 8) + 's';
     };
 
-    const persist = () => saveDetectionSettings(detectionSettings);
+    const persist = () => { saveDetectionSettings(detectionSettings); recomputeEffectiveDetection(); };
 
     threshInput.addEventListener('input', () => {
         detectionSettings.thresholdMultiplier = parseFloat(threshInput.value);
@@ -252,7 +261,62 @@ function initDetectionSettingsUI() {
         });
     }
 
+    // --- Auto-tune (per-roaster detection learning) controls ---
+    const learnToggle = document.getElementById('detectionLearningToggle');
+    const resetLearnBtn = document.getElementById('resetLearningBtn');
+    if (learnToggle) {
+        learnToggle.checked = getDetectionLearningEnabled();
+        learnToggle.addEventListener('change', () => {
+            saveDetectionLearningEnabled(learnToggle.checked);
+            recomputeEffectiveDetection();
+            updateLearningReadout();
+        });
+    }
+    if (resetLearnBtn) {
+        resetLearnBtn.addEventListener('click', () => {
+            clearDetectionAdjustFor(getActiveRoasterId());
+            recomputeEffectiveDetection();
+            updateLearningReadout();
+        });
+    }
+    updateLearningReadout();
+
     render();
+}
+
+// Effective detection = base settings + this roaster's learned offset (when
+// auto-tune is enabled). Keeps the manual sliders authoritative and only shifts
+// the spike threshold.
+function recomputeEffectiveDetection() {
+    effectiveDetection = getDetectionLearningEnabled()
+        ? applyAdjust(detectionSettings, getDetectionAdjustFor(getActiveRoasterId()))
+        : { ...detectionSettings };
+}
+
+// Record one explicit correction against the active roaster and re-tune.
+function applyLearningSignal(signal) {
+    if (!getDetectionLearningEnabled()) return;
+    const roasterId = getActiveRoasterId();
+    if (!roasterId) return;
+    const next = nudgeAdjust(getDetectionAdjustFor(roasterId) || DEFAULT_ADJUST, signal);
+    saveDetectionAdjustFor(roasterId, next);
+    recomputeEffectiveDetection();
+    const how = signal === 'falsePositive' ? 'less sensitive'
+        : signal === 'missed' ? 'more sensitive' : 'noted';
+    logMessage(`🎯 Auto-tuned: detection is now ${how} for this roaster.`);
+    updateLearningReadout();
+}
+
+// Refresh the "Tuning: …" line + toggle state in the settings panel.
+function updateLearningReadout() {
+    const readout = document.getElementById('learningReadout');
+    const toggle = document.getElementById('detectionLearningToggle');
+    const enabled = getDetectionLearningEnabled();
+    if (toggle) toggle.checked = enabled;
+    if (!readout) return;
+    readout.textContent = enabled
+        ? describeAdjust(getDetectionAdjustFor(getActiveRoasterId()), detectionSettings)
+        : 'off';
 }
 
 // Fire a one-shot alarm when the roast reaches a configured total time or DTR.
@@ -425,6 +489,8 @@ function checkReferenceCues(elapsedMs) {
 function syncSettingsInputs() {
     detectionSettings = getDetectionSettings();
     roastTargets = getRoastTargets();
+    recomputeEffectiveDetection();
+    updateLearningReadout();
 
     const t = document.getElementById('thresholdSetting');
     const tv = document.getElementById('thresholdValue');
@@ -499,6 +565,17 @@ function markPhase(phaseName, stateKey) {
     if (roastState[stateKey]) return; // Already marked
 
     roastState[stateKey] = Date.now();
+    // Remember whether the detector or the user recorded this crack — the learner
+    // (and the "clear = false positive" signal) needs to tell them apart.
+    const isAuto = phaseName.includes('Auto');
+    if (stateKey === 'firstCrackTime') roastState.firstCrackAuto = isAuto;
+    if (stateKey === 'secondCrackTime') roastState.secondCrackAuto = isAuto;
+    // A MANUAL crack mark during a mic roast means the detector hadn't caught it
+    // (missed) → nudge more sensitive for this roaster.
+    if (!isAuto && !roastState.manualMode &&
+        (stateKey === 'firstCrackTime' || stateKey === 'secondCrackTime')) {
+        applyLearningSignal('missed');
+    }
     // Enable the matching "clear" (false-positive) button now that a crack is recorded.
     if (stateKey === 'firstCrackTime' && undoFirstCrackBtn) undoFirstCrackBtn.disabled = false;
     if (stateKey === 'secondCrackTime' && undoSecondCrackBtn) undoSecondCrackBtn.disabled = false;
@@ -510,6 +587,10 @@ function markPhase(phaseName, stateKey) {
 // Clear a wrongly-recorded crack (false positive) and resume detection.
 function clearCrack(stateKey) {
     if (!roastState[stateKey]) return;
+    // Clearing an AUTO-detected crack is an explicit false positive → nudge less
+    // sensitive for this roaster (only on mic roasts).
+    const wasAuto = stateKey === 'firstCrackTime' ? roastState.firstCrackAuto : roastState.secondCrackAuto;
+    if (wasAuto && !roastState.manualMode) applyLearningSignal('falsePositive');
     roastState[stateKey] = null;
     const label = stateKey === 'firstCrackTime' ? 'First crack' : 'Second crack';
     // Clearing first crack also clears second (2C can't precede 1C).
@@ -859,6 +940,8 @@ async function startRoast(manual = false) {
         endTime: null,
         phase: 'Heating',
         manualMode: manual,
+        firstCrackAuto: false,
+        secondCrackAuto: false,
         logs: [],
         curve: [],
         temps: [],
@@ -866,6 +949,7 @@ async function startRoast(manual = false) {
         powerLog: [],
         tempUnit: getTempUnit()
     };
+    recomputeEffectiveDetection(); // fold in this roaster's learned tuning for the run
     recentRMSHistory = [];
     transientClusterCount = 0;
     lastTransientTime = 0;
@@ -1069,7 +1153,7 @@ function detectTransient(rms) {
 
     // A transient is a sudden spike well above the baseline and recent history.
     const recentAvg = recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length;
-    const spikeThreshold = Math.max(baselineNoiseRMS * detectionSettings.thresholdMultiplier, recentAvg * 2, 0.05);
+    const spikeThreshold = Math.max(baselineNoiseRMS * effectiveDetection.thresholdMultiplier, recentAvg * 2, 0.05);
 
     if (rms <= spikeThreshold || (now - lastTransientTime <= TRANSIENT_COOLDOWN_MS)) return;
 
