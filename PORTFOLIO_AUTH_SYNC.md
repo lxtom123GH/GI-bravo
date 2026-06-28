@@ -161,9 +161,15 @@ public paths later (golf already shows the `visibility == "public"` pattern).
    signed-in = opt-in sync.
 2. **GI-alpha** — strong pull (VISION §9 multi-user households); reuse the module against dexie.
 3. **tempovibes** — trivial drop-in; completes the "one login across the golf apps" story.
-4. **golf_handicap_tracker LAST** — it's the *pattern source* but has **live users + data**, so
-   its migration into the shared project (or re-pointing its auth) is the riskiest step. Do it
-   once the module is proven on the greenfield apps.
+4. **golf_handicap_tracker LAST** — it's the *pattern source* and has the most **existing data +
+   schema complexity**, so its migration into the shared project (or re-pointing its auth) is the
+   most involved step. Do it once the module is proven on the greenfield apps. (Note: this is about
+   data/complexity, **not** live-user risk — see the users note below.)
+
+> **Users reality (confirmed 2026-06-28):** there are **no real users on any app yet — just the
+> owner**; the owner's **mum is the sole alpha tester for GI-bravo**. So the original "golf is risky
+> because of live users" framing was wrong — rollout risk is low across the portfolio for now. Worth
+> a **weekly check** (in case that changes); if any app gains real users, raise its migration care.
 5. **APS pair** — only if they add personalization (saved comparisons/watchlists); then they
    adopt the same shared auth.
 

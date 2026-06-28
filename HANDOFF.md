@@ -26,6 +26,8 @@ UI** (named spaces; also fixes a known **cross-scope local bleed** — see `FUTU
 (b) receipt **OCR** auto-fill; (c) a fuller pre-roast **"what will happen" simulation**; (d) roll the
 `js/sync/` pattern out to the other apps (GI-alpha → tempovibes → golf last). A **weekly
 best-practice radar** + **monthly retro** run as scheduled cloud routines and open `LESSONS.md` PRs.
+The weekly radar also **checks the users reality** (still just the owner + Mum as GI-bravo alpha
+tester? — see the users note in Thread 1), since real users would raise migration/change risk.
 
 ## How to continue locally
 1. Install the CLI: `npm install -g @anthropic-ai/claude-code` (Node 18+), run `claude`, sign in.
@@ -54,8 +56,15 @@ Firebase is already the incumbent in three repos — `golf-handicap-tracker` alr
 exact accounts + cloud-sync pattern this proposes (Firebase Auth + Firestore + Storage +
 Functions), and `aps-agency-comparator` + `aps-mobility-engine` share one Firebase project
 (reference data, no user accounts). So Supabase was dropped to avoid fragmenting from existing
-investment; `golf-handicap-tracker` is the pattern reference and migrates **last** (it has live
-data). `GI-charlie` is an empty repo.
+investment; `golf-handicap-tracker` is the pattern reference and migrates **last** (it has the most
+existing data + schema complexity — **not** because of user risk; see the users note below).
+`GI-charlie` is an empty repo.
+
+> **Users reality (confirmed 2026-06-28):** there are **no real users on any app yet — just the
+> owner**. The owner's **mum is the sole alpha tester for GI-bravo** (the realest "will actually use
+> it" tester). So rollout risk is low everywhere — be bold/fast with changes, and optimise for "would
+> Mum find this obvious?". **Revisit weekly** (fold into the weekly best-practice radar) in case a
+> real user appears — if golf/any app gains live users, its migration risk goes up.
 
 Locked decisions for the pilot:
 - **Provider:** one shared Firebase project as the identity hub (placeholder id `lx-apps-hub`);
