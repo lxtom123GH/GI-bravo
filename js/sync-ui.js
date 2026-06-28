@@ -80,6 +80,34 @@ function wireLocalPush() {
     }
 }
 
+// ---- Sidebar account affordance -------------------------------------------
+// A persistent, low-key entry point so sign-in is always discoverable without a
+// front-page login wall (the app stays fully usable signed out). Tapping it jumps
+// to the Cloud Sync card in Roast History.
+
+function updateSidebar(user) {
+    const label = document.getElementById('syncSidebarLabel');
+    if (!label) return;
+    if (user) {
+        label.textContent = `● ${user.displayName || user.email} · synced`;
+        label.style.color = 'var(--success, #10b981)';
+    } else {
+        label.textContent = '☁️ Sign in to back up';
+        label.style.color = '';
+    }
+}
+
+function openCloudSync() {
+    const nav = document.querySelector('.nav-links li[data-target="history"]');
+    if (nav) nav.click();                       // switches tab (+ closes the mobile drawer)
+    const card = document.getElementById('cloudSyncCard');
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.transition = 'box-shadow 0.3s';
+    card.style.boxShadow = '0 0 0 2px var(--accent, #e2761b)';
+    setTimeout(() => { card.style.boxShadow = ''; }, 1500);
+}
+
 // ---- UI -------------------------------------------------------------------
 
 function el(html) {
@@ -228,8 +256,11 @@ export function initSync() {
     try {
         buildCollections();
         wireLocalPush();
+        const sideBtn = document.getElementById('syncSidebarBtn');
+        if (sideBtn) sideBtn.addEventListener('click', openCloudSync);
         onAuthState(async (user) => {
             currentUser = user;
+            updateSidebar(user);
             try {
                 if (user) {
                     await startAll(user);

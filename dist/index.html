@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-L-quGN-u.js"></script>
+  <script type="module" crossorigin src="/assets/index-DDvlyu9c.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DgArmMS7.css">
 </head>
 <body>
@@ -26,6 +26,11 @@
             <li data-target="help">Help</li>
         </ul>
         <div class="sidebar-footer" style="padding: 15px 25px; border-top: 1px solid var(--border-color);">
+            <button type="button" id="syncSidebarBtn"
+                data-hint="Optional — sign in to back up your roasts and sync across devices. The app works fully without an account; your data is always saved on this device."
+                style="width: 100%; text-align: left; background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <span id="syncSidebarLabel">☁️ Sign in to back up</span>
+            </button>
             <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
                 <input type="checkbox" id="hintsToggle" style="width: auto; margin: 0;"> 💡 Show hints
             </label>
@@ -520,6 +525,7 @@
                     <li><strong>Blends:</strong> in <strong>Bean Pantry → Blends</strong>, set ratios (e.g. 60/40), then <strong>Weigh out</strong> splits a batch into per-bean prep batches. Set each bean's optional <strong>density/size</strong> and a pre-blend warns if beans won't roast evenly together.</li>
                     <li><strong>Compare</strong> two batches and view <strong>Trends</strong> over time in Roast History.</li>
                     <li><strong>Back up regularly:</strong> Roast History → <strong>Data Backup → Export</strong>. Your data lives only in this browser, so keep backups.</li>
+                    <li><strong>Sync across devices (optional):</strong> tap <strong>☁️ Sign in to back up</strong> at the bottom of the sidebar to create an account and sync your pantry &amp; roasts. It's entirely optional — the app works fully without it — and you can share a pantry with someone by email.</li>
                 </ul>
             </div>
 
