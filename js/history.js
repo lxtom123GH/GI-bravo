@@ -733,7 +733,7 @@ function openCalibratedPhotoModal(roastId) {
             <input type="file" id="calSampleInput" accept="image/*" capture="environment" style="display: none;">
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-            <button id="calCancel" class="danger">Cancel</button>
+            <button id="calCancel" class="secondary">Cancel</button>
             <button id="calProcess" style="background-color: var(--success);">Process</button>
         </div>
     `;
@@ -840,7 +840,7 @@ function openColorCheckerModal(roastId) {
         <label><strong>2. Beans photo</strong></label>
         <input type="file" id="ccBeanInput" accept="image/*" capture="environment">
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-            <button id="ccCancel" class="danger">Cancel</button>
+            <button id="ccCancel" class="secondary">Cancel</button>
             <button id="ccProcess" style="background-color: var(--success);">Process</button>
         </div>
     `;
@@ -964,7 +964,7 @@ function openCustomTargetModal(roastId) {
         <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
             <button id="ctDelete" class="danger" style="font-size: 0.8rem; display: none;">Delete target</button>
             <div style="display: flex; gap: 10px; margin-left: auto;">
-                <button id="ctCancel" class="danger">Cancel</button>
+                <button id="ctCancel" class="secondary">Cancel</button>
                 <button id="ctSave" style="background-color: var(--accent); display: none;">Save calibration</button>
                 <button id="ctProcess" style="background-color: var(--success);">Process</button>
             </div>
@@ -1263,7 +1263,7 @@ function openTastingModal(id) {
         <label for="modalNotesText"><strong>Notes</strong></label>
         <textarea id="modalNotesText" rows="4" placeholder="General impressions, etc.">${notes.text || ''}</textarea>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="modalCancel" class="danger">Cancel</button>
+            <button id="modalCancel" class="secondary">Cancel</button>
             <button id="modalSave" style="background-color: var(--success);">Save</button>
         </div>
     `;

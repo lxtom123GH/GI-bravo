@@ -50,7 +50,7 @@ function openReceiptModal() {
         <button type="button" id="rcptAddRow" style="font-size:0.85rem; padding:6px 12px;">＋ Add bean</button>
         <p id="rcptTotal" style="color:var(--text-muted); margin-top:8px;"></p>
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
-            <button id="rcptCancel" class="danger">Cancel</button>
+            <button id="rcptCancel" class="secondary">Cancel</button>
             <button id="rcptSave" style="background-color:var(--success);">Add to pantry</button>
         </div>`;
     bg.appendChild(modal);

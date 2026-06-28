@@ -110,7 +110,7 @@ function openPrepModal() {
         <label><strong>Note (optional)</strong></label>
         <input type="text" id="prepNote" placeholder="e.g. left jar, espresso batch">
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-            <button id="prepCancel" class="danger">Cancel</button>
+            <button id="prepCancel" class="secondary">Cancel</button>
             <button id="prepSave" style="background-color: var(--success);">Save batch</button>
         </div>
     `;
