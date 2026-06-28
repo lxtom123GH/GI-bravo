@@ -115,9 +115,9 @@ function renderBehmorPanel(mount) {
 
     const refRows = buttons.map(b => `
         <tr>
-            <td style="padding:4px 8px;font-weight:bold;white-space:nowrap;">${b.label}</td>
-            <td style="padding:4px 8px;color:${mode === 'setup' ? 'var(--text-main)' : 'var(--text-muted)'};">${b.setup}</td>
-            <td style="padding:4px 8px;color:${mode === 'live' ? 'var(--text-main)' : 'var(--text-muted)'};">${b.live}</td>
+            <td style="padding:6px 8px;font-weight:bold;white-space:nowrap;">${b.label}</td>
+            <td style="padding:6px 8px;color:${mode === 'setup' ? 'var(--text-main)' : 'var(--text-muted)'};">${b.setup}</td>
+            <td style="padding:6px 8px;color:${mode === 'live' ? 'var(--text-main)' : 'var(--text-muted)'};">${b.live}</td>
         </tr>`).join('');
 
     const liveControls = mode === 'live' ? `
@@ -143,9 +143,9 @@ function renderBehmorPanel(mount) {
             ${uncertain ? '<p style="color:var(--text-muted);font-size:0.8rem;">Model functions vary a little — please double-check against your own manual.</p>' : ''}
             ${setupGuide}
             <div style="overflow-x:auto;">
-            <table style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+            <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
                 <thead><tr style="text-align:left;color:var(--text-muted);">
-                    <th style="padding:4px 8px;">Button</th><th style="padding:4px 8px;">Before roast</th><th style="padding:4px 8px;">During roast</th>
+                    <th style="padding:6px 8px;">Button</th><th style="padding:6px 8px;">Before roast</th><th style="padding:6px 8px;">During roast</th>
                 </tr></thead>
                 <tbody>${refRows}</tbody>
             </table>
@@ -200,8 +200,8 @@ const KKTO_LIVE = [
 function renderKktoPanel(mount) {
     const refRows = KKTO_CONTROLS.map(c => `
         <tr>
-            <td style="padding:4px 8px;font-weight:bold;white-space:nowrap;">${c.label}</td>
-            <td style="padding:4px 8px;">${c.does}</td>
+            <td style="padding:6px 8px;font-weight:bold;white-space:nowrap;">${c.label}</td>
+            <td style="padding:6px 8px;">${c.does}</td>
         </tr>`).join('');
 
     const phaseList = KKTO_PHASES.map(p => `<li>${p}</li>`).join('');
@@ -222,8 +222,8 @@ function renderKktoPanel(mount) {
             <p style="color:var(--text-muted);font-size:0.85rem;">The KKTO is a manual DIY roaster — you steer the roast with <strong>heat</strong> and <strong>airflow</strong> (turbo oven), with the agitator keeping beans moving. There are no fixed programs; builds vary, so set your drum capacity under ⚙ Manage roasters.</p>
             ${mode === 'live' ? '<p style="margin:6px 0;color:var(--success);"><strong>● Live roast</strong> — log your heat/airflow changes below.</p>' : ''}
             <div style="overflow-x:auto;">
-            <table style="border-collapse:collapse;font-size:0.85rem;width:100%;">
-                <thead><tr style="text-align:left;color:var(--text-muted);"><th style="padding:4px 8px;">Control</th><th style="padding:4px 8px;">What it does</th></tr></thead>
+            <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+                <thead><tr style="text-align:left;color:var(--text-muted);"><th style="padding:6px 8px;">Control</th><th style="padding:6px 8px;">What it does</th></tr></thead>
                 <tbody>${refRows}</tbody>
             </table>
             </div>
