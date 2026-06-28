@@ -359,7 +359,7 @@ function applyReference(curve, markers, powerLog) {
     if (!isRecording) {
         if (referenceCurve) {
             drawRoastCurves(curveCanvas, [{
-                curve: referenceCurve, color: REF_COLOR, label: 'Reference',
+                curve: referenceCurve, color: REF_COLOR, label: 'Reference', dashed: true,
                 firstCrackMs: markers.firstCrackMs, secondCrackMs: markers.secondCrackMs
             }]);
         } else {
@@ -1130,17 +1130,22 @@ function sampleRoastCurve(rms) {
 function renderLiveCurve(elapsedMs) {
     const liveSeries = {
         curve: roastState.curve,
-        color: '#ff9800',
+        color: null,   // null → the theme accent (lit amber) in drawRoastCurves
         label: 'This roast',
         firstCrackMs: roastState.firstCrackTime ? roastState.firstCrackTime - roastState.startTime : null,
         secondCrackMs: roastState.secondCrackTime ? roastState.secondCrackTime - roastState.startTime : null
     };
 
-    const markers = { firstCrackMs: liveSeries.firstCrackMs, secondCrackMs: liveSeries.secondCrackMs, totalMs: elapsedMs };
+    const markers = {
+        dryEndMs: roastState.dryEndTime ? roastState.dryEndTime - roastState.startTime : null,
+        firstCrackMs: liveSeries.firstCrackMs,
+        secondCrackMs: liveSeries.secondCrackMs,
+        totalMs: elapsedMs,
+    };
 
     if (referenceCurve) {
         drawRoastCurves(curveCanvas, [
-            { curve: referenceCurve, color: REF_COLOR, label: 'Reference',
+            { curve: referenceCurve, color: REF_COLOR, label: 'Reference', dashed: true,
               firstCrackMs: referenceMarkers.firstCrackMs, secondCrackMs: referenceMarkers.secondCrackMs },
             liveSeries
         ]);
