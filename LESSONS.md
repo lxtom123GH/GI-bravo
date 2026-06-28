@@ -89,6 +89,12 @@ and Gemini**._
   the freshness/blends/planner stack all showed "merged" but never reached `main`. Recovered by
   merging the top branch into `main`. Rule added to `CLAUDE.md`: base PRs on `main`, or retarget
   each to `main` before merging.
+- **Recurred 2026-06-29 (visual-refresh stack):** #74 (chart, based on the CSS branch) was merged
+  *before* #73's branch was deleted, so it landed in `feature/visual-refresh-css`, not `main`.
+  Recovered with a fresh PR #75 (chart branch → `main`; clean diff since #73 was already in `main`).
+  **The missing nuance:** GitHub only **auto-retargets** a child PR to `main` when you **delete the
+  base branch first**. So the safe move is **delete-then-merge** (merge & delete the parent, *then*
+  merge the child once it has retargeted) — or pre-retarget the child's base to `main` by hand.
 
 ### Process lesson — pushes after a merge are stranded — **Adopt**
 - A merged PR is closed, so a commit pushed to that branch afterwards has **no open PR** and the
