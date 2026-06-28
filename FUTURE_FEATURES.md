@@ -180,7 +180,11 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
 6. ✅ Receipt/invoice quick-add (+ photo) — done (`js/receipts.js`): snap a receipt and add
    several beans in one go (name/grams/$ per kg), each landing in the pantry with the purchase
    date; the photo + a purchase record are kept (Recent purchases list). Follow-up: OCR parsing.
-   Remaining: collective space.
+   Remaining: collective space — see 6.9.
+6.9 ◐ Collective space — CODE COMPLETE (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
+   (email/Google), a shared pantry/roastHistory/blends/roasters scoped to a space you can share
+   by email, personal calibration stays per-device; path-generic rules. Runs on the local
+   emulator now. **Going live needs your Firebase console setup — see `GO_LIVE_CHECKLIST.md`.**
 6.7 ✅ Swipe-style personalisation — done (`js/swipe.js`): swipe each optional Active-Roast
    control right to keep / left to hide (or tap the buttons); revisitable from Help or the
    customise panel; writes the same `dashboardHidden` set as "Customise this screen".

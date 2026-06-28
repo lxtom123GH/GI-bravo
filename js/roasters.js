@@ -23,6 +23,8 @@ export function initRoasters() {
     }
     renderRoasterControl();
     window.addEventListener('settingsImported', renderRoasterControl);
+    // Re-render the picker when roasters change (incl. cloud-sync writes).
+    window.addEventListener('roasterChanged', renderRoasterControl);
 }
 
 // Render the compact roaster control in the Roast Setup card.

@@ -12,7 +12,8 @@ import {
 } from './sync/index.js';
 import {
     getPantry, savePantry, getRoastHistory, saveRoastHistory,
-    getReferenceSamples, saveReferenceSamples, getColorTargets, saveColorTargets
+    getReferenceSamples, saveReferenceSamples, getColorTargets, saveColorTargets,
+    getBlends, saveBlends, getRoasters, saveRoasters
 } from './storage.js';
 
 const APP_ID = 'gi-bravo';
@@ -29,6 +30,11 @@ function defs() {
           adapter: adapter(getPantry, savePantry, 'pantryUpdated') },
         { key: 'roastHistory', shared: true, evt: 'historyUpdated',
           adapter: adapter(getRoastHistory, saveRoastHistory, 'historyUpdated') },
+        // The shared roastery: blend recipes and roaster profiles travel with the space too.
+        { key: 'blends', shared: true, evt: 'blendsUpdated',
+          adapter: adapter(getBlends, saveBlends, 'blendsUpdated') },
+        { key: 'roasters', shared: true, evt: 'roasterChanged',
+          adapter: adapter(getRoasters, saveRoasters, 'roasterChanged') },
         // Calibration data is personal (device/user), not shared inventory.
         { key: 'referenceSamples', shared: false, evt: 'settingsImported',
           adapter: adapter(getReferenceSamples, saveReferenceSamples, 'settingsImported') },
