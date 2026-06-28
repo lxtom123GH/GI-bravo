@@ -125,6 +125,26 @@ Shipped: an Expert-tier "Log ET" input records timestamped environment-temperatu
 
 ---
 
+### Detector tuning via two-device live labelling (proposed, 2026-06-28)
+Idea (owner): while roasting, label the crack detector's events as **false positive**, **true
+positive**, or **missed** to build ground truth and tune thresholds — using **two devices at once**
+(not two app versions on one device, which is unworkable to operate mid-roast). The shipped cloud
+sync makes this natural:
+- **Roasting device** runs the roast and streams each detection *candidate* — timestamp + the
+  features the detector already computes (band-energy ratio, transient-cluster count, 1C/2C pitch
+  band) — into a synced "debug session" collection.
+- **Companion device** (phone/tablet) subscribes live (Firestore `onSnapshot`, the same near-real-
+  time path we verified cross-device) and shows each event with one-tap **✗ false / ✓ true /
+  ＋ missed** buttons; labels sync back.
+- **Payoff:** an exported labelled dataset (CSV/JSON) to tune `sensitivity` / `clusterSize` /
+  second-crack pitch — and later an auto-suggested threshold set. Note: the live roast already has
+  manual **Clear** (false-positive) and **Manual: Mark** (missed) controls (`js/audio.js`); this
+  reuses those signals but captures the *features* and supports a hands-free second screen.
+- *MVP without a second device:* a "detection debug" mode that records candidates+features locally,
+  then a post-roast review screen to label and export — the two-device live view is the v2.
+- *Build notes:* new synced collection (space- or user-scoped, fits existing rules); a lightweight
+  companion view; opt-in/Expert-tier so it never clutters the casual path.
+
 ## Competitive landscape research (2026-06)
 
 Surveyed Artisan, RoasTime/Roast.World (Aillio), Cropster, RoastLog/RoastPATH, and Beanconqueror.
