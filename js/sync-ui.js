@@ -135,16 +135,23 @@ function renderSignedOut(mount) {
                 everything keeps working offline and signed out.
             </p>
             ${note}
-            <form id="syncAuthForm" style="display: flex; flex-direction: column; gap: 8px; max-width: 320px;">
-                <input type="text" id="syncName" placeholder="Display name (for new account)" autocomplete="name">
-                <input type="email" id="syncEmail" placeholder="Email" autocomplete="email" required>
-                <input type="password" id="syncPassword" placeholder="Password" autocomplete="current-password" required>
+            <form id="syncAuthForm" style="display: flex; flex-direction: column; gap: 6px; max-width: 340px;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 4px;">New here? Create an account — or use Google.</p>
+                <label class="field-label" for="syncName">Display name</label>
+                <input type="text" id="syncName" placeholder="e.g. Tom" autocomplete="name">
+                <label class="field-label" for="syncEmail">Email</label>
+                <input type="email" id="syncEmail" placeholder="you@example.com" autocomplete="email" required>
+                <label class="field-label" for="syncPassword">Password</label>
+                <input type="password" id="syncPassword" placeholder="At least 6 characters" autocomplete="new-password" required>
                 <div id="syncAuthError" style="color: var(--danger, #ef4444); font-size: 0.85rem; display: none;"></div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="submit" id="syncSignIn">Sign in</button>
-                    <button type="button" id="syncSignUp">Create account</button>
-                    <button type="button" id="syncGoogle">Sign in with Google</button>
+                    <button type="submit" id="syncSignUp">Create account</button>
+                    <button type="button" id="syncGoogle" class="secondary">Sign in with Google</button>
                 </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 0;">
+                    Already have an account?
+                    <button type="button" id="syncSignIn" class="secondary" style="font-size: 0.8rem; padding: 4px 10px;">Sign in</button>
+                </p>
                 <a href="#" id="syncForgot" style="font-size: 0.8rem;">Forgot password?</a>
             </form>
         </div>
@@ -157,13 +164,15 @@ function renderSignedOut(mount) {
         password: mount.querySelector('#syncPassword').value
     });
 
+    // The form's primary action is Create account — a new user filling in their details and
+    // pressing Enter expects to sign up, not hit a failing sign-in.
     mount.querySelector('#syncAuthForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        try { await signIn(creds()); } catch (ex) { showErr(ex.message); }
-    });
-    mount.querySelector('#syncSignUp').addEventListener('click', async () => {
         const displayName = mount.querySelector('#syncName').value.trim();
         try { await signUp({ ...creds(), displayName }); } catch (ex) { showErr(ex.message); }
+    });
+    mount.querySelector('#syncSignIn').addEventListener('click', async () => {
+        try { await signIn(creds()); } catch (ex) { showErr(ex.message); }
     });
     mount.querySelector('#syncGoogle').addEventListener('click', async () => {
         try { await signInWithGoogle(); } catch (ex) { showErr(ex.message); }
