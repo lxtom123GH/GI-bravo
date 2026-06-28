@@ -160,6 +160,11 @@ input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
 }
 
+/* Roaster control-panel reference tables — subtle zebra rows + dividers make the
+   dense before/during reference far easier to scan (the column-dimming is intentional). */
+.rp-table td { border-top: 1px solid var(--border-color); }
+.rp-table tbody tr:nth-child(odd) td { background: rgba(255, 255, 255, 0.025); }
+
 /* Persistent field labels (so the prompt doesn't vanish once you type). */
 .field-label {
     display: block;
