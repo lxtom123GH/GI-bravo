@@ -2,6 +2,7 @@
 // works without a microphone, beans, or saving any data. Pure visual + captions.
 import { drawRoastCurve } from './chart.js';
 
+const DRY_MS = 5 * 60 * 1000;    // dry end (yellowing) ~5:00
 const FC_MS = 9 * 60 * 1000;     // first crack ~9:00
 const SC_MS = 10.5 * 60 * 1000;  // second crack ~10:30
 const END_MS = 11.2 * 60 * 1000; // drop ~11:12
@@ -53,17 +54,18 @@ function runDemo() {
 
     const curve = [];
     const STEP = END_MS / 180; // ~180 frames
-    let vt = 0, fc = null, sc = null;
+    let vt = 0, de = null, fc = null, sc = null;
 
     const iv = setInterval(() => {
         vt += STEP;
         curve.push({ t: vt, rms: energyAt(vt) });
         if (timer) timer.textContent = fmt(vt);
 
+        if (!de && vt >= DRY_MS) { de = vt; cap(`>>> <b>Dry end</b> (beans yellowing) at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — Maillard'; }
         if (!fc && vt >= FC_MS) { fc = vt; cap(`>>> <b>FIRST CRACK detected</b> at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — First Crack'; }
         if (!sc && vt >= SC_MS) { sc = vt; cap(`>>> <b>SECOND CRACK detected</b> at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — Second Crack'; }
 
-        drawRoastCurve(canvas, curve, { firstCrackMs: fc, secondCrackMs: sc, totalMs: vt });
+        drawRoastCurve(canvas, curve, { dryEndMs: de, firstCrackMs: fc, secondCrackMs: sc, totalMs: vt });
 
         if (vt >= END_MS) {
             clearInterval(iv);

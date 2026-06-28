@@ -573,6 +573,7 @@ function renderHistoryList() {
         const curveCanvas = card.querySelector('.history-curve');
         const startMs = roast.timeline.startTime;
         drawRoastCurve(curveCanvas, roast.timeline.curve, {
+            dryEndMs: roast.timeline.dryEndTime ? roast.timeline.dryEndTime - startMs : null,
             firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - startMs : null,
             secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - startMs : null,
             totalMs: roast.timeline.endTime - startMs
