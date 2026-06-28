@@ -1,0 +1,73 @@
+/* ============================================================
+   THEME · GI-bravo (coffee)
+   The only coffee-specific layer. Sets colour roles + fonts.
+   Swap this file to re-skin every component.
+   ============================================================ */
+:root {
+  /* Fonts */
+  --font-sans:    'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Spline Sans Mono', ui-monospace, 'SF Mono', monospace;
+  --font-display: 'Figtree', var(--font-sans);   /* light, calm timer */
+
+  /* Surfaces — warm dark */
+  --color-bg:             #15100C;
+  --color-surface:        #1F1812;
+  --color-surface-raised: #2A211A;
+  --color-hairline:       #2E241C;
+  --color-border:         #3A2E24;
+
+  /* Text — warm whites (AA on every surface above) */
+  --color-text:        #F4EBE2;
+  --color-text-muted:  #9C8B7B;
+  --color-text-faint:  #7A6552;
+
+  /* Accent — ember amber */
+  --color-accent:        #F2A24C;
+  --color-accent-hover:  #E8923A;
+  --color-accent-hot:    #FF7A3C;   /* lit leading edge of the curve */
+  --color-accent-soft:   rgba(242,162,76,0.16);
+  --color-accent-border: rgba(242,162,76,0.45);
+  --color-on-accent:     #1A120B;
+
+  /* Success / selected — calm green */
+  --color-success:        #6FBF73;
+  --color-success-text:   #86D08A;
+  --color-success-soft:   rgba(111,191,115,0.14);
+  --color-success-border: #4F9A53;
+
+  /* Danger */
+  --color-danger:       #E5654B;
+  --color-danger-hover: #D4543C;
+  --color-on-danger:    #1A0E0A;
+
+  /* Health meter (pantry stock) */
+  --meter-high: var(--color-success);
+  --meter-mid:  var(--color-accent);
+  --meter-low:  var(--color-danger);
+
+  /* Theme EXTRAS — roast phases (coffee only; other apps drop these) */
+  --roast-drying:      #6B4A2E;
+  --roast-maillard:    #B5702E;
+  --roast-development: #FF6A2E;
+}
+
+/* ------------------------------------------------------------
+   BACK-COMPAT ALIASES
+   GI-bravo's existing index.html inline styles + JS reference the
+   app's ORIGINAL token names (~150 uses). Map them onto the new
+   semantic tokens so the drop-in needs NO markup/JS edits.
+   (New code should use the --color-* names above; these exist only
+   so the legacy DOM keeps resolving.)
+   ------------------------------------------------------------ */
+:root {
+  --bg-color:     var(--color-bg);
+  --sidebar-bg:   var(--color-surface);
+  --card-bg:      var(--color-surface);
+  --text-main:    var(--color-text);
+  --text-muted:   var(--color-text-muted);
+  --border-color: var(--color-border);
+  --accent:       var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --danger:       var(--color-danger);
+  --success:      var(--color-success);
+}

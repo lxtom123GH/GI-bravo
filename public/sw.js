@@ -3,8 +3,22 @@
 // app works offline regardless of Vite's hashed asset filenames.
 const CACHE = 'roast-tracker-v1';
 
-self.addEventListener('install', () => {
-    self.skipWaiting();
+// Brand fonts are self-hosted (not on a CDN), so precache them at install time
+// to guarantee the type renders on a cold offline launch. System-font fallbacks
+// in the CSS cover the brief window before these resolve.
+const FONT_ASSETS = [
+    '/fonts/hanken-grotesk-var-latin.woff2',
+    '/fonts/spline-sans-mono-var-latin.woff2',
+    '/fonts/figtree-var-latin.woff2',
+];
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE)
+            // Don't let one missing font abort activation — cache best-effort.
+            .then(c => Promise.allSettled(FONT_ASSETS.map(u => c.add(u))))
+            .finally(() => self.skipWaiting())
+    );
 });
 
 self.addEventListener('activate', (event) => {
