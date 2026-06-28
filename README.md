@@ -104,6 +104,19 @@ Tasting), and a one-off override on the cupping modal.
 
 ---
 
+## Design system
+
+The UI runs on a **two-layer plain-CSS token system** (the "Ember" visual
+refresh): a portable layer (`tokens.portable.css` + `components.css`) that's
+app-agnostic, and a theme layer (`theme.coffee.css`) that sets the warm-dark
+colour roles, the three self-hosted brand fonts (Hanken Grotesk, Spline Sans
+Mono, Figtree), and the roast-phase tints. Components reference only semantic
+tokens (`--color-*`, `--font-*`), so swapping the theme file re-skins the whole
+app — `theme.golf.css` is a working proof of that seam. Colours meet WCAG-AA and
+selection states never rely on colour alone.
+
+---
+
 ## Getting started (development)
 
 Requires Node.js and npm.
@@ -128,7 +141,11 @@ npm run preview  # preview the production build
 ```
 index.html          App shell and UI markup
 main.js             Entry point — initializes all modules, registers the service worker
-style.css           Dark theme + responsive/tier styles
+style.css           App skin — maps GI-bravo's DOM onto the token system (imports the layers below)
+tokens.portable.css Portable design tokens (spacing, radius, type ramp, motion) — app-agnostic
+theme.coffee.css    Coffee theme — warm-dark "Ember" colour roles + brand fonts + roast-phase tints
+theme.golf.css      Proof the theme seam works — swap-in skin for the sibling golf app
+components.css      Portable component classes (.btn/.chip/.card/.field/.meter…) for new UI
 js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
   customise.js      Hide/show optional dashboard controls (shared state)
@@ -153,7 +170,7 @@ js/
   photos.js         IndexedDB photo storage + reference-card white balance
   colorcheck.js     N-patch colour-correction matrix (ColorChecker or DIY target)
   bluetooth.js      Web Bluetooth connection to a DIY temperature probe
-public/             PWA manifest, icons, service worker (copied to dist/ on build)
+public/             PWA manifest, icons, service worker, self-hosted brand fonts (copied to dist/ on build)
 HARDWARE_GUIDE.md   DIY Bluetooth thermocouple build (ESP32 + MAX31855) + firmware
 FUTURE_FEATURES.md  Roadmap and backlog
 ```

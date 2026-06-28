@@ -1,0 +1,90 @@
+/* ============================================================
+   PORTABLE TOKENS  ·  app-agnostic, brand-neutral
+   ------------------------------------------------------------
+   These never change between apps. They define the *shape* of
+   the system (rhythm, roundness, type ramp, motion) — not its
+   colour. Colour roles + fonts come from a THEME file.
+   Load order:  tokens.portable.css → theme.<x>.css → components.css
+   ============================================================ */
+:root {
+  /* — Spacing scale (4px base) — */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* — Radius scale — */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  /* — Type ramp — */
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-base: 13.5px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 30px;
+  --text-display: 92px;   /* the live-roast timer */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* — Motion — */
+  --transition-fast: 120ms ease;
+  --transition: 200ms ease;
+
+  /* — Focus ring (uses themed accent) — */
+  --ring-width: 3px;
+
+  /* — Elevation — */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.28);
+  --shadow-pop: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* ------------------------------------------------------------
+   SEMANTIC COLOUR CONTRACT (documentation only)
+   Every theme MUST define these custom properties:
+
+     --font-sans  --font-mono  --font-display
+     --color-bg              page / app background
+     --color-surface         card background
+     --color-surface-raised  nested / hover surface
+     --color-hairline        subtle internal divider
+     --color-border          card & control border
+     --color-text            primary text
+     --color-text-muted      secondary text / labels
+     --color-text-faint      tertiary / placeholder
+     --color-accent          brand action colour
+     --color-accent-hover    accent, hovered
+     --color-accent-soft     translucent accent fill (selected)
+     --color-accent-border   accent outline (selected)
+     --color-on-accent       text on a solid accent fill
+     --color-success         "selected / go" (green)
+     --color-success-text    success text on dark
+     --color-success-soft    translucent success fill
+     --color-success-border  success outline
+     --color-danger          destructive
+     --color-danger-hover    destructive, hovered
+     --color-on-danger       text on a solid danger fill
+     --meter-high/-mid/-low  health meter colours
+
+   Components reference ONLY these names — never raw hex —
+   so a theme swap re-skins the whole app.
+   ------------------------------------------------------------ */

@@ -1,0 +1,45 @@
+/* ============================================================
+   THEME · Golf (proof that the portable layer re-themes)
+   Same component CSS, different colour roles + fonts.
+   No coffee tokens are required by the portable layer.
+   ============================================================ */
+:root {
+  --font-sans:    'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono:    'Spline Sans Mono', ui-monospace, monospace;
+  --font-display: 'Figtree', var(--font-sans);
+
+  /* Surfaces — cool fairway dark */
+  --color-bg:             #0E1411;
+  --color-surface:        #16201A;
+  --color-surface-raised: #1E2B22;
+  --color-hairline:       #1F2A23;
+  --color-border:         #2E3D33;
+
+  --color-text:        #EAF1EC;
+  --color-text-muted:  #93A89B;
+  --color-text-faint:  #6B8174;
+
+  /* Accent — fairway green */
+  --color-accent:        #57B86A;
+  --color-accent-hover:  #4AA65C;
+  --color-accent-hot:    #7FD98F;
+  --color-accent-soft:   rgba(87,184,106,0.16);
+  --color-accent-border: rgba(87,184,106,0.5);
+  --color-on-accent:     #04140A;
+
+  /* Success doubles as a brighter confirm */
+  --color-success:        #8FD9A0;
+  --color-success-text:   #A6E4B4;
+  --color-success-soft:   rgba(143,217,160,0.14);
+  --color-success-border: #4F9A63;
+
+  --color-danger:       #E5654B;
+  --color-danger-hover: #D4543C;
+  --color-on-danger:    #1A0E0A;
+
+  --meter-high: var(--color-accent);
+  --meter-mid:  #E0B341;
+  --meter-low:  var(--color-danger);
+
+  /* no --roast-* extras here — they simply don't exist for golf */
+}
