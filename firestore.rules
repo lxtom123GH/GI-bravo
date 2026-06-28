@@ -34,8 +34,14 @@ service cloud.firestore {
     function canEditSpace(appId, spaceId) {
       return spaceRole(appId, spaceId) in ['editor', 'owner'];
     }
-    function isSpaceOwner(appId, spaceId) {
-      return spaceRole(appId, spaceId) == 'owner';
+    // Space ownership is defined by the space doc's ownerUid field — NOT by a members-doc
+    // role. This lets the owner bootstrap their own 'owner' membership when first creating a
+    // space (the members doc doesn't exist yet, so a role-based check would deny it), while
+    // still preventing a mere editor from managing membership (they aren't the doc owner).
+    function isSpaceDocOwner(appId, spaceId) {
+      return isAuthed()
+        && exists(/databases/$(database)/documents/apps/$(appId)/spaces/$(spaceId))
+        && get(/databases/$(database)/documents/apps/$(appId)/spaces/$(spaceId)).data.ownerUid == request.auth.uid;
     }
 
     // ---- shared identity profile ------------------------------------------
@@ -67,18 +73,18 @@ service cloud.firestore {
         allow read: if isMember(appId, spaceId);
         allow create: if isAuthed()
           && request.resource.data.ownerUid == request.auth.uid;
-        allow update: if isSpaceOwner(appId, spaceId);
-        allow delete: if isSpaceOwner(appId, spaceId);
+        allow update: if isSpaceDocOwner(appId, spaceId);
+        allow delete: if isSpaceDocOwner(appId, spaceId);
 
         // Membership. Only the space owner may set/change a member's role (prevents
         // privilege escalation). A user may self-join as a viewer and may leave (delete
         // their own membership), but may NOT update their own role.
         match /members/{memberUid} {
           allow read: if isMember(appId, spaceId) || isOwner(memberUid);
-          allow create: if isSpaceOwner(appId, spaceId)
+          allow create: if isSpaceDocOwner(appId, spaceId)
             || (isOwner(memberUid) && request.resource.data.role == 'viewer');
-          allow update: if isSpaceOwner(appId, spaceId);
-          allow delete: if isSpaceOwner(appId, spaceId) || isOwner(memberUid);
+          allow update: if isSpaceDocOwner(appId, spaceId);
+          allow delete: if isSpaceDocOwner(appId, spaceId) || isOwner(memberUid);
         }
 
         // Shared collections inside a space (e.g. pantry, roasts, roaster):

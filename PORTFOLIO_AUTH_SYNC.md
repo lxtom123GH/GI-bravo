@@ -8,9 +8,9 @@ opt-in cloud sync, while staying fully usable offline with no account. It is ext
 how `golf_handicap_tracker` already does auth/rules/Firestore, adapted from its
 **cloud-required** model to a **local-first, cloud-optional** model.
 
-> **Status:** ✅ Pilot implemented in GI-bravo against the Firebase Local Emulator Suite
-> (no live project yet). See **§7 Implementation status** at the end for the as-built file
-> map, final data paths, and test results, and the PR's NEEDS-HUMAN checklist for going live.
+> **Status:** ✅ Pilot implemented in GI-bravo **and LIVE** (2026-06-28) on the shared hub
+> **`lx-apps`**. See **§7 Implementation status** for the as-built file map, final data paths,
+> test results, and the go-live record (incl. a rules bug found & fixed at go-live).
 
 ---
 
@@ -220,10 +220,28 @@ mounted lazily from `main.js`. No `js/storage.js` write path changed — sync ri
 **Tests** (`npm run test` pure; `npm run test:rules` emulator; `npm run test:all` both)
 - 14 pure `reconcile` tests: first-sign-in merge (local-only / cloud-only / id-collision LWW),
   union-by-id, edits (local-only / cloud-only / true-conflict / no-op), deletes.
-- 10 emulator rules tests + 1 integration test (cross-device round-trip via `syncedCollection`).
+- **13** emulator rules tests (was 10) + 1 integration test (cross-device round-trip via
+  `syncedCollection`). The +2 cover the go-live bootstrap fix (owner can create their own
+  membership; a non-owner still can't self-add above viewer).
 - Emulator Firestore port moved 8080 → **8089** (8080 was occupied locally).
 
-**Not done (NEEDS-HUMAN / follow-up):** create the real `lx-apps-hub` project; enable
-email/password + Google providers; paste real config into `.env`; deploy `firestore.rules` +
-`storage.rules` + the `members.uid` collection-group index; opt-in photo sync; rollout to
-GI-alpha / tempovibes / golf; richer sharing-roles UI.
+**Go-live (2026-06-28).** Hub project **`lx-apps`** (chose the shared hub over a dedicated project,
+for SSO). Email/Password + Google enabled; Firestore in `australia-southeast1`, production mode,
+`(default)` db; `firestore.rules` + `members.uid` collection-group index deployed via
+`firebase deploy --only firestore:rules,firestore:indexes`. **Storage skipped** — new projects
+require Blaze for a bucket and the pilot is Firestore-only (stayed on free Spark). Config in `.env`
+(gitignored) + Vercel env vars. Verified: cross-device sync + share-by-email across two accounts.
+- **Rules bug fixed at go-live:** `createSpace`'s owner-membership write was denied because space
+  ownership was checked via the not-yet-existing `members/{uid}` doc. Now ownership is read from the
+  space doc's `ownerUid` field (`isSpaceDocOwner`) for membership management + space update/delete,
+  which breaks the chicken-and-egg while preserving the anti-escalation guarantee.
+- **✅ Cross-scope bleed FIXED + clean separation (2026-06-28):** each scope (Personal + every space)
+  now has its own local cache; the single live store mirrors only the ACTIVE scope, switching swaps
+  the view, and sign-out restores Personal — so a space's (or other members') items can no longer
+  leak into Personal. Shipped with named-space labels, a "copy my pantry into this space" button, and
+  a remembered default scope. Proven by `tests/rules/scope-isolation.test.js`. (`js/sync/synced-collection.js`,
+  `js/sync-ui.js`.)
+
+**Not done (follow-up):** opt-in **photo sync** (needs Storage → Blaze decision); per-item **Move to
+Personal / shared** (cross-scope cloud writes; per-item ACLs stay out of scope); rollout to GI-alpha /
+tempovibes / golf; richer sharing-roles UI.

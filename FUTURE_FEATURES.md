@@ -125,6 +125,45 @@ Shipped: an Expert-tier "Log ET" input records timestamped environment-temperatu
 
 ---
 
+### Detector tuning / learning from user labels (proposed, 2026-06-28; research-grounded)
+Owner's idea: label crack events as **false positive / true / missed** to make the detector improve.
+Web research (2026-06) confirms this is exactly **human-in-the-loop active learning** — a validated
+pattern, not naive — and shows where the real leverage is. Two big findings shape the design:
+
+1. **Features matter more than the loop.** State-of-the-art coffee first-crack detection uses
+   **MFCCs** (spectral *timbre* of the fracture), which carry **>73%** of the discriminative power —
+   a Random Forest on MFCCs hits **95.7%** accuracy / 0.992 ROC-AUC. Our current detector keys off
+   time/frequency **band-energy ratios + transient clustering** (`js/audio.js`), i.e. mostly
+   loudness. **Upgrading the features to MFCCs is likely a bigger win than any learning loop.**
+2. **Learn only from *explicit* labels.** Self-training on pseudo-labels/confidence thresholds is
+   known to reinforce errors — so drive learning from the user's real ✗/✓/＋ taps, not guesses.
+
+**How the app actually "learns" — tiered, all browser-feasible (no backend ML required):**
+- **v1 — adaptive per-machine thresholds.** Each label nudges `sensitivity`/`clusterSize`/2C-pitch
+  for *that roaster profile* (false positive → raise; missed → lower). Simple rule/1-D calibration,
+  no ML lib. Immediate, explainable.
+- **v2 — on-device personalised classifier.** Capture a feature vector (add **MFCCs**) at each
+  candidate; from the user's labelled events fit a small **logistic-regression / prototype (k-NN)**
+  model **in the browser** (pure JS). Personalises to the user's machine acoustics — the "it learns
+  from my clicks" they want. Store the model locally; include in backup.
+- **v3 — pooled/community model.** Use the shipped **cloud sync** to aggregate labelled feature
+  vectors across users/sessions, train a Random-Forest/NN **offline**, ship it as a static client
+  model (TinyML-style). This is where the two-device labelling + sync pays off — it builds the
+  dataset. Prior art to align with: **RoastLearner** (ML audio classifier for Artisan) and the
+  emerging open coffee-roasting first-crack **audio datasets**.
+
+**Capture UX — two devices (owner's preference; avoids juggling apps on one device):** roasting
+device streams each *candidate* (timestamp + feature vector) into a synced "debug session"; a
+**companion** phone/tablet subscribes live (Firestore `onSnapshot`, the path we verified) with
+one-tap ✗/✓/＋ that sync back. The live roast already has **Clear** (false +) and **Manual: Mark**
+(missed) in `js/audio.js`; this reuses those signals but *captures the features* and adds the
+hands-free second screen. *Single-device MVP:* record candidates+features during the roast, label
+on a post-roast review screen, export CSV/JSON. Opt-in / Expert-tier so the casual path stays clean.
+
+Sources: ScienceDirect *Acoustic-Based Crack Detection* (MFCC/Random Forest); ResearchGate NN
+first-crack ID; interactiveaudiolab *Human-in-the-Loop Sound Event Detection*; arXiv self-learning /
+continual on-device audio classification; GitHub *RoastLearner*.
+
 ## Competitive landscape research (2026-06)
 
 Surveyed Artisan, RoasTime/Roast.World (Aillio), Cropster, RoastLog/RoastPATH, and Beanconqueror.
@@ -181,16 +220,42 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    several beans in one go (name/grams/$ per kg), each landing in the pantry with the purchase
    date; the photo + a purchase record are kept (Recent purchases list). Follow-up: OCR parsing.
    Remaining: collective space — see 6.9.
-6.9 ◐ Collective space — CODE COMPLETE (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
+6.9 ✅ Collective space — LIVE (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
    (email/Google), a shared pantry/roastHistory/blends/roasters scoped to a space you can share
-   by email, personal calibration stays per-device; path-generic rules. Runs on the local
-   emulator now. **Going live needs your Firebase console setup — see `GO_LIVE_CHECKLIST.md`.**
+   by email, personal calibration stays per-device; path-generic rules. **Went live 2026-06-28**
+   on the shared Firebase hub **`lx-apps`** (Auth: email/password + Google; Firestore in
+   `australia-southeast1`; rules + the `members.uid` collection-group index deployed). Storage
+   was deliberately **not** enabled (new projects now require the Blaze plan for a bucket, and the
+   pilot syncs only Firestore data — photo sync stays a follow-up). Verified live: cross-device
+   sync of pantry/roasts, and share-by-email across two accounts. See `GO_LIVE_CHECKLIST.md`.
+   - **Go-live rules fix:** the first real share failed with `permission-denied` — `createSpace`
+     couldn't write the owner's own `members/{uid}` doc because ownership was checked via that
+     same (not-yet-existing) members doc. Fixed by defining space ownership from the space doc's
+     `ownerUid` field (`isSpaceDocOwner`); the escalation guard still holds. Regression tests added
+     (now 13 rules tests).
+   - **✅ Clean separation + multi-space (shipped 2026-06-28):** scopes are now isolated — each of
+     Personal + every space has its own local cache; switching just swaps the view (no bleed). A
+     shared space starts empty with a **"Copy my personal beans & roasts into this space"** button;
+     the **last-used scope is remembered** (resume on sign-in, fall back to Personal if it's gone);
+     clearer picker labels ("Personal (only me)" / "name (shared · role)"). Per-space roles, not
+     per-item ACLs (Box/Drive/Power BI best practice). `js/sync/synced-collection.js` + `js/sync-ui.js`.
+   - **✅ Cross-scope bleed FIXED (shipped 2026-06-28):** the single live store now mirrors only the
+     ACTIVE scope; switching saves the leaving scope to a per-scope cache and loads the entering one,
+     and sign-out swaps the view back to Personal. So switching back to Personal can no longer drag a
+     space's (or other members') items into Personal. Proven by an emulator test
+     (`tests/rules/scope-isolation.test.js`).
+   - **Follow-up (deferred):** per-item **Move to Personal / shared** (cross-scope cloud writes —
+     handles the "keep one bean private in an otherwise-shared pantry" case without per-item ACLs);
+     per-item "shared" flags remain deliberately out of scope.
 6.7 ✅ Swipe-style personalisation — done (`js/swipe.js`): swipe each optional Active-Roast
    control right to keep / left to hide (or tap the buttons); revisitable from Help or the
    customise panel; writes the same `dashboardHidden` set as "Customise this screen".
 
 Open threads (see `HANDOFF.md` for detail):
-- **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.
+- **Portfolio backend** — ✅ decided & piloted: standardize on **Firebase** (not Supabase —
+  it's already the incumbent in golf + the aps pair), local-first + opt-in cloud sync, one shared
+  identity hub (`lx-apps`). GI-bravo is the pilot and is now **live** (see 6.9). Remaining: roll
+  the `js/sync/` pattern out to GI-alpha → tempovibes → migrate golf last. See `PORTFOLIO_AUTH_SYNC.md`.
 
 Deliberately not built (rationale):
 - **Bluetooth scales / water-mineral brew profiles** (Beanconqueror-style) — per-device BLE protocols can't be built/verified without the hardware; water profiles are consumer-brew scope creep with low value for a roasting-focused app.

@@ -137,6 +137,18 @@ an official Agtron number.
   **Roast History → Data Backup → Export Backup** every so often to save a file
   (tick *Include photos* if you want them too). **Import** it to restore or to move
   to another device.
+- **Sync across devices (optional):** you don't need an account — your data is always saved on
+  this device and survives refreshes. If you'd like it backed up and synced to your phone/laptop
+  too, tap **☁️ Sign in to back up** at the bottom of the sidebar, then **Create account** (email +
+  password) or **Sign in with Google**. Sign in the same way on another device and your pantry and
+  roasts appear there within seconds.
+- **Share a pantry (a "shared roastery"):** once signed in, open **Cloud Sync** (the sidebar
+  button, or Roast History) and use **Share with (email)** to invite someone (ask them to **sign in
+  once first** so they can be found by email). A shared space **starts empty** and is kept **separate
+  from your personal beans** — tap **"Copy my personal beans & roasts into this space"** to populate
+  it. Use the **Pantry & roasts scope** dropdown to switch between **Personal (only me)** and the
+  shared space; the app remembers your last choice. Anything you keep in Personal stays private — a
+  handy spot for, say, a bean you're not ready to share yet.
 
 ---
 
@@ -147,7 +159,8 @@ an official Agtron number.
 | Mic / "allow permissions" error | Use Chrome or Edge, and the `https://` link (not a saved file). Allow the mic when asked. |
 | Too many / too few cracks detected | **Detection Settings** → lower/raise **sensitivity**; **Calibrate Noise** first; reduce background noise. |
 | Second crack not detected | It needs higher-pitched, faster cracking ~20 s+ after first crack — or mark it manually. |
-| My data disappeared | It's per-browser/device and is cleared if you wipe browser data — keep **backups**. |
+| My data disappeared | It's per-browser/device and is cleared if you wipe browser data — keep **backups**, or **sign in** (sidebar → ☁️) to sync it to the cloud. |
+| "…has no account yet" when sharing | Ask that person to **sign in once** first (so they can be found by email), then share again. |
 | Bluetooth probe won't connect | Chrome/Edge only; make sure the probe is powered on (see `HARDWARE_GUIDE.md`). |
 
 ---

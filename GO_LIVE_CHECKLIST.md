@@ -1,4 +1,20 @@
-# Collective space — go-live checklist (NEEDS-HUMAN)
+# Collective space — go-live checklist
+
+> ## ✅ LIVE as of 2026-06-28
+> The collective space is live on the shared Firebase hub **`lx-apps`**:
+> - **Auth:** Email/Password + Google enabled (public-facing name "LX Apps", support email set).
+> - **Firestore:** created in **`australia-southeast1`** (Sydney), production mode, `(default)` db.
+> - **Rules + index deployed:** `firestore.rules` + the `members.uid` collection-group index.
+> - **Config:** real `VITE_FB_*` values in local `.env` (gitignored) **and** in Vercel env vars; redeployed.
+> - **Storage:** deliberately **NOT** enabled — new projects now need the **Blaze** plan for a
+>   bucket, and the pilot syncs only Firestore data (photo sync is a later follow-up). Stayed on
+>   free **Spark**. Deploy was `--only firestore:rules,firestore:indexes` (no `storage`).
+> - **Verified live:** cross-device pantry/roast sync; share-by-email across two accounts.
+> - **Rules fix during go-live:** first share hit `permission-denied` — the space owner couldn't
+>   create their own `members/{uid}` doc (ownership was read from that not-yet-existing doc).
+>   Fixed by checking the space doc's `ownerUid` (`isSpaceDocOwner`); +2 regression tests (13 total).
+>
+> The steps below are kept as the as-built record / a template for rolling this out to the other apps.
 
 The collective-space code is **complete and merged**: opt-in cloud sync (email/password + Google
 sign-in), a **shared pantry, roast history, blends and roaster profiles** scoped to a "space" you
@@ -24,7 +40,9 @@ shows a "not configured yet" note and nothing else changes.
 2. **Add a Web app** (Project settings → General → Your apps → `</>`), and copy the config values
    (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
 3. **Enable Authentication** → Sign-in method → turn on **Email/Password** and **Google**.
-4. **Create Firestore** (Build → Firestore Database → Create, production mode) and **Storage**.
+4. **Create Firestore** (Build → Firestore Database → Create, production mode, default db). **Skip
+   Storage** unless you need photo sync — new projects require the **Blaze** plan for a bucket, and
+   the pilot syncs only Firestore data. (If you do enable it later, deploy `storage` rules then.)
 5. **Local config:** copy `.env.example` → `.env` and paste the 6 `VITE_FB_*` values. (`.env` is
    gitignored; these web keys aren't secret but keep them out of git.)
 6. **Deploy the rules:**
@@ -32,8 +50,9 @@ shows a "not configured yet" note and nothing else changes.
    npm i -g firebase-tools      # if needed
    firebase login
    firebase use <your-project-id>
-   firebase deploy --only firestore:rules,storage
+   firebase deploy --only firestore:rules,firestore:indexes   # add ,storage only if you enabled Storage
    ```
+   (Indexes are needed for the `members.uid` collection-group query behind "list my shared spaces".)
 7. **(Optional) validate the rules** with the emulator: `npm run test:rules`.
 8. **Production env (Vercel):** add the same `VITE_FB_*` vars in the Vercel project's
    Environment Variables (since `.env` isn't committed), then redeploy.

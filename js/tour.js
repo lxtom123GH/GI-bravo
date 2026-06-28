@@ -10,6 +10,7 @@ const STEPS = [
     { sel: '.demo-btn', title: 'Try a demo', text: 'New here? Watch a simulated roast — no microphone needed.' },
     { sel: '#roastCurve', title: 'Live roast curve', text: 'Your roast is drawn here in real time, with crack markers.' },
     { sel: '.nav-links li[data-target="history"]', sidebar: true, title: 'After the roast', text: 'Open Roast History to log the roasted weight, add tasting notes, and take a colour-corrected photo to track how dark each batch is. See Help → “Roast-colour photos”.' },
+    { sel: '#syncSidebarBtn', sidebar: true, title: 'Back up & sync (optional)', text: 'Your data is always saved on this device — no account needed. Tap here any time to sign in and back up or sync across devices, or share a pantry with someone by email.' },
     { sel: '.nav-links li[data-target="help"]', sidebar: true, title: 'Help anytime', text: 'Open Help for a quick guide or to replay this tour.' }
 ];
 

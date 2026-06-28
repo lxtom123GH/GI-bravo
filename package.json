@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "vitest run tests/unit",
-    "test:rules": "firebase emulators:exec --only firestore,auth --project demo-gi-bravo \"vitest run tests/rules\"",
+    "test:rules": "firebase emulators:exec --only firestore,auth --project demo-gi-bravo \"vitest run tests/rules --no-file-parallelism\"",
     "test:all": "npm run test && npm run test:rules",
     "dev": "vite",
     "build": "vite build",
