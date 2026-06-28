@@ -235,12 +235,13 @@ require Blaze for a bucket and the pilot is Firestore-only (stayed on free Spark
   ownership was checked via the not-yet-existing `members/{uid}` doc. Now ownership is read from the
   space doc's `ownerUid` field (`isSpaceDocOwner`) for membership management + space update/delete,
   which breaks the chicken-and-egg while preserving the anti-escalation guarantee.
-- **Known limitation — cross-scope local bleed:** the local store is a *single* store per collection
-  shared across scopes; switching back to Personal after a space merges the space's items into
-  Personal (the personal last-synced snapshot doesn't know them). Fix = namespace the local store
-  per scope; bundle with the multi-space-sharing UI work.
+- **✅ Cross-scope bleed FIXED + clean separation (2026-06-28):** each scope (Personal + every space)
+  now has its own local cache; the single live store mirrors only the ACTIVE scope, switching swaps
+  the view, and sign-out restores Personal — so a space's (or other members') items can no longer
+  leak into Personal. Shipped with named-space labels, a "copy my pantry into this space" button, and
+  a remembered default scope. Proven by `tests/rules/scope-isolation.test.js`. (`js/sync/synced-collection.js`,
+  `js/sync-ui.js`.)
 
-**Not done (follow-up):** opt-in **photo sync** (needs Storage → Blaze decision); **multi-space
-sharing + clearer scope UI** (named spaces; per-item sharing deliberately deferred — see
-`FUTURE_FEATURES.md` 6.9); the cross-scope-bleed fix above; rollout to GI-alpha / tempovibes / golf;
-richer sharing-roles UI.
+**Not done (follow-up):** opt-in **photo sync** (needs Storage → Blaze decision); per-item **Move to
+Personal / shared** (cross-scope cloud writes; per-item ACLs stay out of scope); rollout to GI-alpha /
+tempovibes / golf; richer sharing-roles UI.

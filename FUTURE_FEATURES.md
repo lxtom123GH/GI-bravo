@@ -233,18 +233,20 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
      same (not-yet-existing) members doc. Fixed by defining space ownership from the space doc's
      `ownerUid` field (`isSpaceDocOwner`); the escalation guard still holds. Regression tests added
      (now 13 rules tests).
-   - **Follow-up — multi-space sharing + clearer scope UI:** today "Share" pools your *whole*
-     pantry into one space (all-or-nothing per collection). Best practice (Box/Drive/Power BI:
-     per-space roles, not per-item ACLs) is **named spaces** — let items live in Personal or a
-     chosen space, keep-private = leave in Personal. Defer per-item "shared" flags. Mostly UI work;
-     the data model already nests under `spaces/{spaceId}`.
-   - **Known limitation — cross-scope bleed:** there is a *single* local store per collection
-     shared across scopes, and switching scope reconciles the current local contents against the
-     newly-selected scope. Switching **back to Personal after a space merges the space's items
-     (incl. other members') into your Personal data**, because the personal last-synced snapshot
-     doesn't know them and treats them as new local adds. So the model silently assumes you settle
-     on one scope. Proper fix: namespace the *local* store per scope (so switching swaps the view
-     cleanly) — bundle this with the multi-space work above.
+   - **✅ Clean separation + multi-space (shipped 2026-06-28):** scopes are now isolated — each of
+     Personal + every space has its own local cache; switching just swaps the view (no bleed). A
+     shared space starts empty with a **"Copy my personal beans & roasts into this space"** button;
+     the **last-used scope is remembered** (resume on sign-in, fall back to Personal if it's gone);
+     clearer picker labels ("Personal (only me)" / "name (shared · role)"). Per-space roles, not
+     per-item ACLs (Box/Drive/Power BI best practice). `js/sync/synced-collection.js` + `js/sync-ui.js`.
+   - **✅ Cross-scope bleed FIXED (shipped 2026-06-28):** the single live store now mirrors only the
+     ACTIVE scope; switching saves the leaving scope to a per-scope cache and loads the entering one,
+     and sign-out swaps the view back to Personal. So switching back to Personal can no longer drag a
+     space's (or other members') items into Personal. Proven by an emulator test
+     (`tests/rules/scope-isolation.test.js`).
+   - **Follow-up (deferred):** per-item **Move to Personal / shared** (cross-scope cloud writes —
+     handles the "keep one bean private in an otherwise-shared pantry" case without per-item ACLs);
+     per-item "shared" flags remain deliberately out of scope.
 6.7 ✅ Swipe-style personalisation — done (`js/swipe.js`): swipe each optional Active-Roast
    control right to keep / left to hide (or tap the buttons); revisitable from Help or the
    customise panel; writes the same `dashboardHidden` set as "Customise this screen".

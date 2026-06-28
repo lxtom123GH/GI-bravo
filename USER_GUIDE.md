@@ -143,10 +143,12 @@ an official Agtron number.
   password) or **Sign in with Google**. Sign in the same way on another device and your pantry and
   roasts appear there within seconds.
 - **Share a pantry (a "shared roastery"):** once signed in, open **Cloud Sync** (the sidebar
-  button, or Roast History) and use **Share with (email)** to invite someone. Ask them to **sign in
-  once first** so they can be found by email. They'll see a shared **Pantry & roasts scope** they
-  can switch to. Your personal data stays private — only what's in the shared space is visible to
-  its members.
+  button, or Roast History) and use **Share with (email)** to invite someone (ask them to **sign in
+  once first** so they can be found by email). A shared space **starts empty** and is kept **separate
+  from your personal beans** — tap **"Copy my personal beans & roasts into this space"** to populate
+  it. Use the **Pantry & roasts scope** dropdown to switch between **Personal (only me)** and the
+  shared space; the app remembers your last choice. Anything you keep in Personal stays private — a
+  handy spot for, say, a bean you're not ready to share yet.
 
 ---
 
