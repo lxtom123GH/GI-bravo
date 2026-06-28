@@ -82,6 +82,44 @@ export function saveDetectionSettings(settings) {
     localStorage.setItem('detectionSettings', JSON.stringify(settings));
 }
 
+// --- Per-roaster detection learning (v1: adaptive sensitivity, opt-in) ---
+// Off by default — existing detection is untouched unless the user enables it.
+// The learned offset is stored per roaster id so each machine tunes separately.
+
+export function getDetectionLearningEnabled() {
+    return localStorage.getItem('detectionLearningEnabled') === 'true';
+}
+
+export function saveDetectionLearningEnabled(on) {
+    localStorage.setItem('detectionLearningEnabled', on ? 'true' : 'false');
+}
+
+export function getRoasterDetectionAdjust() {
+    const s = localStorage.getItem('roasterDetectionAdjust');
+    return s ? JSON.parse(s) : {};
+}
+
+export function saveRoasterDetectionAdjust(map) {
+    localStorage.setItem('roasterDetectionAdjust', JSON.stringify(map || {}));
+}
+
+export function getDetectionAdjustFor(roasterId) {
+    return getRoasterDetectionAdjust()[roasterId] || null;
+}
+
+export function saveDetectionAdjustFor(roasterId, adjust) {
+    if (!roasterId) return;
+    const map = getRoasterDetectionAdjust();
+    map[roasterId] = adjust;
+    saveRoasterDetectionAdjust(map);
+}
+
+export function clearDetectionAdjustFor(roasterId) {
+    const map = getRoasterDetectionAdjust();
+    delete map[roasterId];
+    saveRoasterDetectionAdjust(map);
+}
+
 // --- Roast Targets (alarms) ---
 
 export const DEFAULT_ROAST_TARGETS = {
@@ -443,6 +481,8 @@ export function exportAllData() {
         pantry: getPantry(),
         roastHistory: getRoastHistory(),
         detectionSettings: getDetectionSettings(),
+        detectionLearningEnabled: getDetectionLearningEnabled(),
+        roasterDetectionAdjust: getRoasterDetectionAdjust(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
@@ -474,6 +514,12 @@ export function importAllData(data) {
     saveRoastHistory(data.roastHistory);
     if (data.detectionSettings && typeof data.detectionSettings === 'object') {
         saveDetectionSettings({ ...DEFAULT_DETECTION_SETTINGS, ...data.detectionSettings });
+    }
+    if (typeof data.detectionLearningEnabled === 'boolean') {
+        saveDetectionLearningEnabled(data.detectionLearningEnabled);
+    }
+    if (data.roasterDetectionAdjust && typeof data.roasterDetectionAdjust === 'object') {
+        saveRoasterDetectionAdjust(data.roasterDetectionAdjust);
     }
     if (data.roastTargets && typeof data.roastTargets === 'object') {
         saveRoastTargets({ ...DEFAULT_ROAST_TARGETS, ...data.roastTargets });

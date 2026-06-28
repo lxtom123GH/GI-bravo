@@ -148,9 +148,14 @@ pattern, not naive — and shows where the real leverage is. Two big findings sh
    known to reinforce errors — so drive learning from the user's real ✗/✓/＋ taps, not guesses.
 
 **How the app actually "learns" — tiered, all browser-feasible (no backend ML required):**
-- **v1 — adaptive per-machine thresholds.** Each label nudges `sensitivity`/`clusterSize`/2C-pitch
-  for *that roaster profile* (false positive → raise; missed → lower). Simple rule/1-D calibration,
-  no ML lib. Immediate, explainable.
+- **v1 — adaptive per-machine thresholds — ✅ Shipped 2026-06-29.** Opt-in "Auto-tune from my
+  corrections" toggle (off by default) in Detection Settings. On a **mic** roast, clearing an
+  AUTO-detected crack (false positive) nudges the **spike threshold** less sensitive; a Manual:
+  Mark the detector missed nudges it more sensitive — clamped, stored **per roaster**, shown as a
+  live readout with a reset, and included in the JSON backup. Pure helpers in
+  `js/detector-learning.js` (`nudgeAdjust`/`applyAdjust`/`describeAdjust`, unit-tested); wiring in
+  `js/audio.js`; persistence in `js/storage.js`. v1 deliberately tunes only the threshold (the
+  biggest lever); cluster size / 2C-pitch stay on the manual sliders. _Next: v2 below._
 - **v2 — on-device personalised classifier.** Capture a feature vector (add **MFCCs**) at each
   candidate; from the user's labelled events fit a small **logistic-regression / prototype (k-NN)**
   model **in the browser** (pure JS). Personalises to the user's machine acoustics — the "it learns

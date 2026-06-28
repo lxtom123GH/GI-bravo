@@ -30,7 +30,9 @@ model) and each roast is tagged with the machine it was done on.
   automatically from a DIY Bluetooth thermocouple** (see `HARDWARE_GUIDE.md`);
   the live curve overlays a temperature line.
 - 🔥 **Environment temperature (ET) logging** (Expert).
-- 🎚️ **Tunable detection** — sensitivity, cluster size, and second-crack pitch.
+- 🎚️ **Tunable detection** — sensitivity, cluster size, and second-crack pitch,
+  plus an opt-in **auto-tune** that learns each roaster's sensitivity from your
+  false-alarm and missed-crack corrections.
 - 📋 **Reference-roast follow mode** — overlay a past roast's curve live with a
   heads-up ~10 s before its cracks, to reproduce a good batch.
 - ☕ **Behmor profile templates** — save a roast as the template for a
