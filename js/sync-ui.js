@@ -47,6 +47,12 @@ let collections = [];   // [{ key, shared, evt, sc }]
 let currentUser = null;
 let activeSpaceId = null;
 
+// Remember the last-used scope so signing in resumes it (e.g. a couple who mostly live in
+// their shared "Home roastery" boot straight into it; Personal stays one tap away).
+const DEFAULT_SCOPE_KEY = `${APP_ID}:defaultScope`;
+const saveDefaultScope = (sid) => { try { localStorage.setItem(DEFAULT_SCOPE_KEY, sid || ''); } catch {} };
+const loadDefaultScope = () => { try { return localStorage.getItem(DEFAULT_SCOPE_KEY) || null; } catch { return null; } };
+
 function buildCollections() {
     collections = defs().map((d) => ({
         ...d,
@@ -180,7 +186,14 @@ async function renderSignedIn(mount, user) {
                 <button type="button" id="syncSignOut" style="font-size: 0.8rem; padding: 3px 8px;">Sign out</button>
             </p>
             <label for="syncSpace"><strong>Pantry &amp; roasts scope</strong></label>
-            <select id="syncSpace"><option value="">Personal (just me)</option></select>
+            <select id="syncSpace"><option value="">Personal (only me)</option></select>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0;">
+                Personal and each shared space are kept separate — switching just changes what you're
+                viewing. Your personal beans stay private until you copy them in.
+            </p>
+            <div style="margin-top: 8px;">
+                <button type="button" id="syncCopyIn" style="font-size: 0.85rem; display: none;">⬆️ Copy my personal beans &amp; roasts into this space</button>
+            </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; align-items: center;">
                 <input type="email" id="syncShareEmail" placeholder="Share with (email)" style="flex: 1; min-width: 160px;">
                 <button type="button" id="syncShareBtn" style="font-size: 0.85rem;">Share</button>
@@ -192,30 +205,58 @@ async function renderSignedIn(mount, user) {
 
     const sel = mount.querySelector('#syncSpace');
     const msg = mount.querySelector('#syncShareMsg');
+    const copyBtn = mount.querySelector('#syncCopyIn');
     const setMsg = (m) => { msg.textContent = m; };
+    const updateCopyVis = () => { copyBtn.style.display = sel.value ? 'inline-block' : 'none'; };
 
     // Populate spaces I belong to.
     try {
         const spaces = await listMySpaces(APP_ID, user.uid);
         for (const s of spaces) {
             const o = document.createElement('option');
-            o.value = s.id; o.textContent = `${s.name} (${s.role})`;
+            o.value = s.id; o.textContent = `${s.name} (shared · ${s.role})`;
             sel.appendChild(o);
         }
         sel.value = activeSpaceId || '';
+        // The remembered default scope may no longer exist / be accessible (e.g. removed from
+        // the space). <select>.value silently stays '' for a missing option — detect that and
+        // fall back to Personal so we never strand the user on an empty, inaccessible scope.
+        if ((activeSpaceId || '') !== sel.value) {
+            activeSpaceId = null; saveDefaultScope(null);
+            for (const c of collections.filter((x) => x.shared)) {
+                try { await c.sc.setScope(null); } catch (e) { /* fail-soft */ }
+            }
+            sel.value = '';
+        }
     } catch (e) { setMsg('Could not load shared spaces: ' + (e?.message || e)); }
+    updateCopyVis();
 
     mount.querySelector('#syncSignOut').addEventListener('click', () => signOut());
 
     sel.addEventListener('change', async () => {
         activeSpaceId = sel.value || null;
-        // Re-scope shared collections to the chosen space.
+        saveDefaultScope(activeSpaceId);
+        // Re-scope shared collections — a clean view swap (no cross-scope bleed).
         for (const c of collections.filter((x) => x.shared)) {
-            c.sc.stop();
-            try { await c.sc.start(currentUser, { spaceId: activeSpaceId }); }
+            try { await c.sc.setScope(activeSpaceId); }
             catch (e) { console.warn('[sync] rescope failed:', e?.message || e); }
         }
-        setMsg(activeSpaceId ? 'Now syncing pantry & roasts to the shared space.' : 'Back to personal data.');
+        updateCopyVis();
+        setMsg(activeSpaceId
+            ? 'Viewing the shared space. Your personal beans stay private.'
+            : 'Back to your personal data.');
+    });
+
+    copyBtn.addEventListener('click', async () => {
+        if (!activeSpaceId) return setMsg('Switch to a shared space first.');
+        let total = 0;
+        for (const c of collections.filter((x) => x.shared)) {
+            try { total += await c.sc.importItems(c.sc.peekScope(null)); }
+            catch (e) { console.warn(`[sync] copy ${c.key} failed:`, e?.message || e); }
+        }
+        setMsg(total
+            ? `Copied ${total} item(s) from your personal data into this space.`
+            : 'Nothing new to copy — the space already has your items.');
     });
 
     mount.querySelector('#syncNewSpace').addEventListener('click', async () => {
@@ -224,9 +265,9 @@ async function renderSignedIn(mount, user) {
         try {
             const id = await createSpace(APP_ID, user.uid, name);
             const o = document.createElement('option');
-            o.value = id; o.textContent = `${name} (owner)`;
+            o.value = id; o.textContent = `${name} (shared · owner)`;
             sel.appendChild(o); sel.value = id; sel.dispatchEvent(new Event('change'));
-            setMsg('Shared space created. Use "Share" to add people by email.');
+            setMsg('Shared space created (it starts empty). Use the copy button to add your beans, and "Share" to add people by email.');
         } catch (e) { setMsg('Could not create space: ' + (e?.message || e)); }
     });
 
@@ -238,13 +279,14 @@ async function renderSignedIn(mount, user) {
             if (!spaceId) { // auto-create a space the first time they share
                 spaceId = await createSpace(APP_ID, user.uid, 'Shared roastery');
                 const o = document.createElement('option');
-                o.value = spaceId; o.textContent = 'Shared roastery (owner)';
+                o.value = spaceId; o.textContent = 'Shared roastery (shared · owner)';
                 sel.appendChild(o); sel.value = spaceId; sel.dispatchEvent(new Event('change'));
             }
             const r = await shareSpaceByEmail(APP_ID, spaceId, email, 'editor');
-            setMsg(r.ok ? `Shared with ${email}.` : (r.reason === 'no-such-user'
-                ? `${email} has no account yet — ask them to sign in once, then share again.`
-                : 'Could not share.'));
+            setMsg(r.ok ? `Shared with ${email}. The space starts empty — use the copy button to add your beans.`
+                : (r.reason === 'no-such-user'
+                    ? `${email} has no account yet — ask them to sign in once, then share again.`
+                    : 'Could not share.'));
         } catch (e) { setMsg('Could not share: ' + (e?.message || e)); }
     });
 }
@@ -263,6 +305,7 @@ export function initSync() {
             updateSidebar(user);
             try {
                 if (user) {
+                    activeSpaceId = loadDefaultScope();   // resume last-used scope
                     await startAll(user);
                     await renderSignedIn(mount, user);
                 } else {
