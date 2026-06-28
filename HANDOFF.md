@@ -2,7 +2,7 @@
 
 Context bridge for continuing this project in a local Claude Code CLI session
 (the web session's chat history doesn't transfer; the repo + docs are the
-source of truth). _Written 2026-06-27; updated 2026-06-28._
+source of truth). _Written 2026-06-27; updated 2026-06-29._
 
 ## ▶️ Current state & next task (2026-06-28)
 The **entire build roadmap (#1–#8) is shipped to `main`** — roaster profiles, freshness/FIFO,
@@ -20,6 +20,18 @@ Spark. Verified live: cross-device sync + share-by-email across two accounts. A 
 was found & fixed: the space owner couldn't create their own `members/{uid}` doc (ownership was read
 from that not-yet-existing doc) → now keyed off the space doc's `ownerUid` (`isSpaceDocOwner`),
 +2 regression tests. Full as-built record in `GO_LIVE_CHECKLIST.md`; design notes in `PORTFOLIO_AUTH_SYNC.md` §7.
+
+### ✅ Visual refresh shipped (2026-06-29) — the "Ember" design system
+A token-driven visual refresh landed via **PR #73** (CSS token system + self-hosted fonts) and
+**PR #75** (roast-curve repaint; #75 was the recovery for #74, which hit the stacked-PR trap — see
+`LESSONS.md`). Two-layer plain-CSS tokens: portable (`tokens.portable.css`, `components.css`) +
+theme (`theme.coffee.css`, with `theme.golf.css` proving the swap). Warm-dark Ember look, AA
+contrast, self-hosted Hanken Grotesk / Spline Sans Mono / Figtree (precached for offline), and a
+lit roast curve with phase bands off the existing dry-end/first-crack markers. **Visual-only** — no
+behaviour change. Follow-ups: adopt `components.css` for new UI; re-theme the golf app. The
+`handoff/` folder holds the designer's source bundle; design-intent round-trips go via the
+`DesignSync` bridge (reads/writes the claude.ai/design project — none exists yet, so the local
+bundle is the source of truth).
 
 **Next task = pick a post-go-live follow-up.** Options: (a) **multi-space sharing + clearer scope
 UI** (named spaces; also fixes a known **cross-scope local bleed** — see `FUTURE_FEATURES.md` 6.9);

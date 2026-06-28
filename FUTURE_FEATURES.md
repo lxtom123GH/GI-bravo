@@ -1,7 +1,7 @@
 # Roadmap & Future Features
 
 This document tracks the Coffee Roasting Tracker's shipped features and the
-outstanding backlog. _Last reviewed: 2026-06-26._
+outstanding backlog. _Last reviewed: 2026-06-29._
 
 ---
 
@@ -40,6 +40,15 @@ Platform / UX:
 - **Responsive** mobile layout (off-canvas drawer).
 - **Complexity tiers** (Easy/Moderate/Expert) — lightweight global version; see section below.
 - **Tiered cupping & brew log** — see section 2.
+- **"Ember" design system** (visual refresh, shipped 2026-06-29, PRs #73 + #75): a two-layer
+  plain-CSS token architecture — a portable layer (`tokens.portable.css`, `components.css`) + a
+  swappable theme layer (`theme.coffee.css`; `theme.golf.css` proves the seam). Warm-dark surfaces,
+  amber accent, WCAG-AA, selection states that aren't colour-only, three **self-hosted** brand fonts
+  (Hanken Grotesk / Spline Sans Mono / Figtree, woff2, precached in the SW for offline). The roast
+  curve is repainted on the same tokens (lit gradient line, glow, oscilloscope grid, phase bands off
+  the existing dry-end/first-crack markers). Visual-only — no behaviour change.
+  - *Follow-ups:* build new UI with the `components.css` classes; re-theme the **golf app** via
+    `theme.golf.css` (portfolio re-skin proof).
 
 ---
 
