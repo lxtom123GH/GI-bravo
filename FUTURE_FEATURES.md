@@ -181,16 +181,40 @@ See that doc for the full "day/week in the life" narrative. Next up, in order:
    several beans in one go (name/grams/$ per kg), each landing in the pantry with the purchase
    date; the photo + a purchase record are kept (Recent purchases list). Follow-up: OCR parsing.
    Remaining: collective space — see 6.9.
-6.9 ◐ Collective space — CODE COMPLETE (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
+6.9 ✅ Collective space — LIVE (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
    (email/Google), a shared pantry/roastHistory/blends/roasters scoped to a space you can share
-   by email, personal calibration stays per-device; path-generic rules. Runs on the local
-   emulator now. **Going live needs your Firebase console setup — see `GO_LIVE_CHECKLIST.md`.**
+   by email, personal calibration stays per-device; path-generic rules. **Went live 2026-06-28**
+   on the shared Firebase hub **`lx-apps`** (Auth: email/password + Google; Firestore in
+   `australia-southeast1`; rules + the `members.uid` collection-group index deployed). Storage
+   was deliberately **not** enabled (new projects now require the Blaze plan for a bucket, and the
+   pilot syncs only Firestore data — photo sync stays a follow-up). Verified live: cross-device
+   sync of pantry/roasts, and share-by-email across two accounts. See `GO_LIVE_CHECKLIST.md`.
+   - **Go-live rules fix:** the first real share failed with `permission-denied` — `createSpace`
+     couldn't write the owner's own `members/{uid}` doc because ownership was checked via that
+     same (not-yet-existing) members doc. Fixed by defining space ownership from the space doc's
+     `ownerUid` field (`isSpaceDocOwner`); the escalation guard still holds. Regression tests added
+     (now 13 rules tests).
+   - **Follow-up — multi-space sharing + clearer scope UI:** today "Share" pools your *whole*
+     pantry into one space (all-or-nothing per collection). Best practice (Box/Drive/Power BI:
+     per-space roles, not per-item ACLs) is **named spaces** — let items live in Personal or a
+     chosen space, keep-private = leave in Personal. Defer per-item "shared" flags. Mostly UI work;
+     the data model already nests under `spaces/{spaceId}`.
+   - **Known limitation — cross-scope bleed:** there is a *single* local store per collection
+     shared across scopes, and switching scope reconciles the current local contents against the
+     newly-selected scope. Switching **back to Personal after a space merges the space's items
+     (incl. other members') into your Personal data**, because the personal last-synced snapshot
+     doesn't know them and treats them as new local adds. So the model silently assumes you settle
+     on one scope. Proper fix: namespace the *local* store per scope (so switching swaps the view
+     cleanly) — bundle this with the multi-space work above.
 6.7 ✅ Swipe-style personalisation — done (`js/swipe.js`): swipe each optional Active-Roast
    control right to keep / left to hide (or tap the buttons); revisitable from Help or the
    customise panel; writes the same `dashboardHidden` set as "Customise this screen".
 
 Open threads (see `HANDOFF.md` for detail):
-- **Portfolio backend** — reconsider "no backend" across the whole app portfolio (GI-*, golf-handicap-tracker, etc.): one shared Supabase project for SSO + opt-in cloud sync + community, GI-bravo as pilot. Decision pending.
+- **Portfolio backend** — ✅ decided & piloted: standardize on **Firebase** (not Supabase —
+  it's already the incumbent in golf + the aps pair), local-first + opt-in cloud sync, one shared
+  identity hub (`lx-apps`). GI-bravo is the pilot and is now **live** (see 6.9). Remaining: roll
+  the `js/sync/` pattern out to GI-alpha → tempovibes → migrate golf last. See `PORTFOLIO_AUTH_SYNC.md`.
 
 Deliberately not built (rationale):
 - **Bluetooth scales / water-mineral brew profiles** (Beanconqueror-style) — per-device BLE protocols can't be built/verified without the hardware; water profiles are consumer-brew scope creep with low value for a roasting-focused app.

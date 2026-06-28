@@ -8,17 +8,23 @@ source of truth). _Written 2026-06-27; updated 2026-06-28._
 The **entire build roadmap (#1–#8) is shipped to `main`** — roaster profiles, freshness/FIFO,
 blend builder, batch planner, the machine-faithful control panel (Behmor model-aware + KKTO),
 value leaderboard, receipt quick-add, tasting-over-time, swipe personalisation, and the
-collective-space code. **66 unit tests pass.**
+collective-space code. **Firebase go-live is DONE** — the collective space is **live** (see below).
 
-**Next task = walk through the Firebase console go-live** for the collective space (the only thing
-left; it needs the human/console steps). Follow **`GO_LIVE_CHECKLIST.md`** step by step. Decision to
-make first: **reuse the shared portfolio hub** (the intended design — one Firebase project
-`lx-apps-hub`, data namespaced under `/apps/gi-bravo/...`; the user already has Firebase projects
-for golf + the aps pair) **vs a new project just for GI-bravo** (also fine — set a different
-`projectId`). Recommend the shared hub for portfolio consistency.
+### ✅ Go-live complete (2026-06-28)
+The collective space is live on the shared identity hub **`lx-apps`** (chose the shared hub over a
+dedicated project, for portfolio SSO). Email/Password + Google auth on; Firestore in
+`australia-southeast1`; `firestore.rules` + the `members.uid` collection-group index deployed;
+real config in `.env` (gitignored) + Vercel env vars. **Storage was skipped** (new projects need
+Blaze for a bucket; the pilot is Firestore-only — photo sync is a follow-up), so we stayed on free
+Spark. Verified live: cross-device sync + share-by-email across two accounts. A go-live **rules bug**
+was found & fixed: the space owner couldn't create their own `members/{uid}` doc (ownership was read
+from that not-yet-existing doc) → now keyed off the space doc's `ownerUid` (`isSpaceDocOwner`),
++2 regression tests. Full as-built record in `GO_LIVE_CHECKLIST.md`; design notes in `PORTFOLIO_AUTH_SYNC.md` §7.
 
-Remaining optional follow-ups after go-live: receipt **OCR** auto-fill; a fuller pre-roast
-**"what will happen" simulation**; rolling the sync pattern out to the other apps. A **weekly
+**Next task = pick a post-go-live follow-up.** Options: (a) **multi-space sharing + clearer scope
+UI** (named spaces; also fixes a known **cross-scope local bleed** — see `FUTURE_FEATURES.md` 6.9);
+(b) receipt **OCR** auto-fill; (c) a fuller pre-roast **"what will happen" simulation**; (d) roll the
+`js/sync/` pattern out to the other apps (GI-alpha → tempovibes → golf last). A **weekly
 best-practice radar** + **monthly retro** run as scheduled cloud routines and open `LESSONS.md` PRs.
 
 ## How to continue locally
@@ -34,7 +40,7 @@ A browser-only PWA coffee-roasting tracker, fully featured and shipped to `main`
 tab for usage, `HARDWARE_GUIDE.md` for the DIY probe. The entire roadmap is done
 (see the Current state section above); only the Firebase go-live remains.
 
-## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, code-complete; go-live pending
+## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, code-complete, **LIVE** (pilot done)
 **Decided 2026-06-27: standardize the portfolio on Firebase**, local-first + opt-in cloud
 sync, GI-bravo as the pilot. Full plan + as-built status in **`PORTFOLIO_AUTH_SYNC.md`**
 (see §7). The **pilot is implemented** in GI-bravo against the Firebase Local Emulator Suite

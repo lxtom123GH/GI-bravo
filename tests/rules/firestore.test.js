@@ -83,6 +83,26 @@ describe('shared spaces (collaboration)', () => {
         await assertFails(spaceDoc(alice, 'new2').set({ ownerUid: 'bob', name: 'Spoof' }));
     });
 
+    it('owner can bootstrap a new space AND their own owner membership (the createSpace path)', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        // 1) create the space doc with ownerUid = self
+        await assertSucceeds(spaceDoc(alice, 'boot1').set({ ownerUid: 'alice', name: 'Home roastery' }));
+        // 2) create own membership with role 'owner' — denied by the old role-based check,
+        //    allowed now via space-doc ownership (regression test for the go-live share bug).
+        await assertSucceeds(spaceMember(alice, 'boot1', 'alice').set({ uid: 'alice', role: 'owner' }));
+        // 3) the owner can then share with another member (editor) by email
+        await assertSucceeds(spaceMember(alice, 'boot1', 'bob').set({ uid: 'bob', role: 'editor' }));
+    });
+
+    it('a non-owner cannot self-add as editor/owner (only viewer self-join)', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(spaceDoc(alice, 'boot2').set({ ownerUid: 'alice', name: 'Mine' }));
+        const bob = env.authenticatedContext('bob').firestore();
+        await assertFails(spaceMember(bob, 'boot2', 'bob').set({ uid: 'bob', role: 'editor' }));
+        await assertFails(spaceMember(bob, 'boot2', 'bob').set({ uid: 'bob', role: 'owner' }));
+        await assertSucceeds(spaceMember(bob, 'boot2', 'bob').set({ uid: 'bob', role: 'viewer' }));
+    });
+
     it('editor member can read AND write shared pantry items', async () => {
         await seedSpace();
         const bob = env.authenticatedContext('bob').firestore();
