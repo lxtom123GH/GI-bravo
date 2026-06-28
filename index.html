@@ -109,7 +109,7 @@
                             <option value="metric">Metric (g)</option>
                             <option value="imperial">Imperial (lb)</option>
                         </select>
-                        <button id="setDefaultWeightBtn" type="button" style="font-size: 0.8rem; padding: 5px 10px;">Set as default</button>
+                        <button id="setDefaultWeightBtn" class="secondary" type="button" style="font-size: 0.8rem; padding: 5px 10px;">Set as default</button>
                     </div>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
                         <label>Profile:</label>
@@ -166,11 +166,11 @@
                 <button id="ackAlarmBtn" type="button" style="display: none; width: 100%; margin-bottom: 12px; padding: 14px; font-size: 1.1rem; background-color: #e53935; box-shadow: 0 0 8px #e53935;">🔔 Crack detected — tap to silence</button>
 
                 <div class="roast-controls">
-                    <button id="calibrateBtn" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
+                    <button id="calibrateBtn" class="secondary" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
                     <button id="startBtn" data-hint="Start the roast and listen for first and second crack automatically. You can still mark cracks and log power yourself.">Start Roast & Listening</button>
-                    <button id="startManualBtn" data-hint="Start the roast timer WITHOUT the microphone — no automatic crack detection. Mark first/second crack yourself and log power changes. Use this if the mic won't work.">Start (no mic)</button>
+                    <button id="startManualBtn" class="secondary" data-hint="Start the roast timer WITHOUT the microphone — no automatic crack detection. Mark first/second crack yourself and log power changes. Use this if the mic won't work.">Start (no mic)</button>
                     <button id="stopBtn" disabled class="danger">Stop Roast</button>
-                    <button class="demo-btn" type="button">Try a demo (no mic)</button>
+                    <button class="demo-btn secondary" type="button">Try a demo (no mic)</button>
                 </div>
 
                 <details style="margin-bottom: 15px;">
@@ -295,12 +295,17 @@
             <div class="card">
                 <h3>Add New Green Beans</h3>
                 <form id="addBeanForm">
-                    <input type="text" id="beanName" placeholder="Bean Name / Blend Name (Required)" required data-hint="Add green beans here so you can pick them when roasting.">
-                    <input type="text" id="beanCountry" placeholder="Country of Origin (e.g., Ethiopia)">
-                    <input type="text" id="beanRegion" placeholder="Region (e.g., Yirgacheffe)">
-                    <input type="text" id="beanFarm" placeholder="Farm / Producer">
+                    <label class="field-label" for="beanName">Bean / blend name <span class="req">*</span></label>
+                    <input type="text" id="beanName" placeholder="e.g. Ethiopia Yirgacheffe" required data-hint="Add green beans here so you can pick them when roasting.">
+                    <label class="field-label" for="beanCountry">Country of origin</label>
+                    <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
+                    <label class="field-label" for="beanRegion">Region</label>
+                    <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
+                    <label class="field-label" for="beanFarm">Farm / producer</label>
+                    <input type="text" id="beanFarm" placeholder="Optional">
+                    <label class="field-label" for="beanProcess">Process</label>
                     <select id="beanProcess">
-                        <option value="">Select Process...</option>
+                        <option value="">Select process…</option>
                         <option value="Washed">Washed</option>
                         <option value="Natural">Natural</option>
                         <option value="Honey">Honey</option>
@@ -308,21 +313,29 @@
                         <option value="Anaerobic">Anaerobic</option>
                         <option value="Other">Other</option>
                     </select>
-                    <input type="number" id="beanQuantity" placeholder="Quantity on hand (grams)" min="0" step="1">
-                    <input type="number" id="beanCost" placeholder="Cost per kg (optional)" min="0" step="0.01">
+                    <label class="field-label" for="beanQuantity">Quantity on hand (grams)</label>
+                    <input type="number" id="beanQuantity" placeholder="e.g. 1000" min="0" step="1">
+                    <label class="field-label" for="beanCost">Cost per kg</label>
+                    <input type="number" id="beanCost" placeholder="Optional" min="0" step="0.01">
                     <div style="display: flex; gap: 8px;">
-                        <select id="beanDensity" style="flex: 1;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
-                            <option value="">Density (optional)…</option>
-                            <option value="Low">Low density / soft</option>
-                            <option value="Medium">Medium density</option>
-                            <option value="High">High density / hard</option>
-                        </select>
-                        <select id="beanSize" style="flex: 1;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
-                            <option value="">Bean size (optional)…</option>
-                            <option value="Small">Small</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Large">Large</option>
-                        </select>
+                        <div style="flex: 1;">
+                            <label class="field-label" for="beanDensity">Density</label>
+                            <select id="beanDensity" style="width: 100%;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
+                                <option value="">Optional…</option>
+                                <option value="Low">Low density / soft</option>
+                                <option value="Medium">Medium density</option>
+                                <option value="High">High density / hard</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="field-label" for="beanSize">Bean size</label>
+                            <select id="beanSize" style="width: 100%;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
+                                <option value="">Optional…</option>
+                                <option value="Small">Small</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Large">Large</option>
+                            </select>
+                        </div>
                     </div>
                     <button type="submit">Add to Pantry</button>
                 </form>
@@ -385,9 +398,9 @@
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                     <button id="exportBackupBtn" data-hint="Save all your data to a file. Your data lives only in this browser, so back up regularly.">Export Backup (JSON)</button>
-                    <button id="importBackupBtn">Import Backup</button>
+                    <button id="importBackupBtn" class="secondary">Import Backup</button>
                     <input type="file" id="importBackupInput" accept="application/json,.json" style="display: none;">
-                    <button id="importSharedBtn" data-hint="Import a single roast that someone shared as a file (added to your history without replacing anything).">Import shared roast</button>
+                    <button id="importSharedBtn" class="secondary" data-hint="Import a single roast that someone shared as a file (added to your history without replacing anything).">Import shared roast</button>
                     <input type="file" id="importSharedInput" accept="application/json,.json" style="display: none;">
                     <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--text-muted); margin: 0;">
                         <input type="checkbox" id="includePhotosCheck" style="width: auto; margin: 0;"> Include photos (larger file)

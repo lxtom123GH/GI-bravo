@@ -54,6 +54,7 @@ function renderRoasterControl() {
 
     const manage = document.createElement('button');
     manage.type = 'button';
+    manage.className = 'secondary';
     manage.textContent = '⚙ Manage roasters';
     manage.style.cssText = 'font-size: 0.8rem; padding: 5px 10px; margin-top: 6px;';
     manage.setAttribute('data-hint', 'Add your roaster(s) and switch between single- and multi-roaster mode.');

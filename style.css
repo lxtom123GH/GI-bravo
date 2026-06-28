@@ -127,7 +127,21 @@ button.danger {
 button.active {
     background-color: var(--success);
     color: #fff;
+    border-color: var(--success);
     box-shadow: 0 0 5px var(--success);
+}
+
+/* Secondary / neutral actions: a low-emphasis "ghost" button so the one primary
+   (accent) action per section stands out. */
+button.secondary {
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+button.secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--accent);
+    color: #fff;
 }
 
 input, select, textarea {
@@ -146,6 +160,15 @@ input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
 }
 
+/* Persistent field labels (so the prompt doesn't vanish once you type). */
+.field-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+.field-label .req { color: var(--accent); }
+
 /* Specific to Roast Dashboard */
 .roast-controls {
     display: flex;
@@ -155,9 +178,18 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Keep the Behmor button rows (weight / profile P1–P5 / actions / manual power)
-   from overflowing narrow phone screens — they wrap and stay compact. */
+   from overflowing narrow phone screens — they wrap and stay compact. They are
+   selectors, so render UNSELECTED as low-emphasis ghosts; the .active (green) state
+   then clearly reads as "selected" instead of a row of identical orange buttons. */
 .behmor-weight, .behmor-profile, .behmor-action, .manual-power {
     padding: 8px 14px;
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+.behmor-weight:hover, .behmor-profile:hover, .behmor-action:hover, .manual-power:hover {
+    background-color: var(--border-color);
+    border-color: var(--accent);
 }
 
 @media (max-width: 600px) {
