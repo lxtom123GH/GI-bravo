@@ -2,7 +2,24 @@
 
 Context bridge for continuing this project in a local Claude Code CLI session
 (the web session's chat history doesn't transfer; the repo + docs are the
-source of truth). _Written 2026-06-27._
+source of truth). _Written 2026-06-27; updated 2026-06-28._
+
+## ▶️ Current state & next task (2026-06-28)
+The **entire build roadmap (#1–#8) is shipped to `main`** — roaster profiles, freshness/FIFO,
+blend builder, batch planner, the machine-faithful control panel (Behmor model-aware + KKTO),
+value leaderboard, receipt quick-add, tasting-over-time, swipe personalisation, and the
+collective-space code. **66 unit tests pass.**
+
+**Next task = walk through the Firebase console go-live** for the collective space (the only thing
+left; it needs the human/console steps). Follow **`GO_LIVE_CHECKLIST.md`** step by step. Decision to
+make first: **reuse the shared portfolio hub** (the intended design — one Firebase project
+`lx-apps-hub`, data namespaced under `/apps/gi-bravo/...`; the user already has Firebase projects
+for golf + the aps pair) **vs a new project just for GI-bravo** (also fine — set a different
+`projectId`). Recommend the shared hub for portfolio consistency.
+
+Remaining optional follow-ups after go-live: receipt **OCR** auto-fill; a fuller pre-roast
+**"what will happen" simulation**; rolling the sync pattern out to the other apps. A **weekly
+best-practice radar** + **monthly retro** run as scheduled cloud routines and open `LESSONS.md` PRs.
 
 ## How to continue locally
 1. Install the CLI: `npm install -g @anthropic-ai/claude-code` (Node 18+), run `claude`, sign in.
@@ -15,15 +32,16 @@ A browser-only PWA coffee-roasting tracker, fully featured and shipped to `main`
 (deploys to https://gi-bravo.vercel.app). See `README.md` for features,
 `FUTURE_FEATURES.md` for the roadmap/research, `USER_GUIDE.md` + the in-app Help
 tab for usage, `HARDWARE_GUIDE.md` for the DIY probe. The entire roadmap is done
-except the two open threads below.
+(see the Current state section above); only the Firebase go-live remains.
 
-## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, pilot built (emulator)
+## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, code-complete; go-live pending
 **Decided 2026-06-27: standardize the portfolio on Firebase**, local-first + opt-in cloud
 sync, GI-bravo as the pilot. Full plan + as-built status in **`PORTFOLIO_AUTH_SYNC.md`**
 (see §7). The **pilot is implemented** in GI-bravo against the Firebase Local Emulator Suite
 (reusable `js/sync/` module + opt-in UI + rules + tests); no live project wired yet — the PR
 carries a NEEDS-HUMAN checklist (create `lx-apps-hub`, enable email/password + Google, paste
-`.env`, deploy rules). Rollout to the other apps is the next step.
+`.env`, deploy rules) — now captured step-by-step in **`GO_LIVE_CHECKLIST.md`**. Going live is the
+immediate next step; rollout to the other apps follows.
 
 A portfolio-wide survey corrected the original premise: it is **not** "no backend everywhere."
 Firebase is already the incumbent in three repos — `golf-handicap-tracker` already ships the
