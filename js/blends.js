@@ -133,7 +133,7 @@ function openBlendModal() {
         <button type="button" id="addCompBtn" style="font-size: 0.85rem; padding: 6px 12px;">＋ Add component</button>
         <div id="blendCompat" style="font-size: 0.85rem; margin-top: 8px;"></div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-            <button id="blendCancel" class="danger">Cancel</button>
+            <button id="blendCancel" class="secondary">Cancel</button>
             <button id="blendSave" style="background-color: var(--success);">Save blend</button>
         </div>
     `;
