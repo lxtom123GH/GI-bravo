@@ -440,7 +440,7 @@ function renderHistoryList() {
     history.forEach(roast => {
         const bean = pantry.find(b => b.id === roast.beanId) || { name: 'Unknown Bean' };
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'card roast-card';
 
         const dateStr = new Date(roast.date).toLocaleString();
 
