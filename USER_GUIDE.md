@@ -24,6 +24,12 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    origin, process, cost, density or size (each is optional). Then **Add to Pantry**.
    Inside ＋ Add detail, **⚙ Customise fields** lets you hide the optional fields you
    never use, so the form only shows what *you* track (saved on this device).
+   - **You barely have to type the second time.** The supplier, country, region and farm
+     boxes **suggest what you've entered before** (start typing and pick from the list).
+     They also **work together**: choose a supplier and the countries you usually buy from
+     it jump to the top (and fill in automatically if there's only one); choose a country
+     and its usual region/process follow. And if you type or paste a full name like
+     **"Ethiopia Yirgacheffe Washed"**, the country, region and process fill themselves in.
 6. **Your roaster.** On **Active Roast** it shows your machine. If you only use one,
    there's nothing to do. If you use more than one (your machine, a friend's, a
    different Behmor/KKTO), tap **⚙ Manage roasters** → tick *"I use more than one
