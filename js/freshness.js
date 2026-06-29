@@ -63,6 +63,24 @@ export function roastedStock(history) {
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
+// Where a roasted batch went, when the user draws it down. "brewed" is the everyday case;
+// "gift" and "cupping" answer "what did I do with it"; "other" is the catch-all.
+export const ROASTED_USAGE_WHERE = ['brewed', 'gift', 'cupping', 'other'];
+
+// Sum a roast's usage log (entries: { grams, where }) into grams per destination + total.
+// Unknown/blank destinations fold into "other". Pure.
+export function summariseRoastedUsage(usageLog) {
+    const totals = { brewed: 0, gift: 0, cupping: 0, other: 0, total: 0 };
+    for (const e of usageLog || []) {
+        const g = Number(e && e.grams) || 0;
+        if (g <= 0) continue;
+        const where = ROASTED_USAGE_WHERE.includes(e.where) ? e.where : 'other';
+        totals[where] += g;
+        totals.total += g;
+    }
+    return totals;
+}
+
 // Pick the in-stock bean to use first (oldest green) for a gentle FIFO nudge.
 // beans: [{ id, quantity, purchasedAt }]. Returns the id, or null.
 export function fifoBeanId(beans) {

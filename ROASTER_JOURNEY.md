@@ -94,7 +94,8 @@ roast draws down. A simple **Roasted stock** section tracks roasted grams left +
   (different purchases/dates/prices); lots make age, price history, and FEFO accurate (`js/lots.js`).
 - **Roasted inventory.** ✅ Shipped (kept deliberately simple) — a roast's output becomes a
   *roasted* stock item tracking grams left + days since roast, drawn down via **Drank some /
-  Finished**. (Future ✨: a fuller "what did I do with it" trail.)
+  Finished** — each draw-down logs **where it went** (brewed / gift / cupping + optional note),
+  and the batch keeps a small "Where it went" trail (`logRoastedUsage` / `summariseRoastedUsage`). ✅
 
 ---
 

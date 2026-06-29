@@ -1,5 +1,5 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, adjustRoastedRemaining, updateBean } from './storage.js';
-import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock } from './freshness.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, logRoastedUsage, updateBean } from './storage.js';
+import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock, ROASTED_USAGE_WHERE } from './freshness.js';
 import { fefoLotOrder } from './lots.js';
 import { priceHistory, priceTrend } from './sourcebook.js';
 import { openPlanModal } from './planner.js';
@@ -242,38 +242,93 @@ export function renderRoastedStock() {
         }
         info.innerHTML = html;
 
+        // "Where it went" trail — only once something's been logged. Built with text nodes so a
+        // free-text note can't inject markup.
+        if (Array.isArray(roast.usageLog) && roast.usageLog.length) {
+            const trail = document.createElement('details');
+            trail.style.marginTop = '6px';
+            const sum = document.createElement('summary');
+            sum.style.cssText = 'cursor: pointer; font-size: 0.8rem; color: var(--text-muted);';
+            sum.textContent = `Where it went (${roast.usageLog.length})`;
+            trail.appendChild(sum);
+            [...roast.usageLog].reverse().forEach(e => {
+                const line = document.createElement('div');
+                line.style.cssText = 'font-size: 0.8rem; margin-top: 3px; color: var(--text-muted);';
+                const when = e.date ? new Date(e.date).toLocaleDateString() : '';
+                line.textContent = `${when} · ${Number(e.grams) || 0} g · ${e.where || 'other'}${e.note ? ` — ${e.note}` : ''}`;
+                trail.appendChild(line);
+            });
+            info.appendChild(trail);
+        }
+
         const btns = document.createElement('div');
         btns.style.cssText = 'display: flex; gap: 8px;';
 
         const drank = document.createElement('button');
         drank.textContent = 'Drank some';
         drank.style.padding = '5px 10px';
-        drank.setAttribute('data-hint', 'Subtract what you brewed so the grams left stays honest (a cup is roughly 15–18 g).');
-        drank.addEventListener('click', () => {
-            const input = prompt(`How many grams of ${name} did you use?`, '18');
-            const g = parseFloat(input);
-            if (!isNaN(g) && g > 0) {
-                adjustRoastedRemaining(roast.id, -g);
-                renderRoastedStock();
-            }
-        });
+        drank.setAttribute('data-hint', 'Log what you used and where it went (brewed, gift, cupping…) so the grams left stays honest. A cup is roughly 15–18 g.');
+        drank.addEventListener('click', () => openUsageModal(roast, { name, remaining }));
 
         const finished = document.createElement('button');
         finished.textContent = 'Finished';
         finished.className = 'danger';
         finished.style.padding = '5px 10px';
-        finished.addEventListener('click', () => {
-            if (confirm(`Mark ${name} (roasted ${new Date(roast.date).toLocaleDateString()}) as finished?`)) {
-                adjustRoastedRemaining(roast.id, -remaining);
-                renderRoastedStock();
-            }
-        });
+        finished.setAttribute('data-hint', 'Log the rest as used (prefilled with what is left) and note where it went.');
+        finished.addEventListener('click', () => openUsageModal(roast, { name, remaining, finishing: true }));
 
         btns.appendChild(drank);
         btns.appendChild(finished);
         card.appendChild(info);
         card.appendChild(btns);
         div.appendChild(card);
+    });
+}
+
+// Log roasted-stock usage: how much you used and where it went. Floor = grams + a destination
+// (Brewed by default); an optional note folds behind nothing — it's just one small field. When
+// "finishing", grams prefill with what's left. Writes via logRoastedUsage (decrements + trails).
+function openUsageModal(roast, { name, remaining, finishing = false } = {}) {
+    const whereLabels = { brewed: 'Brewed', gift: 'Gift', cupping: 'Cupping', other: 'Other' };
+
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3>${finishing ? 'Finished' : 'Used some'} — where did it go?</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">${Math.round(remaining)} g of this roast on hand.</p>
+        <label class="field-label" for="useGrams">Grams used <span class="req">*</span></label>
+        <input type="number" id="useGrams" min="1" step="1" placeholder="e.g. 18 (about a cup)">
+        <label class="field-label" for="useWhere">Where</label>
+        <select id="useWhere" style="width: 100%;">
+            ${ROASTED_USAGE_WHERE.map(w => `<option value="${w}">${whereLabels[w]}</option>`).join('')}
+        </select>
+        <label class="field-label" for="useNote">Note</label>
+        <input type="text" id="useNote" placeholder="Optional — e.g. gift for Mum, V60 dial-in">
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+            <button id="useCancel">Cancel</button>
+            <button id="useSave" style="background-color: var(--success);">Log it</button>
+        </div>
+    `;
+    bg.appendChild(modal);
+    document.body.appendChild(bg);
+
+    const gramsInput = modal.querySelector('#useGrams');
+    if (finishing) gramsInput.value = String(Math.round(remaining));
+    gramsInput.focus();
+
+    const close = () => document.body.removeChild(bg);
+    modal.querySelector('#useCancel').addEventListener('click', close);
+    bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+
+    modal.querySelector('#useSave').addEventListener('click', () => {
+        const grams = parseFloat(gramsInput.value);
+        if (!(grams > 0)) { alert('Enter how many grams you used.'); return; }
+        logRoastedUsage(roast.id, grams, modal.querySelector('#useWhere').value, modal.querySelector('#useNote').value.trim());
+        close();
+        renderRoastedStock();
     });
 }
 
