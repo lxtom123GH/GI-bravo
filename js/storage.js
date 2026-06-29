@@ -1,5 +1,7 @@
 // --- Data Persistence ---
 
+import { drawDownLots, syncBeanFromLots } from './lots.js';
+
 export function getPantry() {
     const pantry = localStorage.getItem('coffeePantry');
     return pantry ? JSON.parse(pantry) : [];
@@ -18,6 +20,17 @@ export function addBeanToPantry(bean) {
     return bean;
 }
 
+// Patch arbitrary fields on a pantry bean by id (e.g. supplier / re-order link). Returns
+// the bean, or null if it no longer exists.
+export function updateBean(id, patch) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === id);
+    if (!bean) return null;
+    Object.assign(bean, patch);
+    savePantry(pantry);
+    return bean;
+}
+
 export function deleteBeanFromPantry(id) {
     let pantry = getPantry();
     pantry = pantry.filter(b => b.id !== id);
@@ -26,13 +39,57 @@ export function deleteBeanFromPantry(id) {
 
 // Adjust a bean's on-hand quantity (grams) by delta, clamped at 0.
 // Returns the new quantity, or null if the bean no longer exists.
+// Lot-aware: if the bean tracks lots, a decrease draws down the FEFO-first lots
+// (oldest / soonest-to-expire used first) and a top-up grows the most recent lot,
+// then quantity/cost are re-derived from the lots. A flat (pre-lots) bean keeps the
+// simple running-total behaviour.
 export function adjustBeanQuantity(id, deltaGrams) {
     const pantry = getPantry();
     const bean = pantry.find(b => b.id === id);
     if (!bean) return null;
-    bean.quantity = Math.max(0, (Number(bean.quantity) || 0) + deltaGrams);
+    if (Array.isArray(bean.lots) && bean.lots.length) {
+        if (deltaGrams < 0) {
+            bean.lots = drawDownLots(bean.lots, -deltaGrams);
+        } else if (deltaGrams > 0) {
+            const newest = bean.lots.reduce((a, b) => ((b.date || 0) > (a.date || 0) ? b : a));
+            newest.grams = (Number(newest.grams) || 0) + deltaGrams;
+        }
+        syncBeanFromLots(bean);
+    } else {
+        bean.quantity = Math.max(0, (Number(bean.quantity) || 0) + deltaGrams);
+    }
     savePantry(pantry);
     return bean.quantity;
+}
+
+// Add a green lot to a bean (a dated, optionally priced/best-before purchase). The first
+// lot added to a previously-flat bean folds its existing on-hand grams into an implicit
+// lot so nothing is lost. Re-derives quantity/cost from the lots. Returns the bean.
+export function addLotToBean(id, lot) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === id);
+    if (!bean) return null;
+    if (!Array.isArray(bean.lots) || !bean.lots.length) {
+        // Migrate the flat on-hand grams into a first lot, then add the new one.
+        bean.lots = (Number(bean.quantity) || 0) > 0
+            ? [{ id: 'l-' + Date.now().toString(), grams: Number(bean.quantity), date: bean.purchasedAt || null, price: Number(bean.costPerKg) || 0 }]
+            : [];
+    }
+    bean.lots.push({ id: 'l-' + Date.now().toString() + '-' + bean.lots.length, ...lot });
+    syncBeanFromLots(bean);
+    savePantry(pantry);
+    return bean;
+}
+
+// Remove a single lot from a bean by lot id, re-deriving on-hand grams/cost. Returns the bean.
+export function deleteLotFromBean(beanId, lotId) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === beanId);
+    if (!bean || !Array.isArray(bean.lots)) return null;
+    bean.lots = bean.lots.filter(l => l.id !== lotId);
+    syncBeanFromLots(bean);
+    savePantry(pantry);
+    return bean;
 }
 
 export function getRoastHistory() {
@@ -60,6 +117,22 @@ export function updateRoastInHistory(roast) {
 export function deleteRoastFromHistory(id) {
     const history = getRoastHistory().filter(r => r.id !== id);
     saveRoastHistory(history);
+}
+
+// Adjust how much ROASTED coffee is left from a roast (e.g. drank a brew, finished a bag),
+// clamped to [0, roasted yield]. Sets roastedRemainingG on the roast. Deliberately simple —
+// roasted stock is just grams + days-since-roast, no lots. Returns the new remaining, or null.
+export function adjustRoastedRemaining(id, deltaGrams) {
+    const history = getRoastHistory();
+    const roast = history.find(r => r.id === id);
+    if (!roast) return null;
+    const full = Number(roast.roastedWeightG) || 0;
+    const current = (roast.roastedRemainingG === undefined || roast.roastedRemainingG === null)
+        ? full
+        : Number(roast.roastedRemainingG) || 0;
+    roast.roastedRemainingG = Math.max(0, Math.min(full, current + deltaGrams));
+    saveRoastHistory(history);
+    return roast.roastedRemainingG;
 }
 
 // --- Detection Settings ---

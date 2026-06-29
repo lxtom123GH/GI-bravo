@@ -19,8 +19,9 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    - **Moderate** – recommended starting point (crack times, DTR, flavour notes).
    - **Expert** – everything (temperature/RoR, roast targets, cupping scores).
    You can change this any time, or override it per feature.
-5. **Add your beans.** Go to **Bean Pantry → Add New Green Beans**, enter a name
-   (and optionally origin, process, and how many grams you have), and **Add to Pantry**.
+5. **Add your beans.** Go to **Bean Pantry → Add New Green Beans**. All you need is a
+   **name** and **grams on hand** — tap **＋ Add detail** if you also want to record
+   origin, process, cost, density or size (each is optional). Then **Add to Pantry**.
 6. **Your roaster.** On **Active Roast** it shows your machine. If you only use one,
    there's nothing to do. If you use more than one (your machine, a friend's, a
    different Behmor/KKTO), tap **⚙ Manage roasters** → tick *"I use more than one
@@ -90,6 +91,20 @@ an official Agtron number.
 
 ## Ongoing use
 
+- **Lots (separate batches of one bean):** tap **＋ Lot** on a pantry bean to add a fresh
+  batch you bought — grams is all you need, but you can add a date, price and *best-before*.
+  The bean's grams-on-hand is the **sum** of its lots, its cost becomes the **weighted average**
+  across them, and the **Lots** breakdown lists each batch with the one to *use first* on top
+  (soonest best-before, otherwise oldest). Roasting draws green from that oldest lot first, so
+  stock stays honest. Beans without lots stay simple — it's entirely optional.
+- **Source & price history:** tap **Source** on a pantry bean to record where you buy it
+  and a **re-order link**, see its **price history** (built automatically from your dated,
+  priced lots) and whether the price is trending **up or down** versus your first purchase.
+  **↗ Re-order** opens the supplier's page in a new tab.
+- **Roasted stock:** the **Bean Pantry → Roasted stock** section lists coffee you've
+  *roasted* and still have — just grams left and how long it's been resting, oldest first
+  (it stays simple on purpose). It fills in once you record a roast's **roasted weight** in
+  Roast History; tap **Drank some** as you brew it, or **Finished** when a bag is gone.
 - **Freshness & FIFO:** the **Bean Pantry** shows how long ago each bean was bought,
   flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
   In **Roast History**, each roast shows a soft freshness badge — *resting* at first, a broad

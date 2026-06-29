@@ -1482,6 +1482,8 @@ function logRoastedWeight(id) {
 
     updateRoastInHistory(roast);
     renderHistoryList();
+    // Roasted weight feeds the Pantry's Roasted-stock list — let it refresh.
+    window.dispatchEvent(new Event('historyUpdated'));
 }
 
 function exportRoastCsv(id) {

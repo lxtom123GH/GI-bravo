@@ -1,8 +1,16 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry, adjustBeanQuantity } from './storage.js';
-import { greenAge, fifoBeanId } from './freshness.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, adjustRoastedRemaining, updateBean } from './storage.js';
+import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock } from './freshness.js';
+import { fefoLotOrder } from './lots.js';
+import { priceHistory, priceTrend } from './sourcebook.js';
 import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
+
+// "bought today" / "bought yesterday" / "bought 5 days ago" — greenAge returns the bare
+// words "today"/"yesterday", which read wrong with a trailing " ago".
+function boughtPhrase(text) {
+    return (text === 'today' || text === 'yesterday') ? `bought ${text}` : `bought ${text} ago`;
+}
 
 export function initPantry() {
     const pantryForm = document.getElementById('addBeanForm');
@@ -19,16 +27,21 @@ export function initPantry() {
             const costPerKg = parseFloat(document.getElementById('beanCost').value) || 0;
             const density = document.getElementById('beanDensity')?.value || '';
             const size = document.getElementById('beanSize')?.value || '';
+            const supplier = document.getElementById('beanSupplier')?.value || '';
+            const supplierUrl = document.getElementById('beanSupplierUrl')?.value || '';
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size };
+            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size, supplier, supplierUrl };
             addBeanToPantry(newBean);
 
             pantryForm.reset();
+            // Collapse the optional-detail expander so the form returns to its short floor.
+            const detail = document.getElementById('beanDetail');
+            if (detail) detail.open = false;
             renderPantryList();
 
             // Dispatch event so active roast tab can update its bean dropdown
@@ -37,7 +50,10 @@ export function initPantry() {
     }
 
     renderPantryList();
-    window.addEventListener('pantryUpdated', renderPantryList);
+    renderRoastedStock();
+    window.addEventListener('pantryUpdated', () => { renderPantryList(); renderRoastedStock(); });
+    // Roasted stock comes from roast history (e.g. a roasted weight was just recorded).
+    window.addEventListener('historyUpdated', renderRoastedStock);
 }
 
 export function renderPantryList() {
@@ -85,9 +101,14 @@ export function renderPantryList() {
         details += `<br><small style="color: ${qtyColor};">${qtyLabel}</small>`;
 
         const cost = Number(bean.costPerKg) || 0;
+        const pricedLots = Array.isArray(bean.lots) ? bean.lots.filter(l => (Number(l.price) || 0) > 0).length : 0;
         if (cost > 0) {
             const onHandValue = (qty / 1000) * cost;
-            details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg · stock value ${onHandValue.toFixed(2)}</small>`;
+            const avgNote = pricedLots > 1 ? ' avg' : '';
+            details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg${avgNote} · stock value ${onHandValue.toFixed(2)}</small>`;
+        }
+        if (bean.supplier) {
+            details += `<br><small style="color: var(--text-muted);">🏷️ ${bean.supplier}</small>`;
         }
 
         // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
@@ -96,7 +117,7 @@ export function renderPantryList() {
         if (age) {
             const ageColor = age.stale ? 'var(--danger)' : 'var(--text-muted)';
             const staleNote = age.stale ? ' — old, roast soon' : '';
-            details += `<br><small style="color: ${ageColor};">🌱 bought ${age.text} ago${staleNote}</small>`;
+            details += `<br><small style="color: ${ageColor};">🌱 ${boughtPhrase(age.text)}${staleNote}</small>`;
         }
         if (qty > 0 && bean.id === useFirstId) {
             details += `<br><small style="color: var(--accent);">⏳ oldest in stock — roast this first</small>`;
@@ -104,6 +125,38 @@ export function renderPantryList() {
 
         const infoDiv = document.createElement('div');
         infoDiv.innerHTML = details;
+
+        // Per-lot breakdown — only for beans the user has split into lots. Shown in
+        // FEFO ("use first") order so the lot to roast next is at the top.
+        if (Array.isArray(bean.lots) && bean.lots.length) {
+            const lotsWrap = document.createElement('details');
+            lotsWrap.style.marginTop = '6px';
+            const summary = document.createElement('summary');
+            summary.style.cssText = 'cursor: pointer; font-size: 0.8rem; color: var(--text-muted);';
+            summary.textContent = `Lots (${bean.lots.length})`;
+            lotsWrap.appendChild(summary);
+
+            fefoLotOrder(bean.lots).forEach((lot, i) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.8rem; margin-top: 4px;';
+                row.appendChild(lotDescription(lot, i === 0));
+
+                const del = document.createElement('button');
+                del.textContent = '✕';
+                del.title = 'Remove this lot';
+                del.style.cssText = 'padding: 1px 7px; font-size: 0.75rem;';
+                del.addEventListener('click', () => {
+                    if (confirm(`Remove this ${Number(lot.grams) || 0} g lot of ${bean.name}?`)) {
+                        deleteLotFromBean(bean.id, lot.id);
+                        renderPantryList();
+                        window.dispatchEvent(new Event('pantryUpdated'));
+                    }
+                });
+                row.appendChild(del);
+                lotsWrap.appendChild(row);
+            });
+            infoDiv.appendChild(lotsWrap);
+        }
 
         const btnGroup = document.createElement('div');
         btnGroup.style.display = 'flex';
@@ -116,17 +169,10 @@ export function renderPantryList() {
         planBtn.addEventListener('click', () => openPlanModal(bean.name, Number(bean.quantity) || 0));
 
         const restockBtn = document.createElement('button');
-        restockBtn.textContent = 'Restock';
+        restockBtn.textContent = '＋ Lot';
         restockBtn.style.padding = '5px 10px';
-        restockBtn.addEventListener('click', () => {
-            const input = prompt(`Add how many grams to ${bean.name}?`, '454');
-            const grams = parseFloat(input);
-            if (!isNaN(grams) && grams > 0) {
-                adjustBeanQuantity(bean.id, grams);
-                renderPantryList();
-                window.dispatchEvent(new Event('pantryUpdated'));
-            }
-        });
+        restockBtn.setAttribute('data-hint', "Add a fresh batch you bought. Just grams is enough; add a date, price or best-before if you want to track lots separately (cost becomes a weighted average and the oldest lot is flagged to roast first).");
+        restockBtn.addEventListener('click', () => openLotModal(bean));
 
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Delete';
@@ -140,11 +186,251 @@ export function renderPantryList() {
             }
         });
 
+        const sourceBtn = document.createElement('button');
+        sourceBtn.textContent = 'Source';
+        sourceBtn.style.padding = '5px 10px';
+        sourceBtn.setAttribute('data-hint', 'Where you buy this bean and what it has cost over time — re-order in one tap and see if the price is trending up or down.');
+        sourceBtn.addEventListener('click', () => openSourceModal(bean));
+
         btnGroup.appendChild(planBtn);
         btnGroup.appendChild(restockBtn);
+        btnGroup.appendChild(sourceBtn);
         btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);
         beanCard.appendChild(btnGroup);
         pantryListDiv.appendChild(beanCard);
+    });
+}
+
+// Roasted stock — coffee already roasted and still on hand. Deliberately simple: grams
+// left + a soft "days since roast" freshness note, oldest first. Sourced from roast history
+// (a roast with a recorded roasted weight), so there's no separate schema to maintain.
+export function renderRoastedStock() {
+    const div = document.getElementById('roastedStockList');
+    if (!div) return;
+
+    const pantry = getPantry();
+    const stock = roastedStock(getRoastHistory());
+    div.innerHTML = '';
+
+    if (!stock.length) {
+        div.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No roasted stock yet — finish a roast and record its roasted weight in Roast History.</p>';
+        return;
+    }
+
+    stock.forEach((roast, idx) => {
+        const remaining = roastedRemaining(roast);
+        const bean = pantry.find(b => b.id === roast.beanId);
+        const name = (bean && bean.name) || roast.beanName || 'Roast';
+        const rest = roastRest(new Date(roast.date).getTime());
+
+        const card = document.createElement('div');
+        card.className = 'card bean-card';
+        card.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+
+        const info = document.createElement('div');
+        let html = `<strong>${name}</strong>`;
+        html += `<br><small style="color: var(--text-muted);">roasted ${new Date(roast.date).toLocaleDateString()}</small>`;
+        const remColor = remaining < 100 ? 'var(--accent)' : 'var(--text-muted)';
+        html += `<br><small style="color: ${remColor};">${remaining} g left</small>`;
+        if (rest) {
+            const c = rest.phase === 'past' ? 'var(--danger)' : (rest.phase === 'peak' ? 'var(--accent)' : 'var(--text-muted)');
+            html += `<br><small style="color: ${c};">🌱 ${rest.text}</small>`;
+        }
+        if (idx === 0 && stock.length > 1) {
+            html += `<br><small style="color: var(--accent);">⏳ oldest roast — drink this first</small>`;
+        }
+        info.innerHTML = html;
+
+        const btns = document.createElement('div');
+        btns.style.cssText = 'display: flex; gap: 8px;';
+
+        const drank = document.createElement('button');
+        drank.textContent = 'Drank some';
+        drank.style.padding = '5px 10px';
+        drank.setAttribute('data-hint', 'Subtract what you brewed so the grams left stays honest (a cup is roughly 15–18 g).');
+        drank.addEventListener('click', () => {
+            const input = prompt(`How many grams of ${name} did you use?`, '18');
+            const g = parseFloat(input);
+            if (!isNaN(g) && g > 0) {
+                adjustRoastedRemaining(roast.id, -g);
+                renderRoastedStock();
+            }
+        });
+
+        const finished = document.createElement('button');
+        finished.textContent = 'Finished';
+        finished.className = 'danger';
+        finished.style.padding = '5px 10px';
+        finished.addEventListener('click', () => {
+            if (confirm(`Mark ${name} (roasted ${new Date(roast.date).toLocaleDateString()}) as finished?`)) {
+                adjustRoastedRemaining(roast.id, -remaining);
+                renderRoastedStock();
+            }
+        });
+
+        btns.appendChild(drank);
+        btns.appendChild(finished);
+        card.appendChild(info);
+        card.appendChild(btns);
+        div.appendChild(card);
+    });
+}
+
+// One line describing a green lot: grams, when it was bought, price and best-before.
+// `isFirst` marks the FEFO lot to roast next.
+function lotDescription(lot, isFirst) {
+    const span = document.createElement('span');
+    const grams = Number(lot.grams) || 0;
+    const bits = [`${grams} g`];
+    const age = greenAge(lot.date);
+    if (age) bits.push(boughtPhrase(age.text));
+    if (Number(lot.price) > 0) bits.push(`${Number(lot.price).toFixed(2)}/kg`);
+
+    let html = bits.join(' · ');
+    if (lot.expiry) {
+        const days = Math.floor((lot.expiry - Date.now()) / 86_400_000);
+        if (days < 0) html += ` · <span style="color: var(--danger);">best-before passed</span>`;
+        else if (days <= 14) html += ` · <span style="color: var(--accent);">best-before in ${days} d</span>`;
+        else html += ` · best-before in ${Math.round(days / 30)} mo`;
+    }
+    if (isFirst) html = `⏳ <strong>use first</strong> — ${html}`;
+    span.innerHTML = html;
+    return span;
+}
+
+// Modal to add a green lot (a dated purchase) to a bean. Floor = grams; date defaults to
+// today; price and best-before fold behind "＋ more" (progressive disclosure).
+function openLotModal(bean) {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3>Add stock — ${bean.name}</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">A new batch you bought. Just grams is enough — add a date, price or best-before to track this lot on its own.</p>
+        <label class="field-label" for="lotGrams">Grams <span class="req">*</span></label>
+        <input type="number" id="lotGrams" min="1" step="1" placeholder="e.g. 1000">
+        <label class="field-label" for="lotDate">Purchase date</label>
+        <input type="date" id="lotDate" value="${today}">
+        <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; color: var(--accent);">＋ more <span style="color: var(--text-muted); font-weight: normal;">(price, best-before)</span></summary>
+            <div style="margin-top: 10px;">
+                <label class="field-label" for="lotPrice">Cost per kg</label>
+                <input type="number" id="lotPrice" min="0" step="0.01" placeholder="Optional">
+                <label class="field-label" for="lotExpiry">Best-before</label>
+                <input type="date" id="lotExpiry">
+            </div>
+        </details>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+            <button id="lotCancel">Cancel</button>
+            <button id="lotSave" style="background-color: var(--success);">Add lot</button>
+        </div>
+    `;
+    bg.appendChild(modal);
+    document.body.appendChild(bg);
+
+    const close = () => document.body.removeChild(bg);
+    modal.querySelector('#lotCancel').addEventListener('click', close);
+    bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+    modal.querySelector('#lotGrams').focus();
+
+    modal.querySelector('#lotSave').addEventListener('click', () => {
+        const grams = parseFloat(modal.querySelector('#lotGrams').value);
+        if (!(grams > 0)) {
+            alert('Enter how many grams you bought.');
+            return;
+        }
+        const dateStr = modal.querySelector('#lotDate').value;
+        const priceVal = parseFloat(modal.querySelector('#lotPrice').value);
+        const expiryStr = modal.querySelector('#lotExpiry').value;
+        const lot = { grams };
+        lot.date = dateStr ? new Date(dateStr).getTime() : Date.now();
+        if (priceVal > 0) lot.price = priceVal;
+        if (expiryStr) lot.expiry = new Date(expiryStr).getTime();
+
+        addLotToBean(bean.id, lot);
+        close();
+        renderPantryList();
+        window.dispatchEvent(new Event('pantryUpdated'));
+    });
+}
+
+// Source book for a bean: where it comes from (editable supplier + re-order link) and what
+// it has cost over time (price history + trend, derived from its priced lots).
+function openSourceModal(bean) {
+    const history = priceHistory(bean);
+    const trend = priceTrend(history);
+
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
+
+    const histRows = history.length
+        ? history.map(p => `<li>${new Date(p.date).toLocaleDateString()} — ${p.price.toFixed(2)}/kg${p.grams ? ` <span style="color: var(--text-muted);">(${p.grams} g)</span>` : ''}</li>`).join('')
+        : '<li style="color: var(--text-muted);">No priced purchases yet — add a price when you add a lot.</li>';
+
+    let trendLine = '';
+    if (trend) {
+        const arrow = trend.direction === 'up' ? '▲' : (trend.direction === 'down' ? '▼' : '▬');
+        const col = trend.direction === 'up' ? 'var(--danger)' : (trend.direction === 'down' ? 'var(--success)' : 'var(--text-muted)');
+        const word = trend.direction === 'flat' ? 'unchanged' : (trend.direction === 'up' ? 'higher' : 'lower');
+        trendLine = `<p style="color: ${col}; font-size: 0.9rem;">${arrow} ${Math.abs(trend.deltaPct).toFixed(0)}% ${word} than your first purchase (${trend.first.toFixed(2)} → ${trend.last.toFixed(2)}/kg)</p>`;
+    }
+
+    modal.innerHTML = `
+        <h3>Source — ${bean.name}</h3>
+        <label class="field-label" for="srcSupplier">Supplier / roaster</label>
+        <input type="text" id="srcSupplier" placeholder="Where you buy it">
+        <label class="field-label" for="srcUrl">Re-order link</label>
+        <input type="text" id="srcUrl" inputmode="url" placeholder="Product page URL">
+        <p style="margin-bottom: 4px;"><strong>Price history</strong></p>
+        <ul style="margin-top: 4px;">${histRows}</ul>
+        ${trendLine}
+        <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 15px;">
+            <button id="srcReorder">↗ Re-order</button>
+            <div style="display: flex; gap: 8px;">
+                <button id="srcClose">Close</button>
+                <button id="srcSave" style="background-color: var(--success);">Save</button>
+            </div>
+        </div>
+    `;
+    bg.appendChild(modal);
+    document.body.appendChild(bg);
+
+    // Set values via JS (avoids HTML-escaping user text into attributes).
+    modal.querySelector('#srcSupplier').value = bean.supplier || '';
+    modal.querySelector('#srcUrl').value = bean.supplierUrl || '';
+
+    const close = () => document.body.removeChild(bg);
+    modal.querySelector('#srcClose').addEventListener('click', close);
+    bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+
+    const save = () => updateBean(bean.id, {
+        supplier: modal.querySelector('#srcSupplier').value.trim(),
+        supplierUrl: modal.querySelector('#srcUrl').value.trim()
+    });
+
+    modal.querySelector('#srcSave').addEventListener('click', () => {
+        save();
+        close();
+        renderPantryList();
+        window.dispatchEvent(new Event('pantryUpdated'));
+    });
+
+    modal.querySelector('#srcReorder').addEventListener('click', () => {
+        let url = modal.querySelector('#srcUrl').value.trim();
+        if (!url) {
+            alert('Add a re-order link (the product page URL) first.');
+            return;
+        }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        save(); // keep any edits before leaving
+        window.open(url, '_blank', 'noopener');
     });
 }
