@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { daysBetween, greenAge, roastRest, fifoBeanId, restWindowFor } from '../../js/freshness.js';
+import { daysBetween, greenAge, roastRest, fifoBeanId } from '../../js/freshness.js';
 
 const DAY = 86_400_000;
 const ago = (d, now) => now - d * DAY;
@@ -36,33 +36,11 @@ describe('roastRest', () => {
     it('respects custom windows', () => {
         expect(roastRest(ago(2, now), now, { restDays: 5 }).phase).toBe('resting');
     });
-    it('counts down to ready while resting', () => {
-        const r = roastRest(ago(1, now), now, { restDays: 4 });
-        expect(r.ready).toBe(false);
-        expect(r.daysLeft).toBe(3);
-        expect(r.text).toMatch(/ready in 3 days/);
-    });
-    it('shows days left at peak and is ready', () => {
-        const r = roastRest(ago(8, now), now, { restDays: 4, peakEndDays: 21 });
-        expect(r.ready).toBe(true);
-        expect(r.daysLeft).toBe(13);
-        expect(r.text).toMatch(/at peak/);
-    });
-});
-
-describe('restWindowFor', () => {
-    it('gives espresso a longer rest', () => {
-        expect(restWindowFor('Espresso').restDays).toBe(6);
-        expect(restWindowFor('Moka').restDays).toBe(6);
-    });
-    it('gives filter a shorter rest', () => {
-        expect(restWindowFor('V60').restDays).toBe(2);
-        expect(restWindowFor('Filter / Batch').restDays).toBe(2);
-    });
-    it('falls back to a balanced default for unknown/blank', () => {
-        expect(restWindowFor('').restDays).toBe(4);
-        expect(restWindowFor(undefined).restDays).toBe(4);
-        expect(restWindowFor('Other').restDays).toBe(4);
+    it('gives a soft, approximate hint — no asserted per-method day-count', () => {
+        expect(roastRest(ago(1, now), now).text).toMatch(/few days/);
+        expect(roastRest(ago(8, now), now).text).toMatch(/varies/);
+        // no precise countdown fields any more
+        expect(roastRest(ago(1, now), now).daysLeft).toBeUndefined();
     });
 });
 

@@ -26,40 +26,22 @@ export function greenAge(purchasedAt, now = Date.now(), { staleDays = 365 } = {}
     return { days, text: ageText(days), stale: days >= staleDays };
 }
 
-// Rest/peak window for how the beans will be brewed. Espresso likes a longer
-// rest (degas settles the crema); filter is drinkable sooner. Unknown → balanced
-// default. Match by keyword so it's robust to the exact brew-method label.
-const REST_WINDOWS = {
-    espresso: { restDays: 6, peakEndDays: 21 },  // espresso, moka, aeropress
-    filter:   { restDays: 2, peakEndDays: 14 },  // v60, filter, french press, cold brew
-    default:  { restDays: 4, peakEndDays: 21 },
-};
-
-export function restWindowFor(method) {
-    const m = String(method || '').toLowerCase();
-    if (/espresso|moka|aeropress/.test(m)) return REST_WINDOWS.espresso;
-    if (/v60|filter|pour|chemex|drip|french|cold/.test(m)) return REST_WINDOWS.filter;
-    return REST_WINDOWS.default;
-}
-
-// Roasted rest/peak status, with a "ready in N days" / "N days left at peak"
-// countdown. Defaults: resting < 4 days, peak 4–21 days, then fading. Pass a
-// window from restWindowFor(method) to tailor it to how the coffee's brewed.
+// Roasted rest/peak status — a deliberately SOFT, approximate hint. Research note
+// (2026-06-29): published per-brew-method rest tables conflict source-to-source and
+// experts reject one-size-fits-all, so we don't assert precise day counts or a
+// brew-method window — we nudge gently and let the user's own tasting log (see
+// personalPeak in tasting.js) provide the real "tasted best at day X". Phases are a
+// generic guide: settling for the first few days, a broad ~1–3 week window, then fading.
 export function roastRest(roastDateMs, now = Date.now(), { restDays = 4, peakEndDays = 21 } = {}) {
     if (!roastDateMs) return null;
     const days = daysBetween(roastDateMs, now);
     if (days < restDays) {
-        const left = Math.max(0, restDays - days);
-        const text = left === 0 ? 'resting · ready tomorrow'
-            : `resting · ready in ${left} day${left === 1 ? '' : 's'}`;
-        return { phase: 'resting', days: Math.max(0, days), ready: false, daysLeft: left, text };
+        return { phase: 'resting', days: Math.max(0, days), text: 'resting — most coffees open up after a few days' };
     }
     if (days <= peakEndDays) {
-        const left = peakEndDays - days;
-        const text = left <= 0 ? 'at peak · best now' : `at peak · ${left} day${left === 1 ? '' : 's'} left`;
-        return { phase: 'peak', days, ready: true, daysLeft: Math.max(0, left), text };
+        return { phase: 'peak', days, text: `day ${days} — likely in its window (rest varies by bean & roast)` };
     }
-    return { phase: 'past', days, ready: false, daysLeft: 0, text: `${ageText(days)} old · past peak` };
+    return { phase: 'past', days, text: `${ageText(days)} old — likely past its best` };
 }
 
 // Pick the in-stock bean to use first (oldest green) for a gentle FIFO nudge.

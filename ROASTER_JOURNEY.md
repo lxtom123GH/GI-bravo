@@ -164,9 +164,10 @@ home for the per-machine variants (Mark's KKTO, Stuart's Behmor).
 The questions you raised — rest how long? grind fresh? cut/blend when? test single or mixed?
 
 **Today ◐:** colour-corrected photo + roast-colour index; the roast is saved.
-**Shipped ✅ (`js/freshness.js`):** the per-roast **rest/peak badge** now counts down ("resting ·
-ready in 3 days" → "at peak · 13 days left") and is **brew-aware** — espresso gets a longer rest
-window, filter a shorter one, derived from the roast's logged brew method.
+**Shipped ✅ (`js/freshness.js` + `js/tasting.js`):** the per-roast **rest/peak badge** gives a
+deliberately **soft, approximate** hint (research found published per-method rest tables conflict and
+experts reject fixed numbers), and — once a roast has ≥2 dated tastings — surfaces the user's **own
+"★ you rated this best around day X"** from the tasting log instead of asserting a generic window.
 **Ideas ✨:**
 - **Grind-fresh reminder** is really a brew-time nudge — grind per shot, not ahead. _(see below)_
 - **Grind-fresh reminder** is really a brew-time nudge — grind per shot, not ahead.
