@@ -4,6 +4,35 @@ Context bridge for continuing this project in a local Claude Code CLI session
 (the web session's chat history doesn't transfer; the repo + docs are the
 source of truth). _Written 2026-06-27; updated 2026-06-29._
 
+## ▶️ Overnight autonomous PRs (2026-06-29) — awaiting owner review
+
+Pantry depth (Track B, **#80**) and the DIY colour-target groundwork (**#81**) are **merged**.
+An autonomous overnight pass then opened **six independent PRs off `main`** (each: full DoD,
+unit tests, build green, browser-verified where there's UI; **none merged** — owner reviews):
+
+- **#82 — Polish: escape user text in pantry rendering (XSS-safe cards).** Quality pass; adds
+  `escapeHtml` for user-entered name/origin/supplier in pantry cards + modal titles.
+- **#83 — Roasted-stock "where it went" usage trail.** Drank some / Finished log a destination
+  (brewed/gift/cupping + note); per-batch history. `logRoastedUsage` + pure `summariseRoastedUsage`.
+- **#84 — Borrowed/lent bean ledger.** "Loan" button per bean → owe/lent totals + Loans list
+  (`js/ledger.js`).
+- **#85 — Add-bean "Customise fields".** Hide optional fields you don't track (`js/beanfields.js`,
+  reuses `customise.decide`).
+- **#86 — Experimental MFCC feature extraction (opt-in, default OFF).** Pure `js/mfcc.js`
+  (FFT→mel→DCT, 19 tests) + a Detection-Settings toggle that computes MFCCs *alongside* detection
+  without changing it. **Owner-validation needed:** live-mic accuracy on real roast audio.
+- **(this) docs/HANDOFF tidy.**
+
+**Merge notes:** #82/#83/#84/#85 all touch `js/pantry.js` in different regions → expect minor,
+mechanical conflict resolution if landing several; #84 set its modal title via `textContent`
+specifically to avoid a duplicate `escapeHtml` clash with #82. #85 reuses `customise.decide` (no
+clash). Test counts climb per branch (131 base → up to 150 with MFCC).
+
+**Next after these:** the **colour-target** thread is the live one — owner is buying paint chips
+to photograph in daylight; feed the photos through `gradeTarget()` (`js/colourtarget.js`) to
+validate the grader's thresholds, then build the "Build a colour target" UI (B-CT3) and the
+luminance fiducial detector (B-CT4). See `COLOUR_TARGET_DESIGN.md`.
+
 ## ▶️ Current state & next task (2026-06-28)
 The **entire build roadmap (#1–#8) is shipped to `main`** — roaster profiles, freshness/FIFO,
 blend builder, batch planner, the machine-faithful control panel (Behmor model-aware + KKTO),
