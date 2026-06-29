@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { daysBetween, greenAge, roastRest, fifoBeanId } from '../../js/freshness.js';
+import { daysBetween, greenAge, roastRest, fifoBeanId, roastedRemaining, roastedStock } from '../../js/freshness.js';
 
 const DAY = 86_400_000;
 const ago = (d, now) => now - d * DAY;
@@ -41,6 +41,33 @@ describe('roastRest', () => {
         expect(roastRest(ago(8, now), now).text).toMatch(/varies/);
         // no precise countdown fields any more
         expect(roastRest(ago(1, now), now).daysLeft).toBeUndefined();
+    });
+});
+
+describe('roastedRemaining', () => {
+    it('assumes full when nothing recorded, else clamps to yield', () => {
+        expect(roastedRemaining({ roastedWeightG: 400 })).toBe(400);
+        expect(roastedRemaining({ roastedWeightG: 400, roastedRemainingG: 150 })).toBe(150);
+        expect(roastedRemaining({ roastedWeightG: 400, roastedRemainingG: 0 })).toBe(0);
+        expect(roastedRemaining({ roastedWeightG: 400, roastedRemainingG: 999 })).toBe(400); // over-clamp
+        expect(roastedRemaining({})).toBe(0);
+        expect(roastedRemaining(null)).toBe(0);
+    });
+});
+
+describe('roastedStock', () => {
+    it('lists roasts with stock left, oldest first, dropping empty/yieldless', () => {
+        const history = [
+            { id: 'a', date: '2026-06-01', roastedWeightG: 400 },                       // full
+            { id: 'b', date: '2026-05-01', roastedWeightG: 400, roastedRemainingG: 100 },// older, partial
+            { id: 'c', date: '2026-04-01', roastedWeightG: 400, roastedRemainingG: 0 },  // finished -> out
+            { id: 'd', date: '2026-03-01' }                                              // no yield -> out
+        ];
+        expect(roastedStock(history).map(r => r.id)).toEqual(['b', 'a']);
+    });
+    it('tolerates empty input', () => {
+        expect(roastedStock([])).toEqual([]);
+        expect(roastedStock(null)).toEqual([]);
     });
 });
 

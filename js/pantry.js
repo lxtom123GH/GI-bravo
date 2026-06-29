@@ -1,5 +1,5 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean } from './storage.js';
-import { greenAge, fifoBeanId } from './freshness.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, adjustRoastedRemaining } from './storage.js';
+import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock } from './freshness.js';
 import { fefoLotOrder } from './lots.js';
 import { openPlanModal } from './planner.js';
 
@@ -41,7 +41,10 @@ export function initPantry() {
     }
 
     renderPantryList();
-    window.addEventListener('pantryUpdated', renderPantryList);
+    renderRoastedStock();
+    window.addEventListener('pantryUpdated', () => { renderPantryList(); renderRoastedStock(); });
+    // Roasted stock comes from roast history (e.g. a roasted weight was just recorded).
+    window.addEventListener('historyUpdated', renderRoastedStock);
 }
 
 export function renderPantryList() {
@@ -177,6 +180,81 @@ export function renderPantryList() {
         beanCard.appendChild(infoDiv);
         beanCard.appendChild(btnGroup);
         pantryListDiv.appendChild(beanCard);
+    });
+}
+
+// Roasted stock — coffee already roasted and still on hand. Deliberately simple: grams
+// left + a soft "days since roast" freshness note, oldest first. Sourced from roast history
+// (a roast with a recorded roasted weight), so there's no separate schema to maintain.
+export function renderRoastedStock() {
+    const div = document.getElementById('roastedStockList');
+    if (!div) return;
+
+    const pantry = getPantry();
+    const stock = roastedStock(getRoastHistory());
+    div.innerHTML = '';
+
+    if (!stock.length) {
+        div.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No roasted stock yet — finish a roast and record its roasted weight in Roast History.</p>';
+        return;
+    }
+
+    stock.forEach((roast, idx) => {
+        const remaining = roastedRemaining(roast);
+        const bean = pantry.find(b => b.id === roast.beanId);
+        const name = (bean && bean.name) || roast.beanName || 'Roast';
+        const rest = roastRest(new Date(roast.date).getTime());
+
+        const card = document.createElement('div');
+        card.className = 'card bean-card';
+        card.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+
+        const info = document.createElement('div');
+        let html = `<strong>${name}</strong>`;
+        html += `<br><small style="color: var(--text-muted);">roasted ${new Date(roast.date).toLocaleDateString()}</small>`;
+        const remColor = remaining < 100 ? 'var(--accent)' : 'var(--text-muted)';
+        html += `<br><small style="color: ${remColor};">${remaining} g left</small>`;
+        if (rest) {
+            const c = rest.phase === 'past' ? 'var(--danger)' : (rest.phase === 'peak' ? 'var(--accent)' : 'var(--text-muted)');
+            html += `<br><small style="color: ${c};">🌱 ${rest.text}</small>`;
+        }
+        if (idx === 0 && stock.length > 1) {
+            html += `<br><small style="color: var(--accent);">⏳ oldest roast — drink this first</small>`;
+        }
+        info.innerHTML = html;
+
+        const btns = document.createElement('div');
+        btns.style.cssText = 'display: flex; gap: 8px;';
+
+        const drank = document.createElement('button');
+        drank.textContent = 'Drank some';
+        drank.style.padding = '5px 10px';
+        drank.setAttribute('data-hint', 'Subtract what you brewed so the grams left stays honest (a cup is roughly 15–18 g).');
+        drank.addEventListener('click', () => {
+            const input = prompt(`How many grams of ${name} did you use?`, '18');
+            const g = parseFloat(input);
+            if (!isNaN(g) && g > 0) {
+                adjustRoastedRemaining(roast.id, -g);
+                renderRoastedStock();
+            }
+        });
+
+        const finished = document.createElement('button');
+        finished.textContent = 'Finished';
+        finished.className = 'danger';
+        finished.style.padding = '5px 10px';
+        finished.addEventListener('click', () => {
+            if (confirm(`Mark ${name} (roasted ${new Date(roast.date).toLocaleDateString()}) as finished?`)) {
+                adjustRoastedRemaining(roast.id, -remaining);
+                renderRoastedStock();
+            }
+        });
+
+        btns.appendChild(drank);
+        btns.appendChild(finished);
+        card.appendChild(info);
+        card.appendChild(btns);
+        div.appendChild(card);
     });
 }
 

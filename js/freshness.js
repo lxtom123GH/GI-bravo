@@ -44,6 +44,25 @@ export function roastRest(roastDateMs, now = Date.now(), { restDays = 4, peakEnd
     return { phase: 'past', days, text: `${ageText(days)} old — likely past its best` };
 }
 
+// Roasted grams still on hand for a roast. Roasted stock is deliberately simple (research:
+// usually ≤2 batches, a short arc) — we track only how much is left, not lots. An untouched
+// roast (no remaining recorded) is assumed full; a recorded remaining is clamped to its yield.
+export function roastedRemaining(roast) {
+    if (!roast) return 0;
+    const full = Number(roast.roastedWeightG) || 0;
+    const rem = roast.roastedRemainingG;
+    if (rem === undefined || rem === null) return full;
+    return Math.max(0, Math.min(full, Number(rem) || 0));
+}
+
+// The roasted stock on hand: roasts with roasted yield still remaining, oldest first
+// (drink the oldest). Pure over a history array.
+export function roastedStock(history) {
+    return (history || [])
+        .filter(r => roastedRemaining(r) > 0)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
 // Pick the in-stock bean to use first (oldest green) for a gentle FIFO nudge.
 // beans: [{ id, quantity, purchasedAt }]. Returns the id, or null.
 export function fifoBeanId(beans) {

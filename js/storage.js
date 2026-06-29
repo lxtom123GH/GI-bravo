@@ -108,6 +108,22 @@ export function deleteRoastFromHistory(id) {
     saveRoastHistory(history);
 }
 
+// Adjust how much ROASTED coffee is left from a roast (e.g. drank a brew, finished a bag),
+// clamped to [0, roasted yield]. Sets roastedRemainingG on the roast. Deliberately simple —
+// roasted stock is just grams + days-since-roast, no lots. Returns the new remaining, or null.
+export function adjustRoastedRemaining(id, deltaGrams) {
+    const history = getRoastHistory();
+    const roast = history.find(r => r.id === id);
+    if (!roast) return null;
+    const full = Number(roast.roastedWeightG) || 0;
+    const current = (roast.roastedRemainingG === undefined || roast.roastedRemainingG === null)
+        ? full
+        : Number(roast.roastedRemainingG) || 0;
+    roast.roastedRemainingG = Math.max(0, Math.min(full, current + deltaGrams));
+    saveRoastHistory(history);
+    return roast.roastedRemainingG;
+}
+
 // --- Detection Settings ---
 
 export const DEFAULT_DETECTION_SETTINGS = {
