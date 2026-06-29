@@ -97,6 +97,10 @@ an official Agtron number.
   across them, and the **Lots** breakdown lists each batch with the one to *use first* on top
   (soonest best-before, otherwise oldest). Roasting draws green from that oldest lot first, so
   stock stays honest. Beans without lots stay simple — it's entirely optional.
+- **Source & price history:** tap **Source** on a pantry bean to record where you buy it
+  and a **re-order link**, see its **price history** (built automatically from your dated,
+  priced lots) and whether the price is trending **up or down** versus your first purchase.
+  **↗ Re-order** opens the supplier's page in a new tab.
 - **Roasted stock:** the **Bean Pantry → Roasted stock** section lists coffee you've
   *roasted* and still have — just grams left and how long it's been resting, oldest first
   (it stays simple on purpose). It fills in once you record a roast's **roasted weight** in

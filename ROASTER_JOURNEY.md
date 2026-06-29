@@ -59,9 +59,11 @@ restock; low-stock warning; stock value; cost feeds the spend dashboard.
   items into pantry entries (origin, weight, price each). For retail with no itemised receipt:
   a **fast "quick add"** (name + kg + total paid → auto cost/kg) plus an optional **photo of the
   bag/label/receipt** so you can recover details later (we already store photos well).
-- **Source book.** Remember *where* each bean came from (supplier + date + price) so re-ordering
-  and price history are one tap. Australian home-roast suppliers to seed a picker: Green Bean
-  Coffee, Green Bean Roasters, The Coffee Commune (1 kg min), Quest, Witham's, Di Pacci, Artisti.
+- **Source book.** ✅ Shipped — each bean carries a **supplier + re-order link**, and the
+  **Source** button shows a **price history & trend** (up/down vs first purchase) built from its
+  priced lots, with **↗ Re-order** opening the supplier page in one tap (`js/sourcebook.js`).
+  (Future: seed an Australian home-roast supplier picker — Green Bean Coffee, Green Bean Roasters,
+  The Coffee Commune (1 kg min), Quest, Witham's, Di Pacci, Artisti.)
 - **Gift/loan tracking.** Mark a lot as "borrowed from Mark — owe 250 g back" so the collective
   side stays honest.
 
@@ -74,7 +76,13 @@ dashboard; backup/restore.
 **Shipped ✅ (freshness v1, `js/freshness.js`):** the pantry shows each lot's **green age**
 ("bought 5 days ago"), flags lots over ~12 months ("roast soon"), and marks the **oldest
 in-stock** bean "roast this first" (FIFO). Each roast in History shows a **rest/peak badge**
-(resting → ready/peak → past peak). Still to come below: lots, roasted inventory.
+(resting → ready/peak → past peak).
+
+**Shipped ✅ (pantry depth, Track B):** adding a bean floors at **name + grams** with the rest
+behind **＋ Add detail** (progressive disclosure). A bean can hold multiple **green lots**
+(dated/priced sub-records — `js/lots.js`): on-hand grams = sum of lots, cost = grams-weighted
+average, and a **FEFO "use first"** order (soonest best-before, else oldest) decides which lot a
+roast draws down. A simple **Roasted stock** section tracks roasted grams left + days since roast.
 
 **Gaps / ideas ✨ (this is where freshness lives):**
 - **Two clocks, not one.** Green beans keep ~12 months+; **roasted** beans have a short arc
@@ -82,10 +90,11 @@ in-stock** bean "roast this first" (FIFO). Each roast in History shows a **rest/
   per roast, **roasted age** with a rest/peak window.
 - **FIFO nudges.** "Oldest green first" suggestions, and flags for lots going stale ("this
   Brazil is 14 months old — roast it soon"). Directly answers "I don't want to keep really old bins."
-- **Lot vs bean.** A "bean" (Ethiopia Yirgacheffe washed) can have multiple **lots** (different
-  purchases/dates/prices). Tracking lots makes age, price history, and FIFO accurate.
-- **Roasted inventory.** After a roast, the output (e.g. 380 g roasted from 450 g green) becomes a
-  *roasted* stock item with its own freshness clock and "what did I do with it" trail (below).
+- **Lot vs bean.** ✅ Shipped — a "bean" (Ethiopia Yirgacheffe washed) can hold multiple **lots**
+  (different purchases/dates/prices); lots make age, price history, and FEFO accurate (`js/lots.js`).
+- **Roasted inventory.** ✅ Shipped (kept deliberately simple) — a roast's output becomes a
+  *roasted* stock item tracking grams left + days since roast, drawn down via **Drank some /
+  Finished**. (Future ✨: a fuller "what did I do with it" trail.)
 
 ---
 

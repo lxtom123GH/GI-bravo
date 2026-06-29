@@ -46,7 +46,16 @@ model) and each roast is tagged with the machine it was done on.
 
 **Beans, history & analysis**
 - 🫘 **Bean pantry** with green-weight tracking, low-stock warnings, and
-  per-roast weight deduction. Metric/imperial weights + a default batch size.
+  per-roast weight deduction. Adding a bean floors at **name + grams**; origin, process,
+  cost, density, size and supplier fold behind **＋ Add detail**. Metric/imperial weights
+  + a default batch size.
+- 📦 **Green lots** — track separate dated/priced purchases of one bean: on-hand grams is
+  the sum of its lots, cost is the grams-weighted average, and a **FEFO "use first"** order
+  (soonest best-before, else oldest) decides which lot a roast draws from.
+- 🔖 **Source book** — record each bean's supplier + **re-order link**, and see a **price
+  history & trend** (up/down vs your first purchase) built from your priced lots.
+- ☕ **Roasted stock** — a deliberately simple list of coffee you've roasted and still have:
+  grams left + how long it's been resting, oldest first, drawn down as you brew it.
 - 📷 **Quick-add from receipt** — snap a receipt and add several beans at once (name, weight,
   price); each lands in the pantry with the purchase date, and the photo is kept with the purchase.
 - 🌱 **Freshness & FIFO** — green-bean age with a "roast soon" flag for old lots and a
@@ -156,7 +165,9 @@ js/
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
-  pantry.js         Bean inventory (CRUD, quantities, restock, green age/FIFO)
+  pantry.js         Bean inventory (CRUD, green lots, roasted stock, source book, green age/FIFO)
+  lots.js           Green-lot helpers — grams sum, weighted cost, FEFO order, drawdown (pure)
+  sourcebook.js     Source book — per-bean price history + trend from lots (pure)
   prep.js           Weigh-out prep batches (bean + weight + photo)
   blends.js         Blend recipes → per-component weigh-out prep batches
   planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)

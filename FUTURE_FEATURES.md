@@ -207,6 +207,7 @@ Shipped:
 - **Weigh-out prep batches** — ✅ bean + grams + photo in the pantry, loadable onto Active Roast.
 - **Suggested blends** — ✅ "Blends you can make now" matches classic ratios to the in-stock pantry; one tap pre-fills the builder (`suggestBlends` in `js/blends.js`).
 - **Experiential rest/peak guidance** — ✅ the history rest/peak badge is a soft, approximate hint (research refuted fixed per-brew-method rest tables) and surfaces the user's own "★ rated best around day X" from the tasting log once a roast has ≥2 dated tastings (`personalPeak` in `js/tasting.js`).
+- **Pantry depth (Track B)** — ✅ progressive-disclosure add-bean form (name + grams floor, rest behind ＋ Add detail); **green lots** (dated/priced sub-records per bean, sum-of-lots on hand, weighted-average cost, FEFO "use first" + roast drawdown — `js/lots.js`); **roasted stock** (simple grams-left + days-since-roast); and a **source book** (per-bean supplier, re-order link, price history + trend — `js/sourcebook.js`). Research-grounded: green carries the depth, roasted stays dead-simple.
 - **Behmor weights match the machine (100/200/400 g)** + green weight remembers the usual (e.g. 450 g) — ✅.
 - **Roaster profiles** — ✅ single-roaster by default (frictionless), opt-in multi-roaster (`js/roasters.js`); each roast tagged with its machine. _Roadmap step 1 of `ROASTER_JOURNEY.md`._
 

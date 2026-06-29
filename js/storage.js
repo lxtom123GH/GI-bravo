@@ -20,6 +20,17 @@ export function addBeanToPantry(bean) {
     return bean;
 }
 
+// Patch arbitrary fields on a pantry bean by id (e.g. supplier / re-order link). Returns
+// the bean, or null if it no longer exists.
+export function updateBean(id, patch) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === id);
+    if (!bean) return null;
+    Object.assign(bean, patch);
+    savePantry(pantry);
+    return bean;
+}
+
 export function deleteBeanFromPantry(id) {
     let pantry = getPantry();
     pantry = pantry.filter(b => b.id !== id);

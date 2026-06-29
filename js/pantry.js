@@ -1,6 +1,7 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, adjustRoastedRemaining } from './storage.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, adjustRoastedRemaining, updateBean } from './storage.js';
 import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock } from './freshness.js';
 import { fefoLotOrder } from './lots.js';
+import { priceHistory, priceTrend } from './sourcebook.js';
 import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
@@ -20,13 +21,15 @@ export function initPantry() {
             const costPerKg = parseFloat(document.getElementById('beanCost').value) || 0;
             const density = document.getElementById('beanDensity')?.value || '';
             const size = document.getElementById('beanSize')?.value || '';
+            const supplier = document.getElementById('beanSupplier')?.value || '';
+            const supplierUrl = document.getElementById('beanSupplierUrl')?.value || '';
 
             if (!name) {
                 alert('Bean Name is required');
                 return;
             }
 
-            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size };
+            const newBean = { name, region, country, farm, process, quantity, costPerKg, density, size, supplier, supplierUrl };
             addBeanToPantry(newBean);
 
             pantryForm.reset();
@@ -97,6 +100,9 @@ export function renderPantryList() {
             const onHandValue = (qty / 1000) * cost;
             const avgNote = pricedLots > 1 ? ' avg' : '';
             details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg${avgNote} · stock value ${onHandValue.toFixed(2)}</small>`;
+        }
+        if (bean.supplier) {
+            details += `<br><small style="color: var(--text-muted);">🏷️ ${bean.supplier}</small>`;
         }
 
         // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
@@ -174,8 +180,15 @@ export function renderPantryList() {
             }
         });
 
+        const sourceBtn = document.createElement('button');
+        sourceBtn.textContent = 'Source';
+        sourceBtn.style.padding = '5px 10px';
+        sourceBtn.setAttribute('data-hint', 'Where you buy this bean and what it has cost over time — re-order in one tap and see if the price is trending up or down.');
+        sourceBtn.addEventListener('click', () => openSourceModal(bean));
+
         btnGroup.appendChild(planBtn);
         btnGroup.appendChild(restockBtn);
+        btnGroup.appendChild(sourceBtn);
         btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);
         beanCard.appendChild(btnGroup);
@@ -337,5 +350,81 @@ function openLotModal(bean) {
         close();
         renderPantryList();
         window.dispatchEvent(new Event('pantryUpdated'));
+    });
+}
+
+// Source book for a bean: where it comes from (editable supplier + re-order link) and what
+// it has cost over time (price history + trend, derived from its priced lots).
+function openSourceModal(bean) {
+    const history = priceHistory(bean);
+    const trend = priceTrend(history);
+
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
+
+    const histRows = history.length
+        ? history.map(p => `<li>${new Date(p.date).toLocaleDateString()} — ${p.price.toFixed(2)}/kg${p.grams ? ` <span style="color: var(--text-muted);">(${p.grams} g)</span>` : ''}</li>`).join('')
+        : '<li style="color: var(--text-muted);">No priced purchases yet — add a price when you add a lot.</li>';
+
+    let trendLine = '';
+    if (trend) {
+        const arrow = trend.direction === 'up' ? '▲' : (trend.direction === 'down' ? '▼' : '▬');
+        const col = trend.direction === 'up' ? 'var(--danger)' : (trend.direction === 'down' ? 'var(--success)' : 'var(--text-muted)');
+        const word = trend.direction === 'flat' ? 'unchanged' : (trend.direction === 'up' ? 'higher' : 'lower');
+        trendLine = `<p style="color: ${col}; font-size: 0.9rem;">${arrow} ${Math.abs(trend.deltaPct).toFixed(0)}% ${word} than your first purchase (${trend.first.toFixed(2)} → ${trend.last.toFixed(2)}/kg)</p>`;
+    }
+
+    modal.innerHTML = `
+        <h3>Source — ${bean.name}</h3>
+        <label class="field-label" for="srcSupplier">Supplier / roaster</label>
+        <input type="text" id="srcSupplier" placeholder="Where you buy it">
+        <label class="field-label" for="srcUrl">Re-order link</label>
+        <input type="url" id="srcUrl" placeholder="Product page URL">
+        <p style="margin-bottom: 4px;"><strong>Price history</strong></p>
+        <ul style="margin-top: 4px;">${histRows}</ul>
+        ${trendLine}
+        <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 15px;">
+            <button id="srcReorder">↗ Re-order</button>
+            <div style="display: flex; gap: 8px;">
+                <button id="srcClose">Close</button>
+                <button id="srcSave" style="background-color: var(--success);">Save</button>
+            </div>
+        </div>
+    `;
+    bg.appendChild(modal);
+    document.body.appendChild(bg);
+
+    // Set values via JS (avoids HTML-escaping user text into attributes).
+    modal.querySelector('#srcSupplier').value = bean.supplier || '';
+    modal.querySelector('#srcUrl').value = bean.supplierUrl || '';
+
+    const close = () => document.body.removeChild(bg);
+    modal.querySelector('#srcClose').addEventListener('click', close);
+    bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+
+    const save = () => updateBean(bean.id, {
+        supplier: modal.querySelector('#srcSupplier').value.trim(),
+        supplierUrl: modal.querySelector('#srcUrl').value.trim()
+    });
+
+    modal.querySelector('#srcSave').addEventListener('click', () => {
+        save();
+        close();
+        renderPantryList();
+        window.dispatchEvent(new Event('pantryUpdated'));
+    });
+
+    modal.querySelector('#srcReorder').addEventListener('click', () => {
+        let url = modal.querySelector('#srcUrl').value.trim();
+        if (!url) {
+            alert('Add a re-order link (the product page URL) first.');
+            return;
+        }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        save(); // keep any edits before leaving
+        window.open(url, '_blank', 'noopener');
     });
 }
