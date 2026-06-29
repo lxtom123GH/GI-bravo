@@ -276,6 +276,20 @@
                             <small style="color: var(--text-muted); display: block; margin-top: 4px;">Off by default and <strong>has no effect on crack detection</strong>. Groundwork for a future MFCC-based detector — when on, MFCCs are computed alongside the current detector (a <code>mfccFrame</code> event fires) so they can be compared with real roast audio.</small>
                             <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">MFCC: <span id="mfccReadout">off</span></div>
                         </div>
+
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px;">
+                            <label for="roastLabToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="roastLabToggle" style="width: auto; margin: 0;" data-hint="Off by default. When on, each roast quietly records a timeline of what the detector hears — loudness (RMS), the high-vs-low crack pitch, and the MFCC fingerprint — plus every crack and cleared false-alarm. It does NOT change detection. Afterwards you can export the capture (JSON or CSV) to compare roasts and tune the detector. Great for an A/B weekend: roast 1 baseline, roast 2 watch the numbers, roast 3 tweak and compare.">
+                                <strong>🧪 Roast Lab — capture this roast's data</strong>
+                            </label>
+                            <small style="color: var(--text-muted); display: block; margin-top: 4px;">Off by default and <strong>has no effect on crack detection</strong>. Records loudness, crack pitch and MFCC features (plus your crack/✗ marks) for each roast so you can export and analyse them. Ideal for A/B testing detection across a few roasts.</small>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">Roast Lab: <span id="roastLabReadout">off</span></div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                <button id="roastLabExportJsonBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Download the last captured roast as a JSON file (full detail — best for deeper analysis). Tip: drop it into the repo's roast-logs/ folder so Claude can read it directly next session.">Export JSON</button>
+                                <button id="roastLabExportCsvBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Download the last captured roast as a CSV file — opens straight in a spreadsheet for eyeballing the numbers around each crack.">Export CSV</button>
+                                <button id="roastLabCopyBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Copy a one-line summary of the last capture to the clipboard — handy for pasting into a chat or notes.">Copy summary</button>
+                            </div>
+                        </div>
                     </div>
                 </details>
 
@@ -613,6 +627,7 @@
                     <li><strong>“Start” seems to do nothing / mic error:</strong> the status bar now shows the reason. On iPhone/iPad use <strong>Safari</strong> and allow the mic (not the home-screen icon); on desktop use Chrome/Edge over the https link. Either way, <strong>Start (no mic)</strong> lets you roast without auto-detection.</li>
                     <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise. Or turn on <em>Auto-tune from my corrections</em> there — then just clear any false crack (✗) and use <strong>Manual: Mark</strong> for any it misses, and the app quietly tunes the sensitivity for that roaster over time.</li>
                     <li><strong>🧪 Experimental — MFCC features:</strong> Detection Settings has an optional <em>Compute MFCC features</em> toggle (off by default). It computes the audio's timbre fingerprint alongside detection as groundwork for a future, more accurate crack detector — it <strong>doesn't change detection</strong> today. Safe to leave off.</li>
+                    <li><strong>🧪 Roast Lab — capture &amp; compare roasts:</strong> Detection Settings has a <em>Roast Lab</em> toggle (off by default). When on, each roast records a timeline of what the detector hears — loudness, crack pitch and the MFCC fingerprint — plus every crack and cleared false-alarm. It <strong>doesn't change detection</strong>. Afterwards, use <em>Export JSON / CSV</em> (or <em>Copy summary</em>) to save and compare roasts. Handy for an A/B weekend: roast 1 baseline, roast 2 watch the numbers, roast 3 tweak the sensitivity and compare. Drop the exported file into the repo's <code>roast-logs/</code> folder to analyse it later.</li>
                     <li><strong>Screen dims or roast seems to pause:</strong> the app keeps the screen awake automatically, but if you locked the phone or switched apps, detection pauses. Stay on the roast screen; use <strong>Manual: Mark</strong> for any crack missed while away.</li>
                     <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
                 </ul>

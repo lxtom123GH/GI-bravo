@@ -173,6 +173,15 @@ pattern, not naive — and shows where the real leverage is. Two big findings sh
     current detector (throttled, try/caught, dispatches a `mfccFrame` event) **without changing any
     detection decision**. This is the feature-extraction half of v2 — the labelling + classifier
     fit are still to come, and accuracy needs validation against real roast audio.
+  - **Roast Lab capture/export — ✅ shipped (experimental, opt-in, default OFF).** A pure,
+    unit-tested capture layer (`js/roastlab.js`: session model + JSON/CSV/summary formatters; 17
+    tests). A **🧪 Roast Lab** toggle in Detection Settings (`roastLabEnabled`, in backup) makes
+    `js/audio.js` record a per-roast timeline of `{t, rms, bandRatio, mfcc[]}` (~2 frames/s) plus
+    crack/clear **events** — reusing the existing Manual: Mark (missed) and ✗ (false-alarm) signals
+    as labels. The last capture persists locally and exports to **JSON or CSV** (or a one-line
+    clipboard summary); a git-ignored `roast-logs/` drop folder lets the owner hand a capture
+    straight to a local Claude session. This is the **v2 labelling/capture UX** — it turns a few
+    real roasts into a labelled dataset to validate the MFCC bet before fitting a classifier.
 - **v3 — pooled/community model.** Use the shipped **cloud sync** to aggregate labelled feature
   vectors across users/sessions, train a Random-Forest/NN **offline**, ship it as a static client
   model (TinyML-style). This is where the two-device labelling + sync pays off — it builds the

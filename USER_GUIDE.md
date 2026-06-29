@@ -60,6 +60,14 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 > Detection Settings also has a 🧪 **Compute MFCC features** toggle (off by default,
 > for the curious/experimental). It's groundwork for a future, smarter crack detector and
 > **doesn't change detection today** — leave it off unless you're tinkering.
+>
+> Next to it is 🧪 **Roast Lab** (also off by default). Turn it on and each roast quietly
+> records a timeline of what the detector hears — loudness, crack pitch and the MFCC
+> fingerprint — plus every crack and cleared false-alarm. It **doesn't change detection**.
+> Afterwards, **Export JSON / CSV** (or **Copy summary**) to save the capture and compare
+> roasts. It's built for an A/B weekend: roast 1 baseline, roast 2 watch the live numbers,
+> roast 3 nudge the sensitivity and compare the data. Save the export into the repo's
+> `roast-logs/` folder if you want it analysed later.
 
 ---
 
