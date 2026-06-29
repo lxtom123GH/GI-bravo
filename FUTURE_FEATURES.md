@@ -305,4 +305,5 @@ Deliberately not built (rationale):
 - **Artisan interoperability** — deferred. Artisan's importer expects specific CSV/`.alog` schemas that can't be validated here; the existing generic CSV (time, energy, temp, RoR, ET, power, events) already serves spreadsheet analysis. Revisit only with a real Artisan round-trip test.
 - **B4 — auto-detect the ColorChecker** — won't-do for now. Reliable chart detection needs real computer vision; the 4-corner tap is a pragmatic, dependency-free alternative.
 - **B8 — cloud sync / community comparison** — parked; needs a backend, which conflicts with the browser-only design.
-- **Repo hygiene** — `dist/` is committed but Vercel rebuilds from source; could be `.gitignore`d to avoid drift (left as-is — deterministic and in sync).
+- **Repo hygiene** — ✅ **done.** `dist/` is now `.gitignore`d and untracked; Vercel rebuilds from
+  source, so committing the bundle only caused merge drift/conflicts. No more `dist` in PRs.
