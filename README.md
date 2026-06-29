@@ -166,6 +166,7 @@ js/
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
+  mfcc.js           Experimental MFCC feature extraction (FFT/mel/DCT, pure) — opt-in, no effect on detection yet
   pantry.js         Bean inventory (CRUD, green lots, roasted stock, source book, green age/FIFO)
   lots.js           Green-lot helpers — grams sum, weighted cost, FEFO order, drawdown (pure)
   sourcebook.js     Source book — per-bean price history + trend from lots (pure)

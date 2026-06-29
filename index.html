@@ -267,6 +267,15 @@
                             <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">Tuning: <span id="learningReadout">off</span></div>
                             <button id="resetLearningBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px; margin-top: 8px;" data-hint="Forget what the app learned for this roaster and go back to the manual sensitivity above.">Reset tuning for this roaster</button>
                         </div>
+
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px;">
+                            <label for="mfccExperimentalToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="mfccExperimentalToggle" style="width: auto; margin: 0;" data-hint="Experimental, off by default. When on, the app also computes MFCC timbre features from the roast audio (the spectral fingerprint of a crack). It does NOT change crack detection yet — it's groundwork for a future, more accurate detector. Safe to leave off.">
+                                <strong>🧪 Compute MFCC features (experimental)</strong>
+                            </label>
+                            <small style="color: var(--text-muted); display: block; margin-top: 4px;">Off by default and <strong>has no effect on crack detection</strong>. Groundwork for a future MFCC-based detector — when on, MFCCs are computed alongside the current detector (a <code>mfccFrame</code> event fires) so they can be compared with real roast audio.</small>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">MFCC: <span id="mfccReadout">off</span></div>
+                        </div>
                     </div>
                 </details>
 
@@ -603,6 +612,7 @@
                 <ul>
                     <li><strong>“Start” seems to do nothing / mic error:</strong> the status bar now shows the reason. On iPhone/iPad use <strong>Safari</strong> and allow the mic (not the home-screen icon); on desktop use Chrome/Edge over the https link. Either way, <strong>Start (no mic)</strong> lets you roast without auto-detection.</li>
                     <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise. Or turn on <em>Auto-tune from my corrections</em> there — then just clear any false crack (✗) and use <strong>Manual: Mark</strong> for any it misses, and the app quietly tunes the sensitivity for that roaster over time.</li>
+                    <li><strong>🧪 Experimental — MFCC features:</strong> Detection Settings has an optional <em>Compute MFCC features</em> toggle (off by default). It computes the audio's timbre fingerprint alongside detection as groundwork for a future, more accurate crack detector — it <strong>doesn't change detection</strong> today. Safe to leave off.</li>
                     <li><strong>Screen dims or roast seems to pause:</strong> the app keeps the screen awake automatically, but if you locked the phone or switched apps, detection pauses. Stay on the roast screen; use <strong>Manual: Mark</strong> for any crack missed while away.</li>
                     <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
                 </ul>

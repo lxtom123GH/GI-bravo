@@ -211,6 +211,16 @@ export function saveDetectionLearningEnabled(on) {
     localStorage.setItem('detectionLearningEnabled', on ? 'true' : 'false');
 }
 
+// Experimental MFCC feature extraction — OFF by default. When on, MFCCs are computed alongside
+// the existing detector for comparison; it does NOT change crack-detection decisions.
+export function getMfccExperimentalEnabled() {
+    return localStorage.getItem('mfccExperimentalEnabled') === 'true';
+}
+
+export function saveMfccExperimentalEnabled(on) {
+    localStorage.setItem('mfccExperimentalEnabled', on ? 'true' : 'false');
+}
+
 export function getRoasterDetectionAdjust() {
     const s = localStorage.getItem('roasterDetectionAdjust');
     return s ? JSON.parse(s) : {};
@@ -599,6 +609,7 @@ export function exportAllData() {
         roastHistory: getRoastHistory(),
         detectionSettings: getDetectionSettings(),
         detectionLearningEnabled: getDetectionLearningEnabled(),
+        mfccExperimentalEnabled: getMfccExperimentalEnabled(),
         roasterDetectionAdjust: getRoasterDetectionAdjust(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
@@ -634,6 +645,9 @@ export function importAllData(data) {
     }
     if (typeof data.detectionLearningEnabled === 'boolean') {
         saveDetectionLearningEnabled(data.detectionLearningEnabled);
+    }
+    if (typeof data.mfccExperimentalEnabled === 'boolean') {
+        saveMfccExperimentalEnabled(data.mfccExperimentalEnabled);
     }
     if (data.roasterDetectionAdjust && typeof data.roasterDetectionAdjust === 'object') {
         saveRoasterDetectionAdjust(data.roasterDetectionAdjust);

@@ -1,4 +1,5 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled } from './storage.js';
+import { mfcc } from './mfcc.js';
 import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
@@ -10,6 +11,10 @@ let audioContext;
 let microphone;
 let analyser;
 let dataArray;
+// Experimental MFCC feature extraction — OFF by default; never affects detection.
+let mfccEnabled = false;
+let lastMfcc = null;
+let lastMfccAt = 0;
 let isRecording = false;
 let isNotifying = false;
 let animationId;
@@ -281,8 +286,50 @@ function initDetectionSettingsUI() {
     }
     updateLearningReadout();
 
+    // --- Experimental: MFCC feature extraction (off by default, no effect on detection) ---
+    const mfccToggle = document.getElementById('mfccExperimentalToggle');
+    mfccEnabled = getMfccExperimentalEnabled();
+    if (mfccToggle) {
+        mfccToggle.checked = mfccEnabled;
+        mfccToggle.addEventListener('change', () => {
+            mfccEnabled = mfccToggle.checked;
+            saveMfccExperimentalEnabled(mfccEnabled);
+            updateMfccReadout();
+        });
+    }
+    updateMfccReadout();
+
     render();
 }
+
+// Refresh the experimental MFCC readout/toggle state in the settings panel.
+function updateMfccReadout() {
+    const readout = document.getElementById('mfccReadout');
+    if (readout) readout.textContent = mfccEnabled ? 'on — computing alongside detection (no effect on it)' : 'off';
+    const toggle = document.getElementById('mfccExperimentalToggle');
+    if (toggle) toggle.checked = mfccEnabled;
+}
+
+// EXPERIMENTAL + OFF BY DEFAULT. Compute MFCCs from the current audio frame for comparison only.
+// Wrapped so it can never disturb the roast/detection loop, and throttled so it stays cheap.
+function maybeComputeMfcc() {
+    if (!mfccEnabled || !dataArray || !audioContext) return;
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    if (now - lastMfccAt < 400) return; // ~2–3 frames/sec is plenty for an experimental readout
+    lastMfccAt = now;
+    try {
+        const n = dataArray.length; // 2048 (power of 2)
+        const frame = new Array(n);
+        for (let i = 0; i < n; i++) frame[i] = (dataArray[i] - 128) / 128; // byte -> [-1,1]
+        lastMfcc = mfcc(frame, { sampleRate: audioContext.sampleRate });
+        window.dispatchEvent(new CustomEvent('mfccFrame', { detail: { coeffs: lastMfcc } }));
+    } catch (e) {
+        console.warn('[mfcc] experimental compute failed (detection unaffected):', e && e.message);
+    }
+}
+
+// The most recent experimental MFCC vector (or null). For comparison/inspection only.
+export function getLastMfcc() { return lastMfcc; }
 
 // Effective detection = base settings + this roaster's learned offset (when
 // auto-tune is enabled). Keeps the manual sliders authoritative and only shifts
@@ -1256,6 +1303,7 @@ function drawAndAnalyze() {
     } else if (!isNotifying) {
         detectTransient(rms);
         sampleRoastCurve(rms);
+        maybeComputeMfcc(); // experimental, off by default; observes only, never changes detection
     }
 
     // Oscilloscope visual
