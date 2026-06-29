@@ -168,6 +168,8 @@ js/
   pantry.js         Bean inventory (CRUD, green lots, roasted stock, source book, green age/FIFO)
   lots.js           Green-lot helpers — grams sum, weighted cost, FEFO order, drawdown (pure)
   sourcebook.js     Source book — per-bean price history + trend from lots (pure)
+  colorcheck.js     Colour-correction matrix fit/apply for ColorChecker + DIY targets (pure)
+  colourtarget.js   DIY colour-target grader — neutrality, grey ramp, hue spread, conditioning (pure)
   prep.js           Weigh-out prep batches (bean + weight + photo)
   blends.js         Blend recipes → per-component weigh-out prep batches
   planner.js        Batch planner — roast sizes that fit the drum + divide a bag (pure)

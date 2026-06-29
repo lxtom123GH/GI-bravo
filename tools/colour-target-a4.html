@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GI-Bravo DIY Colour Target — A4</title>
+<style>
+  :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { margin: 0; background: #555; color: #eee; }
+  .no-print { max-width: 760px; margin: 0 auto; padding: 20px; line-height: 1.5; }
+  .no-print h1 { font-size: 1.3rem; }
+  .no-print code { background: #333; padding: 1px 5px; border-radius: 4px; }
+  .no-print button { font-size: 1rem; padding: 10px 18px; cursor: pointer; border: 0;
+    border-radius: 6px; background: #c47b3a; color: #fff; }
+  .no-print ol { padding-left: 1.2em; }
+  .sheet-wrap { display: flex; justify-content: center; padding: 20px; }
+  /* The sheet is one SVG sized in real mm so it prints at true scale. */
+  svg.sheet { background: #fff; box-shadow: 0 0 14px rgba(0,0,0,.5); }
+  @media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .sheet-wrap { padding: 0; }
+    svg.sheet { box-shadow: none; }
+    @page { size: A4 portrait; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <h1>GI-Bravo DIY Colour Target (A4)</h1>
+  <p>A printable frame for a home-made colour-calibration target. The <strong>geometry is
+  printed</strong> (so the app can find it reliably under any light); the <strong>colour comes
+  from paint sample chips</strong> you tape into the slots (stable, matte, far better than printer ink).</p>
+  <ol>
+    <li><strong>Print at 100% scale</strong> (no "fit to page" / "shrink to fit"), A4, portrait.
+      In the print dialog turn <strong>ON “Background graphics”</strong> so the black frame prints.</li>
+    <li><strong>Check the scale ruler</strong> at the bottom reads 100&nbsp;mm with a real ruler. If not, reprint at 100%.</li>
+    <li><strong>Tape a paint chip into each numbered slot</strong>, matching the role label
+      (white → near-black greys, three browns, plus orange / yellow / blue / green). Matte chips only —
+      gloss causes glare. It's fine to leave a slot empty for now.</li>
+    <li>In good, even daylight, photograph the whole sheet with a small single layer of your beans
+      in the centre circle. Keep the sheet flat and fill the frame.</li>
+    <li>In the app: <em>calibrate the target once</em> (it measures your chips), then re-shoot
+      sheet + beans any time to colour-correct that batch.</li>
+  </ol>
+  <p style="color:#ffd9a8;">This gives a <strong>repeatable, relative</strong> colour reading for comparing
+  your own roasts over time — not an absolute Agtron number.</p>
+  <button onclick="window.print()">🖨 Print</button>
+</div>
+
+<div class="sheet-wrap">
+<!-- A4 = 210 x 297 mm. viewBox in mm; width/height in mm => prints at true scale. -->
+<svg class="sheet" width="210mm" height="297mm" viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+  <!-- page -->
+  <rect x="0" y="0" width="210" height="297" fill="#ffffff"/>
+
+  <!-- outer registration frame: thick black rectangle the detector locks onto -->
+  <rect x="8" y="8" width="194" height="281" fill="none" stroke="#000" stroke-width="3"/>
+
+  <!-- thick TOP header bar = unambiguous "this edge is up" cue + human label -->
+  <rect x="8" y="8" width="194" height="16" fill="#000"/>
+  <text x="105" y="19.5" fill="#fff" font-size="7" font-weight="700" text-anchor="middle"
+        font-family="system-ui, sans-serif">GI-BRAVO COLOUR TARGET — PRINT 100%, NO SCALING</text>
+
+  <!-- 4 corner fiducials (centres define the working rectangle). Top-left is concentric so
+       orientation is recoverable even if the bar is cropped. -->
+  <g fill="#000">
+    <!-- top-left: concentric marker -->
+    <rect x="14" y="30" width="11" height="11"/>
+    <rect x="17" y="33" width="5" height="5" fill="#fff"/>
+    <rect x="18.75" y="34.75" width="1.5" height="1.5" fill="#000"/>
+    <!-- the other three: plain solid squares -->
+    <rect x="185" y="30" width="11" height="11"/>
+    <rect x="14" y="270" width="11" height="11"/>
+    <rect x="185" y="270" width="11" height="11"/>
+  </g>
+
+  <!-- ===== PATCH SLOTS: 4 columns x 3 rows. Neutrals spread across the sheet. ===== -->
+  <!-- slot helper geometry: col centres 38.75 / 84.25 / 129.75 / 175.25 ; patch 38 wide
+       row centres 60 / 102 / 144 ; patch 32 tall -->
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <!-- Row 1 -->
+    <g>
+      <rect x="19.75" y="44" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="38.75" y="73.5" font-size="4">1 · WHITE</text>
+      <rect x="65.25" y="44" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="84.25" y="73.5" font-size="4">2 · TAN / LT BROWN</text>
+      <rect x="110.75" y="44" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="129.75" y="73.5" font-size="4">3 · ORANGE / TERRACOTTA</text>
+      <rect x="156.25" y="44" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="175.25" y="73.5" font-size="4">4 · MID GREY</text>
+    </g>
+    <!-- Row 2 -->
+    <g>
+      <rect x="19.75" y="86" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="38.75" y="115.5" font-size="4">5 · LIGHT GREY</text>
+      <rect x="65.25" y="86" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="84.25" y="115.5" font-size="4">6 · MID BROWN (COFFEE)</text>
+      <rect x="110.75" y="86" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="129.75" y="115.5" font-size="4">7 · YELLOW / OCHRE</text>
+      <rect x="156.25" y="86" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="175.25" y="115.5" font-size="4">8 · NEAR-BLACK</text>
+    </g>
+    <!-- Row 3 -->
+    <g>
+      <rect x="19.75" y="128" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="38.75" y="157.5" font-size="4">9 · DARK GREY</text>
+      <rect x="65.25" y="128" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="84.25" y="157.5" font-size="4">10 · DARK BROWN</text>
+      <rect x="110.75" y="128" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="129.75" y="157.5" font-size="4">11 · BLUE / DENIM</text>
+      <rect x="156.25" y="128" width="38" height="32" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="175.25" y="157.5" font-size="4">12 · GREEN (optional)</text>
+    </g>
+  </g>
+
+  <!-- beans zone -->
+  <circle cx="105" cy="212" r="46" fill="none" stroke="#000" stroke-width="0.8" stroke-dasharray="3 2"/>
+  <text x="105" y="210" font-size="5" font-weight="700" text-anchor="middle"
+        font-family="system-ui, sans-serif">PLACE BEANS HERE</text>
+  <text x="105" y="217" font-size="3.5" text-anchor="middle"
+        font-family="system-ui, sans-serif">single layer, or a small shallow dish</text>
+
+  <!-- scale ruler (verify the print is true-size) -->
+  <g font-family="system-ui, sans-serif">
+    <line x1="55" y1="276" x2="155" y2="276" stroke="#000" stroke-width="0.5"/>
+    <line x1="55" y1="273.5" x2="55" y2="278.5" stroke="#000" stroke-width="0.5"/>
+    <line x1="105" y1="274.5" x2="105" y2="277.5" stroke="#000" stroke-width="0.5"/>
+    <line x1="155" y1="273.5" x2="155" y2="278.5" stroke="#000" stroke-width="0.5"/>
+    <text x="105" y="283" font-size="3.5" text-anchor="middle">100 mm — check with a ruler; reprint if wrong</text>
+  </g>
+</svg>
+</div>
+
+</body>
+</html>
