@@ -29,6 +29,9 @@ export function initPantry() {
             addBeanToPantry(newBean);
 
             pantryForm.reset();
+            // Collapse the optional-detail expander so the form returns to its short floor.
+            const detail = document.getElementById('beanDetail');
+            if (detail) detail.open = false;
             renderPantryList();
 
             // Dispatch event so active roast tab can update its bean dropdown

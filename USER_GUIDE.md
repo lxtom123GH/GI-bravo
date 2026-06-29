@@ -19,8 +19,9 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    - **Moderate** – recommended starting point (crack times, DTR, flavour notes).
    - **Expert** – everything (temperature/RoR, roast targets, cupping scores).
    You can change this any time, or override it per feature.
-5. **Add your beans.** Go to **Bean Pantry → Add New Green Beans**, enter a name
-   (and optionally origin, process, and how many grams you have), and **Add to Pantry**.
+5. **Add your beans.** Go to **Bean Pantry → Add New Green Beans**. All you need is a
+   **name** and **grams on hand** — tap **＋ Add detail** if you also want to record
+   origin, process, cost, density or size (each is optional). Then **Add to Pantry**.
 6. **Your roaster.** On **Active Roast** it shows your machine. If you only use one,
    there's nothing to do. If you use more than one (your machine, a friend's, a
    different Behmor/KKTO), tap **⚙ Manage roasters** → tick *"I use more than one
