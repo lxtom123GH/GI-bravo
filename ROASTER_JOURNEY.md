@@ -64,8 +64,9 @@ restock; low-stock warning; stock value; cost feeds the spend dashboard.
   priced lots, with **↗ Re-order** opening the supplier page in one tap (`js/sourcebook.js`).
   (Future: seed an Australian home-roast supplier picker — Green Bean Coffee, Green Bean Roasters,
   The Coffee Commune (1 kg min), Quest, Witham's, Di Pacci, Artisti.)
-- **Gift/loan tracking.** Mark a lot as "borrowed from Mark — owe 250 g back" so the collective
-  side stays honest.
+- **Gift/loan tracking.** ✅ Shipped — a **Loan** button on each pantry bean records "borrowed from
+  Mark — owe 250 g" / "lent Sam 200 g"; the card shows what you owe and have lent out, with a
+  per-bean **Loans** list (`js/ledger.js`, `summariseLedger`). Keeps the collective side honest.
 
 ---
 

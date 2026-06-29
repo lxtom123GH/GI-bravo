@@ -1,7 +1,8 @@
-import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, logRoastedUsage, updateBean } from './storage.js';
+import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, logRoastedUsage, updateBean, addBeanLedgerEntry, deleteBeanLedgerEntry } from './storage.js';
 import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock, ROASTED_USAGE_WHERE } from './freshness.js';
 import { fefoLotOrder } from './lots.js';
 import { priceHistory, priceTrend } from './sourcebook.js';
+import { summariseLedger, LEDGER_DIRS } from './ledger.js';
 import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
@@ -118,6 +119,12 @@ export function renderPantryList() {
         if (bean.supplier) {
             details += `<br><small style="color: var(--text-muted);">🏷️ ${escapeHtml(bean.supplier)}</small>`;
         }
+        // Borrowed/lent ledger summary — keeps the "owe Mark 250 g" side honest.
+        if (Array.isArray(bean.ledger) && bean.ledger.length) {
+            const led = summariseLedger(bean.ledger);
+            if (led.owed > 0) details += `<br><small style="color: var(--accent);">🤝 you owe ${led.owed} g (borrowed)</small>`;
+            if (led.lent > 0) details += `<br><small style="color: var(--text-muted);">↗ lent out ${led.lent} g</small>`;
+        }
 
         // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
         // oldest in-stock bean to roast first (FIFO).
@@ -166,9 +173,40 @@ export function renderPantryList() {
             infoDiv.appendChild(lotsWrap);
         }
 
+        // Borrowed/lent detail — text nodes so a free-text "who"/note can't inject markup.
+        if (Array.isArray(bean.ledger) && bean.ledger.length) {
+            const ledWrap = document.createElement('details');
+            ledWrap.style.marginTop = '6px';
+            const sum = document.createElement('summary');
+            sum.style.cssText = 'cursor: pointer; font-size: 0.8rem; color: var(--text-muted);';
+            sum.textContent = `Loans (${bean.ledger.length})`;
+            ledWrap.appendChild(sum);
+            bean.ledger.forEach(entry => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.8rem; margin-top: 4px;';
+                const span = document.createElement('span');
+                const verb = entry.dir === 'borrowed' ? 'Borrowed from' : 'Lent to';
+                span.textContent = `${verb} ${entry.who || '—'}: ${Number(entry.grams) || 0} g${entry.note ? ` — ${entry.note}` : ''}`;
+                row.appendChild(span);
+                const del = document.createElement('button');
+                del.textContent = '✕';
+                del.title = 'Remove this entry';
+                del.style.cssText = 'padding: 1px 7px; font-size: 0.75rem;';
+                del.addEventListener('click', () => {
+                    deleteBeanLedgerEntry(bean.id, entry.id);
+                    renderPantryList();
+                    window.dispatchEvent(new Event('pantryUpdated'));
+                });
+                row.appendChild(del);
+                ledWrap.appendChild(row);
+            });
+            infoDiv.appendChild(ledWrap);
+        }
+
         const btnGroup = document.createElement('div');
         btnGroup.style.display = 'flex';
         btnGroup.style.gap = '8px';
+        btnGroup.style.flexWrap = 'wrap';
 
         const planBtn = document.createElement('button');
         planBtn.textContent = 'Plan roasts';
@@ -200,9 +238,16 @@ export function renderPantryList() {
         sourceBtn.setAttribute('data-hint', 'Where you buy this bean and what it has cost over time — re-order in one tap and see if the price is trending up or down.');
         sourceBtn.addEventListener('click', () => openSourceModal(bean));
 
+        const loanBtn = document.createElement('button');
+        loanBtn.textContent = 'Loan';
+        loanBtn.style.padding = '5px 10px';
+        loanBtn.setAttribute('data-hint', 'Track beans swapped with friends: "borrowed from Mark — owe 250 g" or "lent Sam 200 g", so you remember who owes whom.');
+        loanBtn.addEventListener('click', () => openLedgerModal(bean));
+
         btnGroup.appendChild(planBtn);
         btnGroup.appendChild(restockBtn);
         btnGroup.appendChild(sourceBtn);
+        btnGroup.appendChild(loanBtn);
         btnGroup.appendChild(deleteBtn);
         beanCard.appendChild(infoDiv);
         beanCard.appendChild(btnGroup);
@@ -495,5 +540,57 @@ function openSourceModal(bean) {
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
         save(); // keep any edits before leaving
         window.open(url, '_blank', 'noopener');
+    });
+}
+
+// Record a borrowed/lent bean swap with a friend. Direction + who + grams (+ optional note).
+function openLedgerModal(bean) {
+    const dirLabels = { borrowed: 'I borrowed this (I owe them)', lent: 'I lent this out (they owe me)' };
+
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+    const modal = document.createElement('div');
+    modal.className = 'card';
+    modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
+    modal.innerHTML = `
+        <h3 id="ledTitle"></h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Track beans swapped with friends so you remember who owes whom.</p>
+        <label class="field-label" for="ledDir">What happened</label>
+        <select id="ledDir" style="width: 100%;">
+            ${LEDGER_DIRS.map(d => `<option value="${d}">${dirLabels[d]}</option>`).join('')}
+        </select>
+        <label class="field-label" for="ledWho">Who <span class="req">*</span></label>
+        <input type="text" id="ledWho" placeholder="e.g. Mark">
+        <label class="field-label" for="ledGrams">Grams <span class="req">*</span></label>
+        <input type="number" id="ledGrams" min="1" step="1" placeholder="e.g. 250">
+        <label class="field-label" for="ledNote">Note</label>
+        <input type="text" id="ledNote" placeholder="Optional — e.g. that Ethiopian natural">
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+            <button id="ledCancel">Cancel</button>
+            <button id="ledSave" style="background-color: var(--success);">Save</button>
+        </div>
+    `;
+    bg.appendChild(modal);
+    document.body.appendChild(bg);
+    modal.querySelector('#ledTitle').textContent = `Loan — ${bean.name}`; // textContent = injection-safe
+
+    const close = () => document.body.removeChild(bg);
+    modal.querySelector('#ledCancel').addEventListener('click', close);
+    bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+    modal.querySelector('#ledWho').focus();
+
+    modal.querySelector('#ledSave').addEventListener('click', () => {
+        const who = modal.querySelector('#ledWho').value.trim();
+        const grams = parseFloat(modal.querySelector('#ledGrams').value);
+        if (!who) { alert('Who did you swap with?'); return; }
+        if (!(grams > 0)) { alert('Enter how many grams.'); return; }
+        addBeanLedgerEntry(bean.id, {
+            dir: modal.querySelector('#ledDir').value,
+            who, grams,
+            note: modal.querySelector('#ledNote').value.trim()
+        });
+        close();
+        renderPantryList();
+        window.dispatchEvent(new Event('pantryUpdated'));
     });
 }

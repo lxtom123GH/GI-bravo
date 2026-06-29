@@ -101,6 +101,10 @@ an official Agtron number.
   and a **re-order link**, see its **price history** (built automatically from your dated,
   priced lots) and whether the price is trending **up or down** versus your first purchase.
   **↗ Re-order** opens the supplier's page in a new tab.
+- **Loans (borrowed / lent beans):** tap **Loan** on a pantry bean to record beans swapped with
+  friends — "borrowed from Mark — owe 250 g" or "lent Sam 200 g". The card shows what you **owe**
+  and have **lent out**, with a **Loans** list you can tidy as beans come back. Keeps the
+  who-owes-whom side honest when you share greens.
 - **Roasted stock:** the **Bean Pantry → Roasted stock** section lists coffee you've
   *roasted* and still have — just grams left and how long it's been resting, oldest first
   (it stays simple on purpose). It fills in once you record a roast's **roasted weight** in

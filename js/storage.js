@@ -31,6 +31,28 @@ export function updateBean(id, patch) {
     return bean;
 }
 
+// Add a borrowed/lent ledger entry to a bean (entry: { dir, who, grams, note? }). Stamps an id
+// + date. The ledger lives on the bean, so JSON backup already covers it. Returns the bean.
+export function addBeanLedgerEntry(beanId, entry) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === beanId);
+    if (!bean) return null;
+    if (!Array.isArray(bean.ledger)) bean.ledger = [];
+    bean.ledger.push({ id: 'led-' + Date.now().toString(), date: new Date().toISOString(), ...entry });
+    savePantry(pantry);
+    return bean;
+}
+
+// Remove a ledger entry from a bean by entry id. Returns the bean.
+export function deleteBeanLedgerEntry(beanId, entryId) {
+    const pantry = getPantry();
+    const bean = pantry.find(b => b.id === beanId);
+    if (!bean || !Array.isArray(bean.ledger)) return null;
+    bean.ledger = bean.ledger.filter(e => e.id !== entryId);
+    savePantry(pantry);
+    return bean;
+}
+
 export function deleteBeanFromPantry(id) {
     let pantry = getPantry();
     pantry = pantry.filter(b => b.id !== id);
