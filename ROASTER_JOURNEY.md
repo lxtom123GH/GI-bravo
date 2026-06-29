@@ -31,6 +31,10 @@ card-swiping, not dating-app gimmick) during/after onboarding: show a feature or
 swipe right to keep it, left to hide it — quietly tailoring the app to how *this* person roasts.
 Always **revisitable** ("redo my setup" / a decisions log), and it feeds the same machinery as
 "Customise this screen" so nothing is locked in.
+- ◐ **Extended to the pantry (shipped):** the Add-bean form's **⚙ Customise fields** lets a person
+  hide the optional detail fields they don't track (origin/process/cost/supplier/density-size),
+  reusing the same keep/hide `decide` as Customise-this-screen (`js/beanfields.js`). The swipe-card
+  onboarding wrapper over these choices is still the open ✨ part.
 
 ---
 
