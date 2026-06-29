@@ -166,6 +166,13 @@ pattern, not naive — and shows where the real leverage is. Two big findings sh
   candidate; from the user's labelled events fit a small **logistic-regression / prototype (k-NN)**
   model **in the browser** (pure JS). Personalises to the user's machine acoustics — the "it learns
   from my clicks" they want. Store the model locally; include in backup.
+  - **MFCC groundwork — ✅ shipped (experimental, opt-in, default OFF).** A pure, unit-tested MFCC
+    pipeline (`js/mfcc.js`: radix-2 FFT → power spectrum → Hann window → mel filterbank → log →
+    DCT-II; 19 tests). A **🧪 Compute MFCC features** toggle in Detection Settings (default off,
+    `mfccExperimentalEnabled`, in backup) makes `js/audio.js` compute MFCCs **alongside** the
+    current detector (throttled, try/caught, dispatches a `mfccFrame` event) **without changing any
+    detection decision**. This is the feature-extraction half of v2 — the labelling + classifier
+    fit are still to come, and accuracy needs validation against real roast audio.
 - **v3 — pooled/community model.** Use the shipped **cloud sync** to aggregate labelled feature
   vectors across users/sessions, train a Random-Forest/NN **offline**, ship it as a static client
   model (TinyML-style). This is where the two-device labelling + sync pays off — it builds the

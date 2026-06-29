@@ -56,6 +56,10 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 > and adjust the **sensitivity** slider — or turn on **Auto-tune from my corrections**,
 > which quietly loosens or tightens detection for that roaster each time you clear a false
 > crack (✗) or mark one it missed.
+>
+> Detection Settings also has a 🧪 **Compute MFCC features** toggle (off by default,
+> for the curious/experimental). It's groundwork for a future, smarter crack detector and
+> **doesn't change detection today** — leave it off unless you're tinkering.
 
 ---
 
