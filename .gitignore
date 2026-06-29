@@ -2,6 +2,10 @@ node_modules/
 server.log
 *.log
 
+# Roast Lab capture drops — personal roast data / debug artifacts (keep the README)
+roast-logs/*
+!roast-logs/README.md
+
 # Local secrets / Firebase
 .env
 .env.local

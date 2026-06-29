@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Roast Tracker">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icon-192.png">
-  <script type="module" crossorigin src="/assets/index-DQEr62qq.js"></script>
+  <script type="module" crossorigin src="/assets/index-BdTNZFxN.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-IBgK2rjx.css">
 </head>
 <body>
@@ -268,6 +268,29 @@
                             <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">Tuning: <span id="learningReadout">off</span></div>
                             <button id="resetLearningBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px; margin-top: 8px;" data-hint="Forget what the app learned for this roaster and go back to the manual sensitivity above.">Reset tuning for this roaster</button>
                         </div>
+
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px;">
+                            <label for="mfccExperimentalToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="mfccExperimentalToggle" style="width: auto; margin: 0;" data-hint="Experimental, off by default. When on, the app also computes MFCC timbre features from the roast audio (the spectral fingerprint of a crack). It does NOT change crack detection yet — it's groundwork for a future, more accurate detector. Safe to leave off.">
+                                <strong>🧪 Compute MFCC features (experimental)</strong>
+                            </label>
+                            <small style="color: var(--text-muted); display: block; margin-top: 4px;">Off by default and <strong>has no effect on crack detection</strong>. Groundwork for a future MFCC-based detector — when on, MFCCs are computed alongside the current detector (a <code>mfccFrame</code> event fires) so they can be compared with real roast audio.</small>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">MFCC: <span id="mfccReadout">off</span></div>
+                        </div>
+
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px;">
+                            <label for="roastLabToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="roastLabToggle" style="width: auto; margin: 0;" data-hint="Off by default. When on, each roast quietly records a timeline of what the detector hears — loudness (RMS), the high-vs-low crack pitch, and the MFCC fingerprint — plus every crack and cleared false-alarm. It does NOT change detection. Afterwards you can export the capture (JSON or CSV) to compare roasts and tune the detector. Great for an A/B weekend: roast 1 baseline, roast 2 watch the numbers, roast 3 tweak and compare.">
+                                <strong>🧪 Roast Lab — capture this roast's data</strong>
+                            </label>
+                            <small style="color: var(--text-muted); display: block; margin-top: 4px;">Off by default and <strong>has no effect on crack detection</strong>. Records loudness, crack pitch and MFCC features (plus your crack/✗ marks) for each roast so you can export and analyse them. Ideal for A/B testing detection across a few roasts.</small>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">Roast Lab: <span id="roastLabReadout">off</span></div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                <button id="roastLabExportJsonBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Download the last captured roast as a JSON file (full detail — best for deeper analysis). Tip: drop it into the repo's roast-logs/ folder so Claude can read it directly next session.">Export JSON</button>
+                                <button id="roastLabExportCsvBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Download the last captured roast as a CSV file — opens straight in a spreadsheet for eyeballing the numbers around each crack.">Export CSV</button>
+                                <button id="roastLabCopyBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px;" disabled data-hint="Copy a one-line summary of the last capture to the clipboard — handy for pasting into a chat or notes.">Copy summary</button>
+                            </div>
+                        </div>
                     </div>
                 </details>
 
@@ -315,48 +338,68 @@
                     <details id="beanDetail" style="margin-top: 12px; margin-bottom: 4px;">
                         <summary style="cursor: pointer; color: var(--accent);" data-hint="Optional extras — origin, process, cost, density. Add only the ones you care about; they unfold here so the everyday form stays short.">＋ Add detail <span style="color: var(--text-muted); font-weight: normal;">(origin, process, cost… all optional)</span></summary>
                         <div style="margin-top: 12px;">
-                            <label class="field-label" for="beanCountry">Country of origin</label>
-                            <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
-                            <label class="field-label" for="beanRegion">Region</label>
-                            <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
-                            <label class="field-label" for="beanFarm">Farm / producer</label>
-                            <input type="text" id="beanFarm" placeholder="Optional">
-                            <label class="field-label" for="beanProcess">Process</label>
-                            <select id="beanProcess">
-                                <option value="">Select process…</option>
-                                <option value="Washed">Washed</option>
-                                <option value="Natural">Natural</option>
-                                <option value="Honey">Honey</option>
-                                <option value="Wet-Hulled">Wet-Hulled</option>
-                                <option value="Anaerobic">Anaerobic</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            <label class="field-label" for="beanCost">Cost per kg</label>
-                            <input type="number" id="beanCost" placeholder="Optional" min="0" step="0.01">
-                            <label class="field-label" for="beanSupplier">Supplier / roaster</label>
-                            <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean).">
-                            <label class="field-label" for="beanSupplierUrl">Re-order link</label>
-                            <input type="text" id="beanSupplierUrl" inputmode="url" placeholder="Optional — product page URL">
-                            <div style="display: flex; gap: 8px;">
-                                <div style="flex: 1;">
-                                    <label class="field-label" for="beanDensity">Density</label>
-                                    <select id="beanDensity" style="width: 100%;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
-                                        <option value="">Optional…</option>
-                                        <option value="Low">Low density / soft</option>
-                                        <option value="Medium">Medium density</option>
-                                        <option value="High">High density / hard</option>
-                                    </select>
-                                </div>
-                                <div style="flex: 1;">
-                                    <label class="field-label" for="beanSize">Bean size</label>
-                                    <select id="beanSize" style="width: 100%;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
-                                        <option value="">Optional…</option>
-                                        <option value="Small">Small</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="Large">Large</option>
-                                    </select>
+                            <!-- Each optional field is wrapped so "Customise fields" can hide the
+                                 ones a person doesn't track (js/beanfields.js). -->
+                            <div data-beanfield="country">
+                                <label class="field-label" for="beanCountry">Country of origin</label>
+                                <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
+                            </div>
+                            <div data-beanfield="region">
+                                <label class="field-label" for="beanRegion">Region</label>
+                                <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
+                            </div>
+                            <div data-beanfield="farm">
+                                <label class="field-label" for="beanFarm">Farm / producer</label>
+                                <input type="text" id="beanFarm" placeholder="Optional">
+                            </div>
+                            <div data-beanfield="process">
+                                <label class="field-label" for="beanProcess">Process</label>
+                                <select id="beanProcess">
+                                    <option value="">Select process…</option>
+                                    <option value="Washed">Washed</option>
+                                    <option value="Natural">Natural</option>
+                                    <option value="Honey">Honey</option>
+                                    <option value="Wet-Hulled">Wet-Hulled</option>
+                                    <option value="Anaerobic">Anaerobic</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div data-beanfield="cost">
+                                <label class="field-label" for="beanCost">Cost per kg</label>
+                                <input type="number" id="beanCost" placeholder="Optional" min="0" step="0.01">
+                            </div>
+                            <div data-beanfield="supplier">
+                                <label class="field-label" for="beanSupplier">Supplier / roaster</label>
+                                <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean).">
+                                <label class="field-label" for="beanSupplierUrl">Re-order link</label>
+                                <input type="text" id="beanSupplierUrl" inputmode="url" placeholder="Optional — product page URL">
+                            </div>
+                            <div data-beanfield="densitysize">
+                                <div style="display: flex; gap: 8px;">
+                                    <div style="flex: 1;">
+                                        <label class="field-label" for="beanDensity">Density</label>
+                                        <select id="beanDensity" style="width: 100%;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
+                                            <option value="">Optional…</option>
+                                            <option value="Low">Low density / soft</option>
+                                            <option value="Medium">Medium density</option>
+                                            <option value="High">High density / hard</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label class="field-label" for="beanSize">Bean size</label>
+                                        <select id="beanSize" style="width: 100%;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
+                                            <option value="">Optional…</option>
+                                            <option value="Small">Small</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Large">Large</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+                            <details style="margin-top: 12px;">
+                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-muted);" data-hint="Tick only the optional fields you actually track — the rest stay hidden on this form. Saved on this device.">⚙ Customise fields</summary>
+                                <div id="beanFieldOptions" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;"></div>
+                            </details>
                         </div>
                     </details>
                     <button type="submit">Add to Pantry</button>
@@ -500,7 +543,7 @@
                     <li><strong>Allow the microphone</strong> when asked (first time you start a roast).</li>
                     <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
                     <li><strong>Your roaster:</strong> on Active Roast it shows your machine — most people use one, so there's nothing to set up. If you use more than one (yours, a friend's, a different Behmor/KKTO), tap <strong>⚙ Manage roasters</strong> to add them; each roast is then tagged with the machine it was done on.</li>
-                    <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost. Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
+                    <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost (and <strong>⚙ Customise fields</strong> there hides the optional fields you don't track). Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
                     <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
                 </ol>
             </div>
@@ -570,6 +613,7 @@
                     <li><strong>Lots:</strong> bought another batch of the same bean? Tap <strong>＋ Lot</strong> — grams is enough, or add a date/price/best-before. On-hand grams is the sum of lots, cost is the weighted average, and the <strong>Lots</strong> list shows which batch to <em>use first</em>. Roasting draws from the oldest lot first. Beans without lots stay simple.</li>
                     <li><strong>Roasted stock:</strong> the Bean Pantry's <strong>Roasted stock</strong> section lists coffee you've roasted and still have — grams left and how long it's been resting, oldest first. Record a roast's roasted weight in Roast History to add it, then tap <strong>Drank some</strong> / <strong>Finished</strong> as you brew it down — log <em>where it went</em> (brewed / gift / cupping) and each batch keeps a little <strong>Where it went</strong> history.</li>
                     <li><strong>Source &amp; price:</strong> tap <strong>Source</strong> on a bean to see where you buy it, its <strong>price history</strong> (built from your dated lots) and whether the price is trending up or down — and <strong>↗ Re-order</strong> opens the supplier's page in one tap. Add the supplier when you add the bean, or fill it in here.</li>
+                    <li><strong>Loans (borrowed / lent beans):</strong> swapped beans with a friend? Tap <strong>Loan</strong> on a bean to record "borrowed from Mark — owe 250 g" or "lent Sam 200 g". The card shows what you owe and have lent out, with a <strong>Loans</strong> list you can tidy up as beans come back.</li>
                     <li><strong>Plan roasts:</strong> on a pantry bean, <strong>Plan roasts</strong> suggests sizes that fit your drum and divide a bag evenly (2.5 kg → 6 × 417 g, no runt).</li>
                     <li><strong>Blends:</strong> in <strong>Bean Pantry → Blends</strong>, set ratios (e.g. 60/40), then <strong>Weigh out</strong> splits a batch into per-bean prep batches. <strong>Blends you can make now</strong> suggests classic recipes from the beans you have in stock — tap <em>Use this recipe</em> to pre-fill the builder. Set each bean's optional <strong>density/size</strong> and a pre-blend warns if beans won't roast evenly together.</li>
                     <li><strong>Compare</strong> two batches and view <strong>Trends</strong> over time in Roast History.</li>
@@ -583,6 +627,8 @@
                 <ul>
                     <li><strong>“Start” seems to do nothing / mic error:</strong> the status bar now shows the reason. On iPhone/iPad use <strong>Safari</strong> and allow the mic (not the home-screen icon); on desktop use Chrome/Edge over the https link. Either way, <strong>Start (no mic)</strong> lets you roast without auto-detection.</li>
                     <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise. Or turn on <em>Auto-tune from my corrections</em> there — then just clear any false crack (✗) and use <strong>Manual: Mark</strong> for any it misses, and the app quietly tunes the sensitivity for that roaster over time.</li>
+                    <li><strong>🧪 Experimental — MFCC features:</strong> Detection Settings has an optional <em>Compute MFCC features</em> toggle (off by default). It computes the audio's timbre fingerprint alongside detection as groundwork for a future, more accurate crack detector — it <strong>doesn't change detection</strong> today. Safe to leave off.</li>
+                    <li><strong>🧪 Roast Lab — capture &amp; compare roasts:</strong> Detection Settings has a <em>Roast Lab</em> toggle (off by default). When on, each roast records a timeline of what the detector hears — loudness, crack pitch and the MFCC fingerprint — plus every crack and cleared false-alarm. It <strong>doesn't change detection</strong>. Afterwards, use <em>Export JSON / CSV</em> (or <em>Copy summary</em>) to save and compare roasts. Handy for an A/B weekend: roast 1 baseline, roast 2 watch the numbers, roast 3 tweak the sensitivity and compare. Drop the exported file into the repo's <code>roast-logs/</code> folder to analyse it later.</li>
                     <li><strong>Screen dims or roast seems to pause:</strong> the app keeps the screen awake automatically, but if you locked the phone or switched apps, detection pauses. Stay on the roast screen; use <strong>Manual: Mark</strong> for any crack missed while away.</li>
                     <li><strong>Data gone:</strong> it's per-browser and cleared if you wipe browsing data — keep backups.</li>
                 </ul>

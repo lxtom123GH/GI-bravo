@@ -221,6 +221,34 @@ export function saveMfccExperimentalEnabled(on) {
     localStorage.setItem('mfccExperimentalEnabled', on ? 'true' : 'false');
 }
 
+// Roast Lab — OFF by default. When on, each roast records a feature timeline (RMS, high-band
+// ratio, MFCCs) + crack/clear events for offline A/B analysis. Observational; never affects
+// detection. The last captured session is kept locally so it can be exported after the roast;
+// it's a debug artifact and is intentionally NOT part of the cross-device backup (it can be
+// large) — only the toggle is backed up.
+export function getRoastLabEnabled() {
+    return localStorage.getItem('roastLabEnabled') === 'true';
+}
+
+export function saveRoastLabEnabled(on) {
+    localStorage.setItem('roastLabEnabled', on ? 'true' : 'false');
+}
+
+export function saveLastRoastLab(session) {
+    try {
+        localStorage.setItem('lastRoastLab', JSON.stringify(session));
+    } catch (e) {
+        // Quota or serialisation failure — the in-memory session still exports fine.
+        console.warn('[roastlab] could not persist last session:', e && e.message);
+    }
+}
+
+export function getLastRoastLab() {
+    const raw = localStorage.getItem('lastRoastLab');
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+}
+
 export function getRoasterDetectionAdjust() {
     const s = localStorage.getItem('roasterDetectionAdjust');
     return s ? JSON.parse(s) : {};
@@ -610,6 +638,7 @@ export function exportAllData() {
         detectionSettings: getDetectionSettings(),
         detectionLearningEnabled: getDetectionLearningEnabled(),
         mfccExperimentalEnabled: getMfccExperimentalEnabled(),
+        roastLabEnabled: getRoastLabEnabled(),
         roasterDetectionAdjust: getRoasterDetectionAdjust(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
@@ -648,6 +677,9 @@ export function importAllData(data) {
     }
     if (typeof data.mfccExperimentalEnabled === 'boolean') {
         saveMfccExperimentalEnabled(data.mfccExperimentalEnabled);
+    }
+    if (typeof data.roastLabEnabled === 'boolean') {
+        saveRoastLabEnabled(data.roastLabEnabled);
     }
     if (data.roasterDetectionAdjust && typeof data.roasterDetectionAdjust === 'object') {
         saveRoasterDetectionAdjust(data.roasterDetectionAdjust);

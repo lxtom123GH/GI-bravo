@@ -145,7 +145,9 @@ green-weight remembers your usual (450 g); Behmor 100/200/400 g buttons + profil
 detection with adjustable sensitivity + longer/percentile calibration; manual crack marking +
 false-positive clear; repeating first-crack alarm with tones; phase breakdown (drying/Maillard/
 development) + DTR; follow a reference roast with a first-crack ETA; temp/probe (BT/USB) logging;
-"Start (no mic)" manual mode; keep-screen-awake.
+"Start (no mic)" manual mode; keep-screen-awake; ✅ **🧪 Roast Lab** (opt-in, off by default) —
+capture each roast's feature timeline (loudness, crack pitch, MFCC fingerprint) + crack/clear
+events, then export JSON/CSV to compare roasts and tune detection. Built for an A/B weekend.
 
 **Shipped ✅ (`js/roaster-panel.js`):** a model-aware Behmor panel — a before-vs-during button
 reference (the manual's gotcha), a Behmor-model selector (2000AB Plus / 2000AB / 1600 Plus

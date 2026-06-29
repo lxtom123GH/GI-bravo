@@ -1,5 +1,6 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled, getRoastLabEnabled, saveRoastLabEnabled, saveLastRoastLab, getLastRoastLab } from './storage.js';
 import { mfcc } from './mfcc.js';
+import { createSession, addFrame, addEvent, summariseRoastLab, formatRoastLabJson, formatRoastLabCsv, formatRoastLabSummaryText, roastLabFilename, ROAST_LAB_FRAME_MS } from './roastlab.js';
 import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
@@ -15,6 +16,12 @@ let dataArray;
 let mfccEnabled = false;
 let lastMfcc = null;
 let lastMfccAt = 0;
+
+// Roast Lab — OFF by default. Captures a feature timeline + crack/clear events per roast
+// for offline A/B analysis. Observational only; never affects detection.
+let roastLabEnabled = false;
+let labSession = null;
+let lastLabFrameAt = 0;
 let isRecording = false;
 let isNotifying = false;
 let animationId;
@@ -299,6 +306,25 @@ function initDetectionSettingsUI() {
     }
     updateMfccReadout();
 
+    // --- Roast Lab: capture a feature timeline + events per roast (off by default) ---
+    const roastLabToggle = document.getElementById('roastLabToggle');
+    roastLabEnabled = getRoastLabEnabled();
+    if (roastLabToggle) {
+        roastLabToggle.checked = roastLabEnabled;
+        roastLabToggle.addEventListener('change', () => {
+            roastLabEnabled = roastLabToggle.checked;
+            saveRoastLabEnabled(roastLabEnabled);
+            updateRoastLabReadout();
+        });
+    }
+    const labJsonBtn = document.getElementById('roastLabExportJsonBtn');
+    if (labJsonBtn) labJsonBtn.addEventListener('click', () => exportRoastLab('json'));
+    const labCsvBtn = document.getElementById('roastLabExportCsvBtn');
+    if (labCsvBtn) labCsvBtn.addEventListener('click', () => exportRoastLab('csv'));
+    const labCopyBtn = document.getElementById('roastLabCopyBtn');
+    if (labCopyBtn) labCopyBtn.addEventListener('click', copyRoastLabSummary);
+    updateRoastLabReadout();
+
     render();
 }
 
@@ -313,7 +339,8 @@ function updateMfccReadout() {
 // EXPERIMENTAL + OFF BY DEFAULT. Compute MFCCs from the current audio frame for comparison only.
 // Wrapped so it can never disturb the roast/detection loop, and throttled so it stays cheap.
 function maybeComputeMfcc() {
-    if (!mfccEnabled || !dataArray || !audioContext) return;
+    // Compute when the experimental readout is on OR Roast Lab needs the vector for capture.
+    if ((!mfccEnabled && !roastLabEnabled) || !dataArray || !audioContext) return;
     const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     if (now - lastMfccAt < 400) return; // ~2–3 frames/sec is plenty for an experimental readout
     lastMfccAt = now;
@@ -330,6 +357,119 @@ function maybeComputeMfcc() {
 
 // The most recent experimental MFCC vector (or null). For comparison/inspection only.
 export function getLastMfcc() { return lastMfcc; }
+
+// --- Roast Lab capture (off by default; observational, never affects detection) ---
+
+// Gather the roast context stored alongside the captured timeline for offline analysis.
+function buildRoastLabMeta() {
+    const activeRoaster = getActiveRoaster() || {};
+    const beanSel = document.getElementById('beanSelect');
+    const beanName = beanSel && beanSel.selectedOptions && beanSel.selectedOptions[0]
+        ? beanSel.selectedOptions[0].textContent.split(' — ')[0].trim() : '';
+    return {
+        startedAt: new Date().toISOString(),
+        dateStr: new Date().toISOString().slice(0, 10),
+        bean: beanName,
+        roaster: activeRoaster.name || '',
+        roasterModel: activeRoaster.model || '',
+        manualMode: roastState.manualMode,
+        sampleRate: audioContext ? audioContext.sampleRate : null,
+        detection: { ...effectiveDetection },
+        learningEnabled: getDetectionLearningEnabled(),
+        appVersion: 'roast-lab-v1',
+    };
+}
+
+// Throttled per-frame capture: RMS, high-band ratio and the latest MFCC vector.
+function maybeCaptureRoastLab(rms) {
+    if (!roastLabEnabled || !labSession || !roastState.startTime) return;
+    const now = Date.now();
+    if (now - lastLabFrameAt < ROAST_LAB_FRAME_MS) return;
+    lastLabFrameAt = now;
+    try {
+        addFrame(labSession, {
+            t: now - roastState.startTime,
+            rms,
+            bandRatio: spectralHighRatio(),
+            mfcc: getLastMfcc(),
+        });
+        updateRoastLabReadout();
+    } catch (e) {
+        console.warn('[roastlab] frame capture failed (detection unaffected):', e && e.message);
+    }
+}
+
+// Record a crack/clear event onto the active capture (mirrors the markPhase/clearCrack calls).
+function logRoastLabEvent(type, label, auto) {
+    if (!roastLabEnabled || !labSession || !roastState.startTime) return;
+    addEvent(labSession, { t: Date.now() - roastState.startTime, type, label, auto: !!auto });
+    updateRoastLabReadout();
+}
+
+// At roast end, persist the capture so it can still be exported after a reload.
+function finalizeRoastLab() {
+    if (!labSession) return;
+    labSession.meta.endedAt = new Date().toISOString();
+    saveLastRoastLab(labSession);
+    const s = summariseRoastLab(labSession);
+    logMessage(`🧪 Roast Lab captured ${s.frames} frames + ${s.events} events — export from Detection settings.`);
+    updateRoastLabReadout();
+}
+
+// Refresh the Roast Lab readout + enable/disable export buttons for the last capture.
+function updateRoastLabReadout() {
+    const readout = document.getElementById('roastLabReadout');
+    const session = labSession || getLastRoastLab();
+    if (readout) {
+        if (!roastLabEnabled && !session) {
+            readout.textContent = 'off';
+        } else {
+            const s = summariseRoastLab(session);
+            const live = labSession && isRecording ? 'capturing — ' : (session ? 'last roast — ' : 'on — ');
+            readout.textContent = session
+                ? `${live}${s.frames} frames, ${s.cracks} crack/${s.clears} clear, ${s.mfccDims} MFCC dims`
+                : 'on — waiting for a roast';
+        }
+    }
+    const hasData = !!(session && session.frames && session.frames.length);
+    ['roastLabExportJsonBtn', 'roastLabExportCsvBtn', 'roastLabCopyBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !hasData;
+    });
+}
+
+// Download the captured session as JSON or CSV.
+function exportRoastLab(kind) {
+    const session = labSession || getLastRoastLab();
+    if (!session || !session.frames || !session.frames.length) {
+        updateStatus('No Roast Lab capture yet — run a roast with Roast Lab on first.');
+        return;
+    }
+    const text = kind === 'csv' ? formatRoastLabCsv(session) : formatRoastLabJson(session);
+    const mime = kind === 'csv' ? 'text/csv' : 'application/json';
+    const name = roastLabFilename(session.meta, kind);
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Copy a one-line summary to the clipboard (handy for pasting into a chat/notes quickly).
+function copyRoastLabSummary() {
+    const session = labSession || getLastRoastLab();
+    if (!session) { updateStatus('No Roast Lab capture yet.'); return; }
+    const text = formatRoastLabSummaryText(session);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => updateStatus('Roast Lab summary copied to clipboard.'))
+            .catch(() => updateStatus(text));
+    } else {
+        updateStatus(text);
+    }
+}
 
 // Effective detection = base settings + this roaster's learned offset (when
 // auto-tune is enabled). Keeps the manual sliders authoritative and only shifts
@@ -629,6 +769,7 @@ function markPhase(phaseName, stateKey) {
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
     notifyUser(`${phaseName} recorded!`);
+    logRoastLabEvent('crack', phaseName, isAuto); // Roast Lab capture (no-op when off)
 }
 
 // Clear a wrongly-recorded crack (false positive) and resume detection.
@@ -654,6 +795,7 @@ function clearCrack(stateKey) {
     stopCrackAlarm(); // silence any ongoing first-crack alarm
     logMessage(`✗ ${label} cleared (false alarm). Still listening.`);
     updateStatus(`${label} cleared — watching again.`);
+    logRoastLabEvent('clear', label, wasAuto); // Roast Lab capture (no-op when off)
     renderLiveCurve(Date.now() - roastState.startTime); // remove the marker immediately
 }
 
@@ -1007,6 +1149,12 @@ async function startRoast(manual = false) {
     refAnnounced = { fc: false, sc: false };
     powerAnnounced = new Set();
 
+    // Roast Lab: open a fresh capture for this roast if enabled.
+    roastLabEnabled = getRoastLabEnabled();
+    labSession = roastLabEnabled ? createSession(buildRoastLabMeta()) : null;
+    lastLabFrameAt = 0;
+    updateRoastLabReadout();
+
     logArea.innerHTML = '';
     logMessage('Roast Started.');
 
@@ -1115,6 +1263,7 @@ function stopRoast() {
     // Final static render of the completed curve (with the reference if following).
     renderLiveCurve(roastState.endTime - roastState.startTime);
 
+    finalizeRoastLab(); // persist the Roast Lab capture so it can be exported (no-op when off)
     saveFinalRoast();
 }
 
@@ -1304,6 +1453,7 @@ function drawAndAnalyze() {
         detectTransient(rms);
         sampleRoastCurve(rms);
         maybeComputeMfcc(); // experimental, off by default; observes only, never changes detection
+        maybeCaptureRoastLab(rms); // Roast Lab capture, off by default; observes only
     }
 
     // Oscilloscope visual

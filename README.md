@@ -33,6 +33,10 @@ model) and each roast is tagged with the machine it was done on.
 - 🎚️ **Tunable detection** — sensitivity, cluster size, and second-crack pitch,
   plus an opt-in **auto-tune** that learns each roaster's sensitivity from your
   false-alarm and missed-crack corrections.
+- 🧪 **Roast Lab** (experimental, opt-in, off by default) — capture each roast's
+  feature timeline (loudness, crack pitch, MFCC fingerprint) plus crack/clear events,
+  then **export JSON/CSV** (or copy a summary) to compare roasts and tune detection.
+  Observational — it never changes crack detection.
 - 📋 **Reference-roast follow mode** — overlay a past roast's curve live with a
   heads-up ~10 s before its cracks, to reproduce a good batch.
 - ☕ **Behmor profile templates** — save a roast as the template for a
@@ -167,6 +171,7 @@ js/
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   mfcc.js           Experimental MFCC feature extraction (FFT/mel/DCT, pure) — opt-in, no effect on detection yet
+  roastlab.js       Roast Lab — capture/summarise/export a per-roast feature timeline (pure) — opt-in, observational
   pantry.js         Bean inventory (CRUD, green lots, roasted stock, source book, green age/FIFO)
   lots.js           Green-lot helpers — grams sum, weighted cost, FEFO order, drawdown (pure)
   sourcebook.js     Source book — per-bean price history + trend from lots (pure)
