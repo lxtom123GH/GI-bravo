@@ -12,6 +12,14 @@ function boughtPhrase(text) {
     return (text === 'today' || text === 'yesterday') ? `bought ${text}` : `bought ${text} ago`;
 }
 
+// Escape user-entered text before it goes into innerHTML (bean name, origin, supplier…), so a
+// name like "<b>x" renders as literal text instead of breaking — or injecting — the card markup.
+function escapeHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 export function initPantry() {
     const pantryForm = document.getElementById('addBeanForm');
     if (pantryForm) {
@@ -77,12 +85,12 @@ export function renderPantryList() {
         beanCard.style.justifyContent = 'space-between';
         beanCard.style.alignItems = 'center';
 
-        let details = `<strong>${bean.name}</strong>`;
-        let info = [];
-        if (bean.country) info.push(bean.country);
-        if (bean.region) info.push(bean.region);
-        if (bean.farm) info.push(bean.farm);
-        if (bean.process) info.push(bean.process);
+        let details = `<strong>${escapeHtml(bean.name)}</strong>`;
+        const info = [];
+        if (bean.country) info.push(escapeHtml(bean.country));
+        if (bean.region) info.push(escapeHtml(bean.region));
+        if (bean.farm) info.push(escapeHtml(bean.farm));
+        if (bean.process) info.push(escapeHtml(bean.process));
 
         if (info.length > 0) {
             details += `<br><small>${info.join(' - ')}</small>`;
@@ -108,7 +116,7 @@ export function renderPantryList() {
             details += `<br><small style="color: var(--text-muted);">${cost.toFixed(2)}/kg${avgNote} · stock value ${onHandValue.toFixed(2)}</small>`;
         }
         if (bean.supplier) {
-            details += `<br><small style="color: var(--text-muted);">🏷️ ${bean.supplier}</small>`;
+            details += `<br><small style="color: var(--text-muted);">🏷️ ${escapeHtml(bean.supplier)}</small>`;
         }
 
         // Green-bean age + freshness. Green keeps ~a year; flag old lots and the
@@ -229,7 +237,7 @@ export function renderRoastedStock() {
         card.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
 
         const info = document.createElement('div');
-        let html = `<strong>${name}</strong>`;
+        let html = `<strong>${escapeHtml(name)}</strong>`;
         html += `<br><small style="color: var(--text-muted);">roasted ${new Date(roast.date).toLocaleDateString()}</small>`;
         const remColor = remaining < 100 ? 'var(--accent)' : 'var(--text-muted)';
         html += `<br><small style="color: ${remColor};">${remaining} g left</small>`;
@@ -310,7 +318,7 @@ function openLotModal(bean) {
     modal.className = 'card';
     modal.style.cssText = 'width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;';
     modal.innerHTML = `
-        <h3>Add stock — ${bean.name}</h3>
+        <h3>Add stock — ${escapeHtml(bean.name)}</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">A new batch you bought. Just grams is enough — add a date, price or best-before to track this lot on its own.</p>
         <label class="field-label" for="lotGrams">Grams <span class="req">*</span></label>
         <input type="number" id="lotGrams" min="1" step="1" placeholder="e.g. 1000">
@@ -384,7 +392,7 @@ function openSourceModal(bean) {
     }
 
     modal.innerHTML = `
-        <h3>Source — ${bean.name}</h3>
+        <h3>Source — ${escapeHtml(bean.name)}</h3>
         <label class="field-label" for="srcSupplier">Supplier / roaster</label>
         <input type="text" id="srcSupplier" placeholder="Where you buy it">
         <label class="field-label" for="srcUrl">Re-order link</label>
