@@ -160,6 +160,7 @@ components.css      Portable component classes (.btn/.chip/.card/.field/.meterâ€
 js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
   customise.js      Hide/show optional dashboard controls (shared state)
+  beanfields.js     "Customise fields" â€” hide unused optional add-bean fields (reuses customise.decide)
   swipe.js          Swipe-style personaliser over the customise sections
   roast.js          Roast setup (bean selection, Behmor/KKTO controls, weight units)
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)

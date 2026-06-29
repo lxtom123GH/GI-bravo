@@ -314,48 +314,68 @@
                     <details id="beanDetail" style="margin-top: 12px; margin-bottom: 4px;">
                         <summary style="cursor: pointer; color: var(--accent);" data-hint="Optional extras — origin, process, cost, density. Add only the ones you care about; they unfold here so the everyday form stays short.">＋ Add detail <span style="color: var(--text-muted); font-weight: normal;">(origin, process, cost… all optional)</span></summary>
                         <div style="margin-top: 12px;">
-                            <label class="field-label" for="beanCountry">Country of origin</label>
-                            <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
-                            <label class="field-label" for="beanRegion">Region</label>
-                            <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
-                            <label class="field-label" for="beanFarm">Farm / producer</label>
-                            <input type="text" id="beanFarm" placeholder="Optional">
-                            <label class="field-label" for="beanProcess">Process</label>
-                            <select id="beanProcess">
-                                <option value="">Select process…</option>
-                                <option value="Washed">Washed</option>
-                                <option value="Natural">Natural</option>
-                                <option value="Honey">Honey</option>
-                                <option value="Wet-Hulled">Wet-Hulled</option>
-                                <option value="Anaerobic">Anaerobic</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            <label class="field-label" for="beanCost">Cost per kg</label>
-                            <input type="number" id="beanCost" placeholder="Optional" min="0" step="0.01">
-                            <label class="field-label" for="beanSupplier">Supplier / roaster</label>
-                            <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean).">
-                            <label class="field-label" for="beanSupplierUrl">Re-order link</label>
-                            <input type="text" id="beanSupplierUrl" inputmode="url" placeholder="Optional — product page URL">
-                            <div style="display: flex; gap: 8px;">
-                                <div style="flex: 1;">
-                                    <label class="field-label" for="beanDensity">Density</label>
-                                    <select id="beanDensity" style="width: 100%;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
-                                        <option value="">Optional…</option>
-                                        <option value="Low">Low density / soft</option>
-                                        <option value="Medium">Medium density</option>
-                                        <option value="High">High density / hard</option>
-                                    </select>
-                                </div>
-                                <div style="flex: 1;">
-                                    <label class="field-label" for="beanSize">Bean size</label>
-                                    <select id="beanSize" style="width: 100%;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
-                                        <option value="">Optional…</option>
-                                        <option value="Small">Small</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="Large">Large</option>
-                                    </select>
+                            <!-- Each optional field is wrapped so "Customise fields" can hide the
+                                 ones a person doesn't track (js/beanfields.js). -->
+                            <div data-beanfield="country">
+                                <label class="field-label" for="beanCountry">Country of origin</label>
+                                <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
+                            </div>
+                            <div data-beanfield="region">
+                                <label class="field-label" for="beanRegion">Region</label>
+                                <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
+                            </div>
+                            <div data-beanfield="farm">
+                                <label class="field-label" for="beanFarm">Farm / producer</label>
+                                <input type="text" id="beanFarm" placeholder="Optional">
+                            </div>
+                            <div data-beanfield="process">
+                                <label class="field-label" for="beanProcess">Process</label>
+                                <select id="beanProcess">
+                                    <option value="">Select process…</option>
+                                    <option value="Washed">Washed</option>
+                                    <option value="Natural">Natural</option>
+                                    <option value="Honey">Honey</option>
+                                    <option value="Wet-Hulled">Wet-Hulled</option>
+                                    <option value="Anaerobic">Anaerobic</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div data-beanfield="cost">
+                                <label class="field-label" for="beanCost">Cost per kg</label>
+                                <input type="number" id="beanCost" placeholder="Optional" min="0" step="0.01">
+                            </div>
+                            <div data-beanfield="supplier">
+                                <label class="field-label" for="beanSupplier">Supplier / roaster</label>
+                                <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean).">
+                                <label class="field-label" for="beanSupplierUrl">Re-order link</label>
+                                <input type="text" id="beanSupplierUrl" inputmode="url" placeholder="Optional — product page URL">
+                            </div>
+                            <div data-beanfield="densitysize">
+                                <div style="display: flex; gap: 8px;">
+                                    <div style="flex: 1;">
+                                        <label class="field-label" for="beanDensity">Density</label>
+                                        <select id="beanDensity" style="width: 100%;" data-hint="Roughly how dense/hard the bean is (high-altitude washed = dense; low-grown naturals = soft). Used to flag pre-blends that may roast unevenly.">
+                                            <option value="">Optional…</option>
+                                            <option value="Low">Low density / soft</option>
+                                            <option value="Medium">Medium density</option>
+                                            <option value="High">High density / hard</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label class="field-label" for="beanSize">Bean size</label>
+                                        <select id="beanSize" style="width: 100%;" data-hint="Screen/bean size. Mixing very different sizes roasts unevenly in one batch.">
+                                            <option value="">Optional…</option>
+                                            <option value="Small">Small</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Large">Large</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+                            <details style="margin-top: 12px;">
+                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-muted);" data-hint="Tick only the optional fields you actually track — the rest stay hidden on this form. Saved on this device.">⚙ Customise fields</summary>
+                                <div id="beanFieldOptions" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;"></div>
+                            </details>
                         </div>
                     </details>
                     <button type="submit">Add to Pantry</button>
@@ -499,7 +519,7 @@
                     <li><strong>Allow the microphone</strong> when asked (first time you start a roast).</li>
                     <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
                     <li><strong>Your roaster:</strong> on Active Roast it shows your machine — most people use one, so there's nothing to set up. If you use more than one (yours, a friend's, a different Behmor/KKTO), tap <strong>⚙ Manage roasters</strong> to add them; each roast is then tagged with the machine it was done on.</li>
-                    <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost. Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
+                    <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost (and <strong>⚙ Customise fields</strong> there hides the optional fields you don't track). Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
                     <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
                 </ol>
             </div>

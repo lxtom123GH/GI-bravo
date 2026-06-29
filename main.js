@@ -8,6 +8,7 @@ import { initAudioSystem } from './js/audio.js';
 import { initPantry } from './js/pantry.js';
 import { initHistory } from './js/history.js';
 import { initCustomise } from './js/customise.js';
+import { initBeanFields } from './js/beanfields.js';
 import { initPrep } from './js/prep.js';
 import { initRoasters } from './js/roasters.js';
 import { initBlends } from './js/blends.js';
@@ -33,6 +34,7 @@ function init() {
     initRoasterPanel();
     initAudioSystem();
     initPantry();
+    initBeanFields();
     initPrep();
     initReceipts();
     initBlends();
