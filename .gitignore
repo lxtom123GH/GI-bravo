@@ -13,3 +13,6 @@ roast-logs/*
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Build output — Vercel rebuilds from source; stop committing it to avoid drift/conflicts
+dist/
