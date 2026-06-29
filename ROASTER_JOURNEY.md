@@ -89,6 +89,14 @@ behind **＋ Add detail** (progressive disclosure). A bean can hold multiple **g
 average, and a **FEFO "use first"** order (soonest best-before, else oldest) decides which lot a
 roast draws down. A simple **Roasted stock** section tracks roasted grams left + days since roast.
 
+**Shipped ✅ (low-friction entry, `js/suggest.js`):** answers the owner's "if they only buy from
+1–3 places, do they retype it every time?" — no. Supplier/country/region/farm **autocomplete from
+the user's own history** (+ a seed origin/process vocabulary), and **cascade**: pick a supplier →
+the countries used from it lead (auto-filled when unique); pick a country → its usual region leads
+and a single-ever process pre-fills. Typing/pasting a structured name (*"Ethiopia Yirgacheffe
+Washed"*) parses into country/region/process. Pure + unit-tested; no scraping. (Future polish: a
+seeded Australian home-roast supplier picker — see Stage 1.)
+
 **Gaps / ideas ✨ (this is where freshness lives):**
 - **Two clocks, not one.** Green beans keep ~12 months+; **roasted** beans have a short arc
   (degas a few days, peak ~4–14 days, fade after). Track **green age** (purchased date) *and*,

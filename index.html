@@ -331,7 +331,13 @@
                     <!-- Floor: just a name and how much you have. Everything else is optional,
                          folded away behind "＋ Add detail" (progressive disclosure). -->
                     <label class="field-label" for="beanName">Bean / blend name <span class="req">*</span></label>
-                    <input type="text" id="beanName" placeholder="e.g. Ethiopia Yirgacheffe" required data-hint="Add green beans here so you can pick them when roasting. Just a name and grams is enough — the rest is optional.">
+                    <input type="text" id="beanName" placeholder="e.g. Ethiopia Yirgacheffe" required data-hint="Add green beans here so you can pick them when roasting. Just a name and grams is enough — the rest is optional. Tip: type or paste a full name like “Ethiopia Yirgacheffe Washed” and the country, region and process fields fill themselves in.">
+                    <!-- Autocomplete lists built from your own past entries (+ a seed vocabulary),
+                         populated and re-ordered by js/suggest.js for low-friction repeat entry. -->
+                    <datalist id="supplierList"></datalist>
+                    <datalist id="countryList"></datalist>
+                    <datalist id="regionList"></datalist>
+                    <datalist id="farmList"></datalist>
                     <label class="field-label" for="beanQuantity">Grams on hand</label>
                     <input type="number" id="beanQuantity" placeholder="e.g. 1000" min="0" step="1">
                     <details id="beanDetail" style="margin-top: 12px; margin-bottom: 4px;">
@@ -341,15 +347,15 @@
                                  ones a person doesn't track (js/beanfields.js). -->
                             <div data-beanfield="country">
                                 <label class="field-label" for="beanCountry">Country of origin</label>
-                                <input type="text" id="beanCountry" placeholder="e.g. Ethiopia">
+                                <input type="text" id="beanCountry" placeholder="e.g. Ethiopia" list="countryList" autocomplete="off">
                             </div>
                             <div data-beanfield="region">
                                 <label class="field-label" for="beanRegion">Region</label>
-                                <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe">
+                                <input type="text" id="beanRegion" placeholder="e.g. Yirgacheffe" list="regionList" autocomplete="off">
                             </div>
                             <div data-beanfield="farm">
                                 <label class="field-label" for="beanFarm">Farm / producer</label>
-                                <input type="text" id="beanFarm" placeholder="Optional">
+                                <input type="text" id="beanFarm" placeholder="Optional" list="farmList" autocomplete="off">
                             </div>
                             <div data-beanfield="process">
                                 <label class="field-label" for="beanProcess">Process</label>
@@ -358,8 +364,11 @@
                                     <option value="Washed">Washed</option>
                                     <option value="Natural">Natural</option>
                                     <option value="Honey">Honey</option>
+                                    <option value="Pulped Natural">Pulped Natural</option>
                                     <option value="Wet-Hulled">Wet-Hulled</option>
                                     <option value="Anaerobic">Anaerobic</option>
+                                    <option value="Monsooned">Monsooned</option>
+                                    <option value="Decaf">Decaf</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -369,7 +378,7 @@
                             </div>
                             <div data-beanfield="supplier">
                                 <label class="field-label" for="beanSupplier">Supplier / roaster</label>
-                                <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean).">
+                                <input type="text" id="beanSupplier" placeholder="Optional — where you buy it" list="supplierList" autocomplete="off" data-hint="Where you source this bean. Saved so you can re-order in one tap and watch its price over time (the Source button on each bean). Start typing to pick from places you've used before — and the country/region/process fields then suggest what you usually buy from there first.">
                                 <label class="field-label" for="beanSupplierUrl">Re-order link</label>
                                 <input type="text" id="beanSupplierUrl" inputmode="url" placeholder="Optional — product page URL">
                             </div>
@@ -543,6 +552,7 @@
                     <li>Pick your <strong>Mode</strong> (bottom of the sidebar): Easy, Moderate (recommended), or Expert.</li>
                     <li><strong>Your roaster:</strong> on Active Roast it shows your machine — most people use one, so there's nothing to set up. If you use more than one (yours, a friend's, a different Behmor/KKTO), tap <strong>⚙ Manage roasters</strong> to add them; each roast is then tagged with the machine it was done on.</li>
                     <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost (and <strong>⚙ Customise fields</strong> there hides the optional fields you don't track). Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
+                    <li><strong>Adding beans you've bought before is quick:</strong> the supplier, country, region and farm boxes <strong>suggest what you've typed before</strong> — and they work together. Pick a <strong>supplier</strong> and the countries you usually buy from it move to the top (and fill in if there's only one); pick a <strong>country</strong> and its usual region/process follow. Typing or pasting a full name like <em>"Ethiopia Yirgacheffe Washed"</em> fills in country, region and process for you.</li>
                     <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
                 </ol>
             </div>

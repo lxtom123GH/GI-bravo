@@ -53,6 +53,12 @@ model) and each roast is tagged with the machine it was done on.
   per-roast weight deduction. Adding a bean floors at **name + grams**; origin, process,
   cost, density, size and supplier fold behind **＋ Add detail**. Metric/imperial weights
   + a default batch size.
+- ⚡ **Low-friction repeat entry** — if you buy from just a few places, you barely type:
+  supplier/country/region/farm **autocomplete from your own past entries** (+ a seed list of
+  origins/processes), and they **cascade** — pick a supplier and the countries you buy from it
+  float to the top (auto-filled if there's only one); pick a country and its usual region/process
+  follow. Typing or pasting a structured name like *"Ethiopia Yirgacheffe Washed"* **auto-fills**
+  country, region and process.
 - 📦 **Green lots** — track separate dated/priced purchases of one bean: on-hand grams is
   the sum of its lots, cost is the grams-weighted average, and a **FEFO "use first"** order
   (soonest best-before, else oldest) decides which lot a roast draws from.
@@ -172,6 +178,7 @@ js/
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   mfcc.js           Experimental MFCC feature extraction (FFT/mel/DCT, pure) — opt-in, no effect on detection yet
   roastlab.js       Roast Lab — capture/summarise/export a per-roast feature timeline (pure) — opt-in, observational
+  suggest.js        Low-friction bean entry — autocomplete + cascading suggestions + name parsing (pure)
   pantry.js         Bean inventory (CRUD, green lots, roasted stock, source book, green age/FIFO)
   lots.js           Green-lot helpers — grams sum, weighted cost, FEFO order, drawdown (pure)
   sourcebook.js     Source book — per-bean price history + trend from lots (pure)

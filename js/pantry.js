@@ -1,4 +1,5 @@
 import { getPantry, addBeanToPantry, deleteBeanFromPantry, addLotToBean, deleteLotFromBean, getRoastHistory, logRoastedUsage, updateBean, addBeanLedgerEntry, deleteBeanLedgerEntry } from './storage.js';
+import { buildSuggestions, parseBeanName, orderByContext, uniqueValue } from './suggest.js';
 import { greenAge, fifoBeanId, roastRest, roastedRemaining, roastedStock, ROASTED_USAGE_WHERE } from './freshness.js';
 import { fefoLotOrder } from './lots.js';
 import { priceHistory, priceTrend } from './sourcebook.js';
@@ -58,11 +59,85 @@ export function initPantry() {
         });
     }
 
+    initBeanSuggestions();
     renderPantryList();
     renderRoastedStock();
     window.addEventListener('pantryUpdated', () => { renderPantryList(); renderRoastedStock(); });
     // Roasted stock comes from roast history (e.g. a roasted weight was just recorded).
     window.addEventListener('historyUpdated', renderRoastedStock);
+}
+
+// --- Low-friction bean entry: autocomplete + cascading suggestions + name parsing ---
+// All suggestions come from the user's own pantry/history (+ a seed vocabulary). Free text
+// always works; this only re-orders <datalist> options and pre-fills empty fields.
+let beanSuggestions = null;
+
+function fillDatalist(id, values) {
+    const dl = document.getElementById(id);
+    if (!dl) return;
+    dl.innerHTML = values.map(v => `<option value="${escapeHtml(v)}"></option>`).join('');
+}
+
+// Rebuild the suggestion model + base datalists from current data.
+function refreshBeanSuggestions() {
+    beanSuggestions = buildSuggestions(getPantry(), getRoastHistory());
+    fillDatalist('supplierList', beanSuggestions.suppliers);
+    fillDatalist('countryList', beanSuggestions.countries);
+    fillDatalist('regionList', beanSuggestions.regions);
+    fillDatalist('farmList', beanSuggestions.farms);
+}
+
+function setInputIfEmpty(el, value) {
+    if (el && !el.value.trim() && value) el.value = value;
+}
+
+// Only set a <select> if it's untouched and the value is one of its options.
+function setSelectIfEmpty(sel, value) {
+    if (!sel || sel.value || !value) return;
+    if ([...sel.options].some(o => o.value === value)) sel.value = value;
+}
+
+function initBeanSuggestions() {
+    const nameEl = document.getElementById('beanName');
+    if (!nameEl) return;
+    const supEl = document.getElementById('beanSupplier');
+    const ctyEl = document.getElementById('beanCountry');
+    const regEl = document.getElementById('beanRegion');
+    const procEl = document.getElementById('beanProcess');
+
+    refreshBeanSuggestions();
+    window.addEventListener('pantryUpdated', refreshBeanSuggestions);
+
+    // Country chosen → float its usual regions to the top, and pre-fill the process if there's
+    // only ever been one for this country.
+    const reorderForCountry = (country) => {
+        const ctx = beanSuggestions.byCountry[(country || '').trim()];
+        if (!ctx) return;
+        fillDatalist('regionList', orderByContext(beanSuggestions.regions, ctx.regions));
+        setSelectIfEmpty(procEl, uniqueValue(ctx.processes));
+    };
+
+    // Type/paste a structured name → fill empty origin fields (lowest-friction of all).
+    nameEl.addEventListener('change', () => {
+        const parsed = parseBeanName(nameEl.value, {
+            countries: beanSuggestions.countries, processes: beanSuggestions.processes,
+        });
+        setInputIfEmpty(ctyEl, parsed.country);
+        setInputIfEmpty(regEl, parsed.region);
+        setSelectIfEmpty(procEl, parsed.process);
+        if (parsed.country) reorderForCountry(parsed.country);
+    });
+
+    // Supplier chosen → float the countries you buy from there first; pre-fill if there's only one.
+    if (supEl) supEl.addEventListener('change', () => {
+        const ctx = beanSuggestions.bySupplier[supEl.value.trim()];
+        if (!ctx) return;
+        fillDatalist('countryList', orderByContext(beanSuggestions.countries, ctx.countries));
+        setInputIfEmpty(ctyEl, uniqueValue(ctx.countries));
+        if (ctyEl && ctyEl.value) reorderForCountry(ctyEl.value);
+    });
+
+    if (ctyEl) ctyEl.addEventListener('change', () => reorderForCountry(ctyEl.value));
 }
 
 export function renderPantryList() {

@@ -230,6 +230,15 @@ Shipped:
 - **Suggested blends** — ✅ "Blends you can make now" matches classic ratios to the in-stock pantry; one tap pre-fills the builder (`suggestBlends` in `js/blends.js`).
 - **Experiential rest/peak guidance** — ✅ the history rest/peak badge is a soft, approximate hint (research refuted fixed per-brew-method rest tables) and surfaces the user's own "★ rated best around day X" from the tasting log once a roast has ≥2 dated tastings (`personalPeak` in `js/tasting.js`).
 - **Pantry depth (Track B)** — ✅ progressive-disclosure add-bean form (name + grams floor, rest behind ＋ Add detail); **green lots** (dated/priced sub-records per bean, sum-of-lots on hand, weighted-average cost, FEFO "use first" + roast drawdown — `js/lots.js`); **roasted stock** (simple grams-left + days-since-roast); and a **source book** (per-bean supplier, re-order link, price history + trend — `js/sourcebook.js`). Research-grounded: green carries the depth, roasted stays dead-simple.
+- **Low-friction bean entry** — ✅ answers "if you buy from 1–3 places, must you retype it each
+  time?" (no). `js/suggest.js` (pure, unit-tested): `buildSuggestions(pantry, history)` powers
+  native `<datalist>` **autocomplete** for supplier/country/region/farm from the user's own
+  entries (+ seed origin/process vocabulary), ordered by frequency; **cascading** via
+  `bySupplier`/`byCountry` + `orderByContext` re-orders child suggestions by the chosen parent and
+  `uniqueValue` auto-fills the only-ever case; `parseBeanName` splits a structured name
+  ("Ethiopia Yirgacheffe Washed") into country/region/process to pre-fill on type/paste. Wired in
+  `js/pantry.js`; free text always works; **no external scraping** (history + seed + parsing covers
+  the Bean Bay-style structured names). Smart-bean-entry plan from memory.
 - **Roasted-stock usage trail** — ✅ each Drank some / Finished draw-down records **where it went** (brewed / gift / cupping + optional note) on the roast's `usageLog`, shown as a per-batch "Where it went" history; `logRoastedUsage` + pure `summariseRoastedUsage` (`js/storage.js` / `js/freshness.js`). Lives in roastHistory, so backup already covers it. Keeps the "what did I do with it" answer without leaving roasted stock heavy.
 - **Borrowed/lent bean ledger** — ✅ a **Loan** button on each pantry bean records "borrowed from Mark — owe 250 g" / "lent Sam 200 g"; the card shows owed/lent totals with a per-bean **Loans** list (`js/ledger.js` `summariseLedger` + `addBeanLedgerEntry`/`deleteBeanLedgerEntry`). Lives on the bean, so backup covers it. (Owner idea, ROASTER_JOURNEY Stage 1 — keeps the collective side honest.)
 - **Choose-your-fields add-bean form** — ✅ a **⚙ Customise fields** panel inside ＋ Add detail lets each person hide the optional fields they don't track (origin/process/cost/supplier/density-size); reuses the dashboard customiser's pure keep/hide `decide` (`js/beanfields.js`, `beanFieldsHidden` device-local pref, like `dashboardHidden`). Progressive-disclosure direction from the pantry memory; the swipe-card onboarding over it remains the open part.
