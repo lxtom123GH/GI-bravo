@@ -91,6 +91,12 @@ an official Agtron number.
 
 ## Ongoing use
 
+- **Lots (separate batches of one bean):** tap **＋ Lot** on a pantry bean to add a fresh
+  batch you bought — grams is all you need, but you can add a date, price and *best-before*.
+  The bean's grams-on-hand is the **sum** of its lots, its cost becomes the **weighted average**
+  across them, and the **Lots** breakdown lists each batch with the one to *use first* on top
+  (soonest best-before, otherwise oldest). Roasting draws green from that oldest lot first, so
+  stock stays honest. Beans without lots stay simple — it's entirely optional.
 - **Freshness & FIFO:** the **Bean Pantry** shows how long ago each bean was bought,
   flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
   In **Roast History**, each roast shows a soft freshness badge — *resting* at first, a broad
