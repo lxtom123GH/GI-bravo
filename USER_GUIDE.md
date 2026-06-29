@@ -104,7 +104,9 @@ an official Agtron number.
 - **Roasted stock:** the **Bean Pantry → Roasted stock** section lists coffee you've
   *roasted* and still have — just grams left and how long it's been resting, oldest first
   (it stays simple on purpose). It fills in once you record a roast's **roasted weight** in
-  Roast History; tap **Drank some** as you brew it, or **Finished** when a bag is gone.
+  Roast History; tap **Drank some** as you brew it, or **Finished** when a bag is gone. Each
+  time you can note **where it went** (brewed / gift / cupping, with an optional note), and the
+  batch keeps a small **Where it went** history — handy for "I gave that one to Mum".
 - **Freshness & FIFO:** the **Bean Pantry** shows how long ago each bean was bought,
   flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
   In **Roast History**, each roast shows a soft freshness badge — *resting* at first, a broad

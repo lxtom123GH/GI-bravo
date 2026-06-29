@@ -135,6 +135,28 @@ export function adjustRoastedRemaining(id, deltaGrams) {
     return roast.roastedRemainingG;
 }
 
+// Draw roasted stock down AND record where it went (brewed / gift / cupping / other) on the
+// roast's usageLog — a light "what did I do with it" trail. Grams are clamped to what's left
+// (you can't use more than you have). Returns the new remaining, or null if the roast is gone.
+// usageLog lives on the roast in roastHistory, so it's already covered by export/import backup.
+export function logRoastedUsage(id, grams, where = 'brewed', note = '') {
+    const history = getRoastHistory();
+    const roast = history.find(r => r.id === id);
+    if (!roast) return null;
+    const full = Number(roast.roastedWeightG) || 0;
+    const current = (roast.roastedRemainingG === undefined || roast.roastedRemainingG === null)
+        ? full
+        : Number(roast.roastedRemainingG) || 0;
+    const used = Math.max(0, Math.min(current, Number(grams) || 0));
+    roast.roastedRemainingG = current - used;
+    if (used > 0) {
+        if (!Array.isArray(roast.usageLog)) roast.usageLog = [];
+        roast.usageLog.push({ date: new Date().toISOString(), grams: used, where: where || 'other', note: note || '' });
+    }
+    saveRoastHistory(history);
+    return roast.roastedRemainingG;
+}
+
 // --- Detection Settings ---
 
 export const DEFAULT_DETECTION_SETTINGS = {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { daysBetween, greenAge, roastRest, fifoBeanId, roastedRemaining, roastedStock } from '../../js/freshness.js';
+import { daysBetween, greenAge, roastRest, fifoBeanId, roastedRemaining, roastedStock, summariseRoastedUsage } from '../../js/freshness.js';
 
 const DAY = 86_400_000;
 const ago = (d, now) => now - d * DAY;
@@ -68,6 +68,26 @@ describe('roastedStock', () => {
     it('tolerates empty input', () => {
         expect(roastedStock([])).toEqual([]);
         expect(roastedStock(null)).toEqual([]);
+    });
+});
+
+describe('summariseRoastedUsage', () => {
+    it('totals grams per destination + overall', () => {
+        const log = [
+            { grams: 18, where: 'brewed' },
+            { grams: 36, where: 'brewed' },
+            { grams: 250, where: 'gift' },
+            { grams: 12, where: 'cupping' }
+        ];
+        expect(summariseRoastedUsage(log)).toEqual({ brewed: 54, gift: 250, cupping: 12, other: 0, total: 316 });
+    });
+    it('folds unknown/blank destinations into other and ignores non-positive grams', () => {
+        const log = [{ grams: 20, where: 'mystery' }, { grams: 0, where: 'brewed' }, { grams: -5, where: 'gift' }];
+        expect(summariseRoastedUsage(log)).toEqual({ brewed: 0, gift: 0, cupping: 0, other: 20, total: 20 });
+    });
+    it('tolerates empty/missing input', () => {
+        expect(summariseRoastedUsage([]).total).toBe(0);
+        expect(summariseRoastedUsage(null).total).toBe(0);
     });
 });
 
