@@ -26,15 +26,40 @@ export function greenAge(purchasedAt, now = Date.now(), { staleDays = 365 } = {}
     return { days, text: ageText(days), stale: days >= staleDays };
 }
 
-// Roasted rest/peak status. Defaults: resting < 4 days, peak 4–21 days, then fading.
-// (Best is often ~4–14 days; espresso likes a longer rest, filter a shorter one.)
+// Rest/peak window for how the beans will be brewed. Espresso likes a longer
+// rest (degas settles the crema); filter is drinkable sooner. Unknown → balanced
+// default. Match by keyword so it's robust to the exact brew-method label.
+const REST_WINDOWS = {
+    espresso: { restDays: 6, peakEndDays: 21 },  // espresso, moka, aeropress
+    filter:   { restDays: 2, peakEndDays: 14 },  // v60, filter, french press, cold brew
+    default:  { restDays: 4, peakEndDays: 21 },
+};
+
+export function restWindowFor(method) {
+    const m = String(method || '').toLowerCase();
+    if (/espresso|moka|aeropress/.test(m)) return REST_WINDOWS.espresso;
+    if (/v60|filter|pour|chemex|drip|french|cold/.test(m)) return REST_WINDOWS.filter;
+    return REST_WINDOWS.default;
+}
+
+// Roasted rest/peak status, with a "ready in N days" / "N days left at peak"
+// countdown. Defaults: resting < 4 days, peak 4–21 days, then fading. Pass a
+// window from restWindowFor(method) to tailor it to how the coffee's brewed.
 export function roastRest(roastDateMs, now = Date.now(), { restDays = 4, peakEndDays = 21 } = {}) {
     if (!roastDateMs) return null;
     const days = daysBetween(roastDateMs, now);
-    if (days < 0) return { phase: 'resting', days: 0, text: 'just roasted' };
-    if (days < restDays) return { phase: 'resting', days, text: `resting · day ${days + 1} of ~${restDays}` };
-    if (days <= peakEndDays) return { phase: 'peak', days, text: `ready · day ${days} (peak)` };
-    return { phase: 'past', days, text: `${ageText(days)} old · past peak` };
+    if (days < restDays) {
+        const left = Math.max(0, restDays - days);
+        const text = left === 0 ? 'resting · ready tomorrow'
+            : `resting · ready in ${left} day${left === 1 ? '' : 's'}`;
+        return { phase: 'resting', days: Math.max(0, days), ready: false, daysLeft: left, text };
+    }
+    if (days <= peakEndDays) {
+        const left = peakEndDays - days;
+        const text = left <= 0 ? 'at peak · best now' : `at peak · ${left} day${left === 1 ? '' : 's'} left`;
+        return { phase: 'peak', days, ready: true, daysLeft: Math.max(0, left), text };
+    }
+    return { phase: 'past', days, ready: false, daysLeft: 0, text: `${ageText(days)} old · past peak` };
 }
 
 // Pick the in-stock bean to use first (oldest green) for a gentle FIFO nudge.

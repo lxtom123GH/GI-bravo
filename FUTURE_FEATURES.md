@@ -205,6 +205,8 @@ Shipped:
 - **Onboarding** — ✅ simulated demo roast, guided tour, hint mode, in-app Help, empty-state nudges.
 - **Mobile layout + crack false-positive undo + repeating alarm/tones + declutter + smarter calibration** — ✅ (see `ROASTER_JOURNEY.md`).
 - **Weigh-out prep batches** — ✅ bean + grams + photo in the pantry, loadable onto Active Roast.
+- **Suggested blends** — ✅ "Blends you can make now" matches classic ratios to the in-stock pantry; one tap pre-fills the builder (`suggestBlends` in `js/blends.js`).
+- **Brew-aware rest countdown** — ✅ the history rest/peak badge counts down ("ready in 3 days" / "at peak · N left") with espresso-vs-filter windows (`restWindowFor` in `js/freshness.js`).
 - **Behmor weights match the machine (100/200/400 g)** + green weight remembers the usual (e.g. 450 g) — ✅.
 - **Roaster profiles** — ✅ single-roaster by default (frictionless), opt-in multi-roaster (`js/roasters.js`); each roast tagged with its machine. _Roadmap step 1 of `ROASTER_JOURNEY.md`._
 

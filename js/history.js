@@ -1,6 +1,6 @@
 import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistory, exportAllData, importAllData, getReferenceSamples, addReferenceSample, getColorTargets, addColorTarget, deleteColorTarget, getEffectiveTier, saveBehmorTemplate, getBehmorTemplates, getWeightUnit, saveManualProfile, saveRoastHistory, addBeanToPantry } from './storage.js';
 import { flavorWheel } from './flavors.js';
-import { roastRest } from './freshness.js';
+import { roastRest, restWindowFor } from './freshness.js';
 import { buildLeaderboard } from './value.js';
 import { upsertTasting, latestTasting, toNotes } from './tasting.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
@@ -509,7 +509,9 @@ function renderHistoryList() {
         if (tcount > 1) flavorsHtml += ` ${chip(`📈 ${tcount} tastings over time`)}`;
 
         // Roasted rest/peak badge — how the beans are resting since this roast.
-        const rest = roastRest(new Date(roast.date).getTime());
+        // Tailor the window to how it's brewed, if a brew method has been logged.
+        const brewMethod = roast.tastingNotes && roast.tastingNotes.brewLog && roast.tastingNotes.brewLog.method;
+        const rest = roastRest(new Date(roast.date).getTime(), Date.now(), restWindowFor(brewMethod));
         let restBadge = '';
         if (rest) {
             const c = rest.phase === 'peak' ? 'var(--success)' : (rest.phase === 'past' ? 'var(--text-muted)' : 'var(--accent)');

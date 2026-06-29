@@ -113,9 +113,10 @@ You asked "what blends, where to look, can you find them?" — yes:
 **Shipped ✅ (blend builder, `js/blends.js`):** define a recipe (components + %), pre- or
 post-blend; **"Weigh out"** splits a chosen batch weight into per-component **prep batches**
 (60/40 of 450 g → 270 g + 180 g) that load onto Active Roast. Classic starting points shown.
+**Shipped ✅ (`js/blends.js`):** **Suggested blends** — "Blends you can make now" surfaces the
+classic ratios (Everyday, Bold espresso, Mocha-Java, Italian-style) the current in-stock pantry can
+fulfil, matched by origin keyword, each **"Use this recipe"** pre-filling the blend builder.
 **Ideas ✨ (still to come):**
-- **Suggested blends** — given what's in your pantry, surface 2–3 classic ratios you *can* make
-  right now, with the source links above.
 - Track **pre- vs post-blend** on the *roast record* so tasting notes know what they're describing
   (the blend recipe already records it; carry it onto the roast).
 
@@ -163,9 +164,11 @@ home for the per-machine variants (Mark's KKTO, Stuart's Behmor).
 The questions you raised — rest how long? grind fresh? cut/blend when? test single or mixed?
 
 **Today ◐:** colour-corrected photo + roast-colour index; the roast is saved.
+**Shipped ✅ (`js/freshness.js`):** the per-roast **rest/peak badge** now counts down ("resting ·
+ready in 3 days" → "at peak · 13 days left") and is **brew-aware** — espresso gets a longer rest
+window, filter a shorter one, derived from the roast's logged brew method.
 **Ideas ✨:**
-- **Degas / rest timer.** On drop, start a freshness clock with guidance: *espresso* often wants
-  ~5–14 days rest; *filter* can be ready sooner. A simple "ready window" badge ("peak in 3 days").
+- **Grind-fresh reminder** is really a brew-time nudge — grind per shot, not ahead. _(see below)_
 - **Grind-fresh reminder** is really a brew-time nudge — grind per shot, not ahead.
 - **Cut / combine timing** (for post-blend): record when components were combined and the ratio,
   so tasting notes reference the actual cup.
