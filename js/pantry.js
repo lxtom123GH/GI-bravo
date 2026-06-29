@@ -6,6 +6,12 @@ import { openPlanModal } from './planner.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
 
+// "bought today" / "bought yesterday" / "bought 5 days ago" — greenAge returns the bare
+// words "today"/"yesterday", which read wrong with a trailing " ago".
+function boughtPhrase(text) {
+    return (text === 'today' || text === 'yesterday') ? `bought ${text}` : `bought ${text} ago`;
+}
+
 export function initPantry() {
     const pantryForm = document.getElementById('addBeanForm');
     if (pantryForm) {
@@ -111,7 +117,7 @@ export function renderPantryList() {
         if (age) {
             const ageColor = age.stale ? 'var(--danger)' : 'var(--text-muted)';
             const staleNote = age.stale ? ' — old, roast soon' : '';
-            details += `<br><small style="color: ${ageColor};">🌱 bought ${age.text} ago${staleNote}</small>`;
+            details += `<br><small style="color: ${ageColor};">🌱 ${boughtPhrase(age.text)}${staleNote}</small>`;
         }
         if (qty > 0 && bean.id === useFirstId) {
             details += `<br><small style="color: var(--accent);">⏳ oldest in stock — roast this first</small>`;
@@ -278,7 +284,7 @@ function lotDescription(lot, isFirst) {
     const grams = Number(lot.grams) || 0;
     const bits = [`${grams} g`];
     const age = greenAge(lot.date);
-    if (age) bits.push(`bought ${age.text} ago`);
+    if (age) bits.push(boughtPhrase(age.text));
     if (Number(lot.price) > 0) bits.push(`${Number(lot.price).toFixed(2)}/kg`);
 
     let html = bits.join(' · ');
@@ -382,7 +388,7 @@ function openSourceModal(bean) {
         <label class="field-label" for="srcSupplier">Supplier / roaster</label>
         <input type="text" id="srcSupplier" placeholder="Where you buy it">
         <label class="field-label" for="srcUrl">Re-order link</label>
-        <input type="url" id="srcUrl" placeholder="Product page URL">
+        <input type="text" id="srcUrl" inputmode="url" placeholder="Product page URL">
         <p style="margin-bottom: 4px;"><strong>Price history</strong></p>
         <ul style="margin-top: 4px;">${histRows}</ul>
         ${trendLine}
