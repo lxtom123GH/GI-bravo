@@ -2,7 +2,7 @@ import { getRoastHistory, getPantry, updateRoastInHistory, deleteRoastFromHistor
 import { flavorWheel } from './flavors.js';
 import { roastRest } from './freshness.js';
 import { buildLeaderboard } from './value.js';
-import { upsertTasting, latestTasting, toNotes } from './tasting.js';
+import { upsertTasting, latestTasting, toNotes, personalPeak } from './tasting.js';
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
@@ -508,13 +508,20 @@ function renderHistoryList() {
         const tcount = Array.isArray(roast.tastingLog) ? roast.tastingLog.length : 0;
         if (tcount > 1) flavorsHtml += ` ${chip(`📈 ${tcount} tastings over time`)}`;
 
-        // Roasted rest/peak badge — how the beans are resting since this roast.
-        const rest = roastRest(new Date(roast.date).getTime());
+        // Roasted rest/peak badge — a soft generic hint (rest genuinely varies by
+        // bean/roast/palate). When the roast has enough tasting entries, surface the
+        // user's OWN "tasted best at day X" instead — grounded, not a generic table.
+        const roastMs = new Date(roast.date).getTime();
+        const rest = roastRest(roastMs);
+        const peak = personalPeak(roastMs, roast.tastingLog);
         let restBadge = '';
         if (rest) {
             const c = rest.phase === 'peak' ? 'var(--success)' : (rest.phase === 'past' ? 'var(--text-muted)' : 'var(--accent)');
             const icon = rest.phase === 'peak' ? '☕' : (rest.phase === 'past' ? '·' : '⏳');
             restBadge = `<div style="font-size: 0.8rem; color: ${c};">${icon} ${rest.text}</div>`;
+        }
+        if (peak) {
+            restBadge += `<div style="font-size: 0.8rem; color: var(--success);">★ you rated this best around day ${peak.day}</div>`;
         }
 
         card.innerHTML = `

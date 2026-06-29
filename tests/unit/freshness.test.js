@@ -36,6 +36,12 @@ describe('roastRest', () => {
     it('respects custom windows', () => {
         expect(roastRest(ago(2, now), now, { restDays: 5 }).phase).toBe('resting');
     });
+    it('gives a soft, approximate hint — no asserted per-method day-count', () => {
+        expect(roastRest(ago(1, now), now).text).toMatch(/few days/);
+        expect(roastRest(ago(8, now), now).text).toMatch(/varies/);
+        // no precise countdown fields any more
+        expect(roastRest(ago(1, now), now).daysLeft).toBeUndefined();
+    });
 });
 
 describe('fifoBeanId', () => {

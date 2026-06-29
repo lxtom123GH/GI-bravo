@@ -50,7 +50,9 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    automatically, and the bean's quantity is reduced by the batch weight.
 
 > Tip: if it's detecting too many or too few cracks, open **Detection Settings**
-> and adjust the **sensitivity** slider, then try again next roast.
+> and adjust the **sensitivity** slider — or turn on **Auto-tune from my corrections**,
+> which quietly loosens or tightens detection for that roaster each time you clear a false
+> crack (✗) or mark one it missed.
 
 ---
 
@@ -90,8 +92,10 @@ an official Agtron number.
 
 - **Freshness & FIFO:** the **Bean Pantry** shows how long ago each bean was bought,
   flags old lots ("roast soon"), and marks the **oldest in stock** to *roast this first*.
-  In **Roast History**, each roast shows a freshness badge — *resting* for the first few
-  days, then *ready (peak)* for roughly 1–3 weeks, then *past peak*.
+  In **Roast History**, each roast shows a soft freshness badge — *resting* at first, a broad
+  *likely window* (~1–3 weeks), then *past peak*. Rest genuinely varies by bean, roast and palate,
+  so once you've logged **2+ dated tastings** the badge instead surfaces your own
+  *★ rated best around day X* — your real sweet spot, not a generic number.
 - **Add a whole receipt at once:** in **Bean Pantry → Quick-add from receipt**, snap the receipt
   (optional), set the date, and add each bean (name, grams, $/kg) in one go — they all land in your
   pantry with that purchase date, and the photo is kept under **Recent purchases** so you can check
@@ -102,7 +106,9 @@ an official Agtron number.
   about what you'll drink in ~2 weeks.
 - **Blends:** in **Bean Pantry → Blends**, build a recipe (e.g. 60% Colombia · 40% Brazil),
   choose *pre-blend* (roast together) or *post-blend* (roast each, combine after), then
-  **Weigh out** a batch — the app splits it into per-bean prep batches ready to roast. If you
+  **Weigh out** a batch — the app splits it into per-bean prep batches ready to roast. **Blends
+  you can make now** suggests classic recipes from the beans you already have in stock — tap
+  *Use this recipe* to pre-fill the builder. If you
   set each bean's optional **density** and **size**, a *pre-blend* warns when beans differ too
   much to roast evenly together (use post-blend instead).
 - **Roaster capacity:** each roaster has a drum min/max (Behmor ≈ 100–454 g) used by **Plan

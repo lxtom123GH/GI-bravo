@@ -6,11 +6,50 @@
 import { getPantry, getBlends, addBlend, deleteBlend, addPrepBatch, getLastGreenWeight } from './storage.js';
 
 // A few classic starting points (see the research links in ROASTER_JOURNEY.md).
+// Each component carries an origin keyword matcher so we can spot which classics
+// the current pantry can actually make.
 const CLASSIC_BLENDS = [
-    { name: 'Everyday (Colombia/Brazil)', ratio: '60% Colombia · 40% Brazil' },
-    { name: 'Bold espresso', ratio: '50% Sumatra · 30% Colombia · 20% Ethiopia' },
-    { name: 'Mocha-Java (classic)', ratio: '25% Yemen/Ethiopia · 75% Indonesian' }
+    { name: 'Everyday (Colombia/Brazil)', type: 'pre', components: [
+        { role: 'Colombia', pct: 60, match: /colombia/ },
+        { role: 'Brazil', pct: 40, match: /brazil/ },
+    ] },
+    { name: 'Bold espresso', type: 'post', components: [
+        { role: 'Sumatra/Indonesia', pct: 50, match: /sumatra|indonesia|java|sulawesi|mandheling/ },
+        { role: 'Colombia', pct: 30, match: /colombia/ },
+        { role: 'Ethiopia', pct: 20, match: /ethiopia|yirgacheffe|guji|sidamo|harrar/ },
+    ] },
+    { name: 'Mocha-Java (classic)', type: 'pre', components: [
+        { role: 'Yemen/Ethiopia', pct: 25, match: /yemen|mocha|ethiopia|harrar|yirgacheffe/ },
+        { role: 'Indonesian', pct: 75, match: /java|sumatra|sulawesi|indonesia|mandheling/ },
+    ] },
+    { name: 'Italian-style base', type: 'pre', components: [
+        { role: 'Brazil base', pct: 70, match: /brazil/ },
+        { role: 'Bright lift (Ethiopia/Kenya/Colombia)', pct: 30, match: /ethiopia|kenya|colombia|yirgacheffe/ },
+    ] },
 ];
+
+// A "60% Colombia · 40% Brazil" style summary of a classic's components.
+function ratioText(blend) {
+    return blend.components.map(c => `${c.pct}% ${c.role}`).join(' · ');
+}
+
+// PURE: given the in-stock pantry, surface the classic blends you can make RIGHT
+// NOW — matching each component's origin keywords against a bean's name/country/
+// region. Each component is filled by a distinct in-stock bean; only fully
+// matched (makeable) blends are returned, with the bean chosen per component.
+export function suggestBlends(beans) {
+    const inStock = (beans || []).filter(b => (Number(b.quantity) || 0) > 0);
+    const haystack = b => `${b.name || ''} ${b.country || ''} ${b.region || ''}`.toLowerCase();
+    return CLASSIC_BLENDS.map(blend => {
+        const used = new Set();
+        const components = blend.components.map(c => {
+            const bean = inStock.find(b => !used.has(b.id) && c.match.test(haystack(b)));
+            if (bean) used.add(bean.id);
+            return { role: c.role, pct: c.pct, beanId: bean ? bean.id : null, beanName: bean ? bean.name : null };
+        });
+        return { name: blend.name, type: blend.type, components, makeable: components.every(c => c.beanId) };
+    }).filter(s => s.makeable);
+}
 
 // PURE: assess whether components suit PRE-blending (roast together). Beans of differing
 // density or size roast unevenly in one batch, so flag it and suggest post-blend instead.
@@ -41,11 +80,40 @@ export function splitBlend(components, totalG) {
 
 export function initBlends() {
     const newBtn = document.getElementById('newBlendBtn');
-    if (newBtn) newBtn.addEventListener('click', openBlendModal);
+    if (newBtn) newBtn.addEventListener('click', () => openBlendModal());
     renderBlends();
-    window.addEventListener('pantryUpdated', renderBlends);
-    window.addEventListener('blendsUpdated', renderBlends);
-    window.addEventListener('settingsImported', renderBlends);
+    renderSuggestions();
+    const refresh = () => { renderBlends(); renderSuggestions(); };
+    window.addEventListener('pantryUpdated', refresh);
+    window.addEventListener('blendsUpdated', refresh);
+    window.addEventListener('settingsImported', refresh);
+}
+
+// "Blends you can make now" — classic recipes the current pantry can fulfil,
+// each pre-filled into the builder in one tap.
+function renderSuggestions() {
+    const wrap = document.getElementById('blendSuggestions');
+    if (!wrap) return;
+    const suggestions = suggestBlends(getPantry());
+    if (suggestions.length === 0) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">☕ Blends you can make now from your pantry:</div>`;
+    suggestions.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'margin: 0 0 8px; padding: 10px 12px;';
+        const parts = s.components.map(c => `${c.pct}% ${c.beanName}`).join(' · ');
+        card.innerHTML = `
+            <div style="font-weight: bold;">${s.name} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(${s.type === 'post' ? 'roast separately' : 'roast together'})</span></div>
+            <div style="color: var(--text-muted); font-size: 0.9rem; margin: 4px 0;">${parts}</div>
+            <button class="suggest-use" style="font-size: 0.85rem;">Use this recipe</button>
+        `;
+        card.querySelector('.suggest-use').addEventListener('click', () => openBlendModal({
+            name: s.name,
+            type: s.type,
+            components: s.components.map(c => ({ beanId: c.beanId, pct: c.pct })),
+        }));
+        wrap.appendChild(card);
+    });
 }
 
 function pctSum(components) {
@@ -58,7 +126,7 @@ function renderBlends() {
     const blends = getBlends();
     wrap.innerHTML = '';
     if (blends.length === 0) {
-        wrap.innerHTML = `<small style="color: var(--text-muted);">No blends yet. Classic starting points: ${CLASSIC_BLENDS.map(b => `<em>${b.name}</em> (${b.ratio})`).join(' · ')}.</small>`;
+        wrap.innerHTML = `<small style="color: var(--text-muted);">No blends yet. Classic starting points: ${CLASSIC_BLENDS.map(b => `<em>${b.name}</em> (${ratioText(b)})`).join(' · ')}.</small>`;
         return;
     }
     blends.forEach(blend => {
@@ -98,7 +166,7 @@ function weighOutBlend(blend) {
     alert(`Weighed out ${blend.name}: ${summary}.\nAdded as prep batches — find them in Roast prep, then load on Active Roast.`);
 }
 
-function openBlendModal() {
+function openBlendModal(prefill = null) {
     const pantry = getPantry();
     if (pantry.length < 2) { alert('Add at least two beans to your pantry to build a blend.'); return; }
 
@@ -111,25 +179,33 @@ function openBlendModal() {
     document.body.appendChild(bg);
     const close = () => document.body.removeChild(bg);
 
-    const beanOptions = pantry.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    const componentRow = () => `
+    const componentRow = (beanId = '', pct = '') => {
+        const opts = pantry.map(b => `<option value="${b.id}"${b.id === beanId ? ' selected' : ''}>${b.name}</option>`).join('');
+        return `
         <div class="blend-comp" style="display: flex; gap: 8px; margin-bottom: 6px;">
-            <select class="comp-bean" style="flex: 1; margin: 0;">${beanOptions}</select>
-            <input type="number" class="comp-pct" placeholder="%" min="0" max="100" style="width: 80px; margin: 0;">
+            <select class="comp-bean" style="flex: 1; margin: 0;">${opts}</select>
+            <input type="number" class="comp-pct" placeholder="%" min="0" max="100" style="width: 80px; margin: 0;" value="${pct}">
             <button type="button" class="comp-del danger" style="font-size: 0.75rem; padding: 5px 8px;">✕</button>
         </div>`;
+    };
+    const initialRows = (prefill && Array.isArray(prefill.components) && prefill.components.length)
+        ? prefill.components.map(c => componentRow(c.beanId, c.pct)).join('')
+        : componentRow() + componentRow();
+    const nameVal = prefill && prefill.name ? prefill.name : '';
+    const preSel = (!prefill || prefill.type !== 'post') ? ' selected' : '';
+    const postSel = prefill && prefill.type === 'post' ? ' selected' : '';
 
     modal.innerHTML = `
         <h3>Create a blend</h3>
         <label><strong>Name</strong></label>
-        <input type="text" id="blendName" placeholder="e.g. House espresso">
+        <input type="text" id="blendName" placeholder="e.g. House espresso" value="${nameVal}">
         <label><strong>Type</strong></label>
         <select id="blendType">
-            <option value="pre">Pre-blend (mix greens, roast together)</option>
-            <option value="post">Post-blend (roast each separately, then combine)</option>
+            <option value="pre"${preSel}>Pre-blend (mix greens, roast together)</option>
+            <option value="post"${postSel}>Post-blend (roast each separately, then combine)</option>
         </select>
         <label><strong>Components</strong> <span id="pctTotal" style="color: var(--text-muted); font-weight: normal;"></span></label>
-        <div id="blendComps">${componentRow()}${componentRow()}</div>
+        <div id="blendComps">${initialRows}</div>
         <button type="button" id="addCompBtn" style="font-size: 0.85rem; padding: 6px 12px;">＋ Add component</button>
         <div id="blendCompat" style="font-size: 0.85rem; margin-top: 8px;"></div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">

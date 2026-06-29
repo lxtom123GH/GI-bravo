@@ -26,15 +26,22 @@ export function greenAge(purchasedAt, now = Date.now(), { staleDays = 365 } = {}
     return { days, text: ageText(days), stale: days >= staleDays };
 }
 
-// Roasted rest/peak status. Defaults: resting < 4 days, peak 4–21 days, then fading.
-// (Best is often ~4–14 days; espresso likes a longer rest, filter a shorter one.)
+// Roasted rest/peak status — a deliberately SOFT, approximate hint. Research note
+// (2026-06-29): published per-brew-method rest tables conflict source-to-source and
+// experts reject one-size-fits-all, so we don't assert precise day counts or a
+// brew-method window — we nudge gently and let the user's own tasting log (see
+// personalPeak in tasting.js) provide the real "tasted best at day X". Phases are a
+// generic guide: settling for the first few days, a broad ~1–3 week window, then fading.
 export function roastRest(roastDateMs, now = Date.now(), { restDays = 4, peakEndDays = 21 } = {}) {
     if (!roastDateMs) return null;
     const days = daysBetween(roastDateMs, now);
-    if (days < 0) return { phase: 'resting', days: 0, text: 'just roasted' };
-    if (days < restDays) return { phase: 'resting', days, text: `resting · day ${days + 1} of ~${restDays}` };
-    if (days <= peakEndDays) return { phase: 'peak', days, text: `ready · day ${days} (peak)` };
-    return { phase: 'past', days, text: `${ageText(days)} old · past peak` };
+    if (days < restDays) {
+        return { phase: 'resting', days: Math.max(0, days), text: 'resting — most coffees open up after a few days' };
+    }
+    if (days <= peakEndDays) {
+        return { phase: 'peak', days, text: `day ${days} — likely in its window (rest varies by bean & roast)` };
+    }
+    return { phase: 'past', days, text: `${ageText(days)} old — likely past its best` };
 }
 
 // Pick the in-stock bean to use first (oldest green) for a gentle FIFO nudge.
