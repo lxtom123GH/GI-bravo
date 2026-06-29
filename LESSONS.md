@@ -104,4 +104,57 @@ and Gemini**._
 
 ---
 
-_Next: Radar #2 (weekly) and the first monthly retro — see the scheduled routines._
+## 2026-06-29 — Radar #2
+
+### Claude Code: compact sessions at 60% context — **Adopt**
+- Radar #1 said "end long sessions"; more precise: **manually compact (or `/clear`) once context
+  hits ~60–70%**. Auto-compact fires at ~83.5% and is lossy (retains only 20–30% of detail).
+  Proactive compaction preserves more useful context.
+- **Action:** treat ~60% context fill as the checkpoint to review scope, compact/clear, and
+  continue fresh — not something to push through.
+- Source: [Claude Code usage limits playbook](https://www.developersdigest.tech/blog/claude-code-usage-limits-playbook-2026)
+
+### Claude Code: `fallbackModel` config (v2.1.166) — **Adopt**
+- New `fallbackModel` setting in `~/.claude/settings.json` lets you chain up to 3 backup models
+  tried in order when the primary is overloaded. Recommended chain: `claude-opus-4-8 →
+  claude-sonnet-4-6 → claude-haiku-4-5`. Prevents dead sessions during peak hours.
+- **Action:** add to personal `~/.claude/settings.json`; no repo change needed.
+- Source: [fallbackModel guide](https://www.aiforanything.io/blog/claude-code-fallback-model-overload-fix-2026)
+
+### Claude Code: Writer/Reviewer two-session pattern — **Adopt**
+- A fresh-context session for code review avoids the reviewer being anchored to code it just
+  wrote. Practical pattern: one session implements, a second reviews (or write tests first, then
+  implement to pass them). Already easy with sub-agents or `claude --continue` in a new window.
+- Source: [effective Claude Code workflows](https://medium.com/data-science-collective/effective-claude-code-workflows-in-2026-what-changed-and-what-works-now-c93ebc6f8f50)
+
+### Gemini CLI → Antigravity CLI rename — **Watch**
+- Google started transitioning Gemini CLI to **Antigravity CLI** from June 18 2026. The free
+  personal tier (1,000 req/day, 1M-token context) remains; tool set unchanged (Search grounding,
+  file ops, shell, web fetch). v0.43.0 added surgical code-edit preference.
+- **Impact on Radar #1:** division-of-labour advice stands; just track the new name. Update any
+  docs that reference "Gemini CLI" once the rename is stable.
+- Source: [Antigravity CLI announcement](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)
+
+### AGENTS.md: write it yourself — don't AI-generate it — **Adopt**
+- New research (May 2026): LLM-generated AGENTS.md files reduce task success in 5/8 tested
+  settings and add ~3 extra steps per task. Developer-written files improve success by 4% and
+  reduce bugs 35–55%. Codex silently truncates beyond 32 KiB; target ≤ 150 lines.
+- **Here:** our CLAUDE.md is ~60 lines and hand-written — keep it that way. When we rename to
+  AGENTS.md (per Radar #1 plan), write the content ourselves.
+- Source: [AGENTS.md spec research](https://asdlc.io/practices/agents-md-spec/)
+
+### vite-plugin-pwa: prefer `prompt` over `autoUpdate` — **Adopt (when we migrate)**
+- Refines the Radar #1 "Watch → Adopt" for `vite-plugin-pwa`: the `registerType: 'autoUpdate'`
+  default silently replaces the running app mid-session. Use `registerType: 'prompt'` instead and
+  show a "New version available — reload" toast. Old cache cleanup requires explicit `workbox:
+  {cleanupOutdatedCaches: true}` (default in `generateSW` strategy, not in `injectManifest`).
+- Source: [vite + PWA caching guide 2026](https://www.enjoytoday.cn/posts/vite-pwa-guide/)
+
+### Ignore (for now)
+- Gemini 3D interactive model output (novel but no use case here yet).
+- Heavy Claude sub-agent hierarchies (3-level nested) — enterprise-scale; solo dev doesn't need
+  the orchestration overhead yet.
+
+---
+
+_Next: Radar #3 (weekly) and first monthly retro — see the scheduled routines._
