@@ -180,8 +180,11 @@ pattern, not naive — and shows where the real leverage is. Two big findings sh
     crack/clear **events** — reusing the existing Manual: Mark (missed) and ✗ (false-alarm) signals
     as labels. The last capture persists locally and exports to **JSON or CSV** (or a one-line
     clipboard summary); a git-ignored `roast-logs/` drop folder lets the owner hand a capture
-    straight to a local Claude session. This is the **v2 labelling/capture UX** — it turns a few
-    real roasts into a labelled dataset to validate the MFCC bet before fitting a classifier.
+    straight to a local Claude session. A **📤 Share capture** button (Web Share API with a file,
+    download fallback) makes it one tap to send a capture off a phone/tablet (Mail / AirDrop /
+    Files) — the no-backend way to collect captures from several devices after the same roast. This
+    is the **v2 labelling/capture UX** — it turns a few real roasts into a labelled dataset to
+    validate the MFCC bet before fitting a classifier.
   - **Shadow detector bank — ✅ shipped (LOG-ONLY, rides on Roast Lab).** A pure, unit-tested
     detector bank (`js/shadow.js`: `SHADOW_VARIANTS` + `createShadowBank`/`stepShadowBank`/
     `summariseShadowBank`; 9 tests). When Roast Lab capture is on, `js/audio.js` advances a bank of
