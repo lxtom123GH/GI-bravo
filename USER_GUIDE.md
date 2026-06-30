@@ -74,6 +74,13 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 > roasts. It's built for an A/B weekend: roast 1 baseline, roast 2 watch the live numbers,
 > roast 3 nudge the sensitivity and compare the data. Save the export into the repo's
 > `roast-logs/` folder if you want it analysed later.
+>
+> While Roast Lab is on, a 🫥 **shadow detector bank** also runs: several crack detectors
+> with different sensitivities listen *alongside* the real one and log what each would have
+> called. They **never beep and never change your detection** — they're only in the export,
+> so you can see which tuning best matches the cracks you actually heard. Want more data from
+> the same beans? Run the roast on a couple of devices (two phones + an iPad is fine), export
+> each, and drop them all in `roast-logs/` — same roast, several mics, many detectors compared.
 
 ---
 
