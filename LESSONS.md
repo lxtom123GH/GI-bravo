@@ -157,4 +157,39 @@ and Gemini**._
 
 ---
 
-_Next: Radar #3 (weekly) and first monthly retro — see the scheduled routines._
+## 2026-06-30 — Radar #3 (doc-integrity retro)
+
+### Status needs ONE owner — adopt `STATUS.md` everywhere — **Adopt** (portfolio-general)
+- **Incident:** GI-bravo's live Firebase backend read as *"parked — needs a backend"* to both the
+  owner and Claude, because status was restated across README + FUTURE_FEATURES + ROASTER_JOURNEY +
+  HANDOFF + the design docs, and newer "LIVE" notes were added **without deleting** the old
+  "no backend" text — so three docs contradicted *themselves*. An audit found 7 such issues.
+- **Root cause:** no doc *owned* status, and `CLAUDE.md`'s definition-of-done **mandated copying
+  status into 5 files** → drift was structurally guaranteed.
+- **Fix (GI-bravo, #95):** one root `STATUS.md` as the single source of truth + a "what the backend
+  does today" section; other docs link to it; DoD slimmed to "update STATUS.md + the one relevant doc."
+- **Portfolio note:** `PORTFOLIO_CONVENTIONS.md` §4 **already recommended `STATUS.md`** (golf/aps
+  have it) — GI-bravo just hadn't adopted it, so this lesson **isn't new; the self-learning loop
+  didn't close.** Every app with multiple status-bearing docs (e.g. GI-alpha's `tasks.csv` + `VISION.md`)
+  is at the same risk → adopt **"status has one owner; link, don't restate"** + a `STATUS.md` everywhere.
+
+### Roadmap/journey "aspiration layers" drift — reconcile on ship — **Adopt** (portfolio-general)
+- The specific drift vector: `FUTURE_FEATURES`/`ROASTER_JOURNEY` carry ✨/◐ "future idea" prose that
+  isn't deleted when the feature ships — the ✅ entry gets added, the ✨ pitch stays, and a reader hits
+  the aspiration first (this hid the backend AND the tastiness-per-dollar leaderboard). **Rule:** when
+  a feature ships, *delete* its aspiration text (or flip ✨/◐ → ✅), don't just append a "done" line.
+
+### "Adopt" ≠ executed — track adoption — **Adopt** (portfolio-general)
+- Radar #1's first "Adopt" (rename `CLAUDE.md` → `AGENTS.md` + shim) was **never done** — GI-bravo
+  still uses `CLAUDE.md`. An "Adopt" written as decided but unexecuted later reads as "we did this."
+  **Rule:** pair each Adopt with an execution checkbox and periodically reconcile *proposed vs done*
+  (this retro). Still pending across the portfolio: the `AGENTS.md` rename, `DECISIONS.md`,
+  `FALSE_POSITIVES.md`, and the shared `portfolio-conventions` repo.
+
+### Gemini CLI → Antigravity rename is now real — **Watch → Adopt**
+- Radar #1/#2 tracked this as "Watch." The working environment is now Antigravity
+  (`.gemini/antigravity/…`), so update doc references from "Gemini CLI" to "Antigravity CLI" when touched.
+
+---
+
+_Next: act on the Radar #3 portfolio items (STATUS.md + the self-learning loop) across the other apps._

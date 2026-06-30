@@ -8,13 +8,23 @@ aps-agency-comparator, aps-mobility-engine, tempovibes (GI-charlie is empty)._
 > This doc currently lives in GI-bravo as the working hub. **Proposed home: a small shared
 > `portfolio-conventions` repo** (or a pinned gist) that every app links to — see §4.
 
+> **⚠️ Execution status (reconciled 2026-06-30).** This is still a *proposal* — most of §4–§5 is
+> **not yet done**, so read it as a plan, not a description of reality.
+> - **Adopted:** GI-bravo now has a root **`STATUS.md`** (single source of truth for status, PR #95)
+>   and a slimmed docs definition-of-done — i.e. it finally adopted the §4 `STATUS.md` convention
+>   that golf/aps already had.
+> - **Still pending (everywhere):** the `AGENTS.md` rename + `CLAUDE.md` shim, `DECISIONS.md`,
+>   `FALSE_POSITIVES.md`, and the shared `portfolio-conventions` repo itself.
+> - **Root cause to fix:** the **self-learning loop (§4c) never closed** — these were written down
+>   in 2026-06-27 and not propagated. See `LESSONS.md` → Radar #3 (2026-06-30).
+
 ---
 
 ## 1. What each app does today (governance docs)
 
 | App | Agent file | Decisions log | Backlog / status | "Don't re-investigate" | Notes |
 |---|---|---|---|---|---|
-| **GI-bravo** | `CLAUDE.md` (new) | — | `FUTURE_FEATURES.md` | — | New "definition of done" (update docs/hints/tour/help); roadmap in `ROASTER_JOURNEY.md`. |
+| **GI-bravo** | `CLAUDE.md` (rename to `AGENTS.md` still pending) | — (no `DECISIONS.md` yet) | **`STATUS.md`** (#95) + `FUTURE_FEATURES.md` | — (no FP list yet) | "Definition of done" (docs/hints/tour/help) now points status at `STATUS.md`; narrative in `ROASTER_JOURNEY.md`. |
 | **GI-alpha** | `CLAUDE.md` → `@AGENTS.md` | — | `tasks.csv`, `VISION.md` | — | Next.js; "maintained by Gemini PM + Jules executor"; strong accessibility rules. |
 | **golf** | `CLAUDE.md` (154 ln) | `docs/DECISIONS.md` (`[D-xx]` + re-test) | `MASTER_BACKLOG.md` + `docs/STATUS.md` | **`Known False Positives` FP-01…10** | The most mature self-learning setup. |
 | **aps-agency-comparator** | `AGENTS.md` | `docs/design_decisions_log.md` (numbered) | `MASTER_BACKLOG.md` | — | `docs/model_workflow.md` offload ledger; `handoffs/` pairs; ADR. |
