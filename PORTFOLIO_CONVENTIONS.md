@@ -168,3 +168,10 @@ the explicit "harvest, don't replace" guardrail in the prompt.
   proposals** for the owner to review — then Phase 2 scaffolds the approved ones as supervised PRs.
 - **Guardrails:** read-only/audit on Phase 1; never edit another repo's domain docs unsupervised;
   never delete; never merge; one app per sprint; log what was found + anything needing a decision.
+- **Optional structure lens (`graphify`, on trial):** as a *disposable* aid during a sprint, run
+  `graphify .` once in an app to get a structure map + "god nodes" + surprising-connections report,
+  read it as input to the audit, and **don't keep it** (don't commit `graphify-out/`, don't wire the
+  always-on MCP). Trial it on **golf first**: if the map surfaces the gold/drift faster than a plain
+  read, use it for the remaining sprints; if it's noise, drop it. Rationale: our repos are small
+  enough to fit in context, and always-on graph/MCP tooling bloats context (Radar #3) — so this stays
+  a load-it-then-put-it-down lens, never standing infrastructure.

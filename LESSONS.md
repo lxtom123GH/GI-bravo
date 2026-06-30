@@ -210,6 +210,14 @@ Headline: the field converged on low-tech habits we'd *already designed* but not
   explicitly warn these *"bloat the context window, resulting in lower-quality output."* Be sparing.
 - **Subagents in parallel git worktrees — Watch.** Genuinely useful at *portfolio* scale (parallel app
   work); the tooling exists; overkill for a single small PWA today.
+- **`graphify` (codebase → knowledge graph) — Watch / trial as a disposable lens, not standing infra.**
+  Lightest of the knowledge-graph-memory category (local tree-sitter, JSON out, no DB, code needs no
+  API key; installs as a skill, exposes an MCP). Core value (navigate code too big for context)
+  doesn't fit our small repos, and an always-on graph MCP bloats context — so **don't adopt it
+  portfolio-wide**. But two slices interest us: (a) a *one-shot* structure map during the harvest
+  (`graphify .`, read `graphify-out/GRAPH_REPORT.md`, then drop it), and (b) its **PR merge-order /
+  shared-community risk** analysis (maps to our recurring stacked-PR trap). Plan: trial on golf during
+  the harvest; keep only if it earns it. (https://github.com/safishamsi/graphify)
 
 ---
 
