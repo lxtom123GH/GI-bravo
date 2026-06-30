@@ -14,7 +14,7 @@
 </head>
 <body>
     <button id="menuToggle" class="menu-toggle" aria-label="Toggle navigation menu">☰</button>
-    <div class="sidebar">
+    <nav class="sidebar" aria-label="Primary">
         <div class="sidebar-header">
             <h2>Roast Tracker</h2>
         </div>
@@ -57,9 +57,9 @@
                 </select>
             </details>
         </div>
-    </div>
+    </nav>
 
-    <div class="main-content">
+    <main class="main-content">
         <!-- Active Roast Dashboard -->
         <div id="dashboard" class="tab-pane active">
             <h1>Active Roast Dashboard</h1>
@@ -105,7 +105,7 @@
                         <button class="behmor-weight" data-weight="100"></button>
                         <button class="behmor-weight" data-weight="200"></button>
                         <button class="behmor-weight" data-weight="400"></button>
-                        <select id="weightUnitSelect" style="width: auto; margin-bottom: 0;">
+                        <select id="weightUnitSelect" aria-label="Weight unit" style="width: auto; margin-bottom: 0;">
                             <option value="metric">Metric (g)</option>
                             <option value="imperial">Imperial (lb)</option>
                         </select>
@@ -651,7 +651,7 @@
                 <p style="color: var(--text-muted); font-size: 0.9rem;">Full guide and developer docs are in the project repository (USER_GUIDE.md, README.md, HARDWARE_GUIDE.md).</p>
             </div>
         </div>
-    </div>
+    </main>
 
     <script type="module" src="main.js"></script>
 </body>
