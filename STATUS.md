@@ -65,6 +65,9 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
 **Platform & UX**
 - PWA (manifest, icons, offline SW), responsive mobile layout, complexity tiers (Easy/Moderate/
   Expert) with per-feature overrides, "Ember" design system, onboarding (demo, tour, hints, Help).
+- **Accessibility** — semantic `<nav>`/`<main>` landmarks, named form controls, and AA-contrast
+  controls; verified with a live axe-core + Lighthouse pass (a11y 88; remaining: a document-wide
+  heading-hierarchy pass, tracked as a follow-up).
 
 **☁️ Cloud sync & sharing — LIVE (opt-in)** — see the dedicated section below.
 

@@ -76,6 +76,7 @@ function showUpdateBanner() {
     if (document.getElementById('updateBanner')) return;
     const bar = document.createElement('div');
     bar.id = 'updateBanner';
+    bar.setAttribute('role', 'status');
     bar.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:3000;background:var(--card-bg);color:var(--text-main);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;box-shadow:0 4px 12px rgba(0,0,0,0.5);display:flex;gap:12px;align-items:center;font-size:0.9rem;';
     bar.innerHTML = '<span>A new version is available.</span>';
     const btn = document.createElement('button');
@@ -84,7 +85,7 @@ function showUpdateBanner() {
     btn.addEventListener('click', () => location.reload());
     const dismiss = document.createElement('button');
     dismiss.textContent = 'Later';
-    dismiss.style.cssText = 'font-size:0.85rem;padding:5px 12px;background:var(--border-color);';
+    dismiss.style.cssText = 'font-size:0.85rem;padding:5px 12px;background:transparent;color:var(--text-main);border:1px solid var(--text-muted);';
     dismiss.addEventListener('click', () => bar.remove());
     bar.append(btn, dismiss);
     document.body.appendChild(bar);
