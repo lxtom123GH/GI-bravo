@@ -4,6 +4,7 @@
 // together) vs post-blend (roast separately, combine after) is recorded on the recipe.
 
 import { getPantry, getBlends, addBlend, deleteBlend, addPrepBatch, getLastGreenWeight } from './storage.js';
+import { escapeHtml } from './escape.js';
 
 // A few classic starting points (see the research links in ROASTER_JOURNEY.md).
 // Each component carries an origin keyword matcher so we can spot which classics
@@ -101,9 +102,9 @@ function renderSuggestions() {
         const card = document.createElement('div');
         card.className = 'card';
         card.style.cssText = 'margin: 0 0 8px; padding: 10px 12px;';
-        const parts = s.components.map(c => `${c.pct}% ${c.beanName}`).join(' · ');
+        const parts = s.components.map(c => `${c.pct}% ${escapeHtml(c.beanName)}`).join(' · ');
         card.innerHTML = `
-            <div style="font-weight: bold;">${s.name} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(${s.type === 'post' ? 'roast separately' : 'roast together'})</span></div>
+            <div style="font-weight: bold;">${escapeHtml(s.name)} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(${s.type === 'post' ? 'roast separately' : 'roast together'})</span></div>
             <div style="color: var(--text-muted); font-size: 0.9rem; margin: 4px 0;">${parts}</div>
             <button class="suggest-use" style="font-size: 0.85rem;">Use this recipe</button>
         `;
@@ -133,9 +134,9 @@ function renderBlends() {
         const card = document.createElement('div');
         card.className = 'card';
         card.style.cssText = 'margin: 0; padding: 12px;';
-        const parts = blend.components.map(c => `${c.pct}% ${c.beanName}`).join(' · ');
+        const parts = blend.components.map(c => `${c.pct}% ${escapeHtml(c.beanName)}`).join(' · ');
         card.innerHTML = `
-            <div style="font-weight: bold;">${blend.name} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(${blend.type === 'post' ? 'roast separately' : 'roast together'})</span></div>
+            <div style="font-weight: bold;">${escapeHtml(blend.name)} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(${blend.type === 'post' ? 'roast separately' : 'roast together'})</span></div>
             <div style="color: var(--text-muted); font-size: 0.9rem; margin: 4px 0;">${parts}</div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button class="blend-weigh" data-id="${blend.id}" style="font-size: 0.85rem;">Weigh out…</button>
