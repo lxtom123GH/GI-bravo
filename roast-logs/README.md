@@ -12,7 +12,13 @@ repo (e.g. by Claude Code in a local session) without copy-pasting big files int
 
 JSON = full fidelity (best for analysis). CSV = opens in a spreadsheet for eyeballing the
 numbers around each crack. The **Copy summary** button puts a one-line recap on your clipboard
-for a quick paste.
+for a quick paste. On a phone/tablet, **📤 Share capture** sends the file straight to Mail/AirDrop/Files.
+
+## Pulling captures from the cloud (optional — B8a)
+If you tick **☁️ Back up captures to cloud** in the Roast Lab panel (signed in), captures sync to
+your account and collect across devices. To pull them into this folder, run
+`node tools/pull-roast-logs.mjs` — see the setup steps at the top of that script (it needs a one-time
+Firebase service-account key, kept in the git-ignored `.secrets/`).
 
 ## What's in a capture
 - `meta` — bean, roaster, sample rate, the detection settings used, timestamps.

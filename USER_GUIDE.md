@@ -84,6 +84,11 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 > On a phone or tablet, the easiest way to get each capture off the device is **📤 Share capture**:
 > it opens the native share sheet so you can Mail it to yourself, AirDrop it to your Mac, or Save
 > to Files — no fiddly downloads. (On a desktop browser it just saves the file.)
+>
+> If you're **signed in**, you can instead tick **☁️ Back up captures to cloud** (off by default):
+> each finished capture is then backed up to your account and collects automatically across your
+> devices — handy when you roast with two phones and an iPad. It keeps just your most recent few
+> captures, and only uploads when you opt in (they're large).
 
 ---
 

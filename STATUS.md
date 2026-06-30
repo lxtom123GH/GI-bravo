@@ -77,9 +77,11 @@ The backend is **built and live in production** (since 2026-06-28), not a plan. 
 `lx-apps`, free **Spark** tier). The app stays **fully usable signed out** — sync is opt-in.
 
 - **Auth:** email/password + Google sign-in (`js/sync/auth.js`).
-- **Synced collections (6):** `pantry`, `roastHistory`, `blends`, `roasters` (shared — travel with a
-  selected *space*), and `referenceSamples`, `colorTargets` (personal, per-user). Each is a
-  local-first `createSyncedCollection` with first-sign-in merge + live `onSnapshot` (`js/sync/synced-collection.js`, merge math in `reconcile.js`, both unit-tested).
+- **Synced collections (7):** `pantry`, `roastHistory`, `blends`, `roasters` (shared — travel with a
+  selected *space*), and `referenceSamples`, `colorTargets`, `roastLabSessions` (personal, per-user;
+  `roastLabSessions` is opt-in via the Roast Lab cloud toggle — B8a). Each is a local-first
+  `createSyncedCollection` with first-sign-in merge + live `onSnapshot` (`js/sync/synced-collection.js`,
+  merge math in `reconcile.js`, both unit-tested).
 - **Shared "spaces":** create a space and **share it by email** (owner / editor / viewer roles) so a
   couple/household share one pantry + roast history (`js/sync/spaces.js`).
 - **Security rules** (`firestore.rules`): per-user data under `apps/{appId}/users/{uid}/**` (owner
@@ -95,10 +97,14 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
 
 ## 🔜 Next / in progress
 
-- **B8a — sync roast-lab captures** so they auto-collect across devices and can be read straight from
-  Firestore. Note: the current synced-collection re-fetches a whole collection on every change, which
-  is a poor fit for large per-roast captures — so this needs a *purpose-built per-session-doc path*,
-  not just another collection entry. (No rules change needed: the per-user wildcard already covers it.)
+- **B8a — sync roast-lab captures.** **App side ✅ shipped** (opt-in **"Back up captures to cloud"**
+  toggle, default OFF; a personal `roastLabSessions` synced collection capped to the last 6 captures;
+  emulator rules test). With it on + signed in, captures auto-collect across your devices. **Read side
+  ⏳ pending:** `tools/pull-roast-logs.mjs` is written but needs a one-time **Firebase service-account
+  key** (owner-only console step) before Claude can pull captures into `roast-logs/`. Reused the
+  existing synced-collection (fine at a small cap — captures change once per roast); a per-session-doc
+  path is a future optimization only if it grows.
+- **Photo sync** — the one user-data type the cloud pilot doesn't sync yet (Firestore-only free tier).
 - See `FUTURE_FEATURES.md` for the full backlog and the "deliberately not built" rationale.
 
 ---

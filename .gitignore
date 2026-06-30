@@ -9,6 +9,8 @@ roast-logs/*
 # Local secrets / Firebase
 .env
 .env.local
+.secrets/
+*service-account*.json
 .firebase/
 firebase-debug.log
 firestore-debug.log

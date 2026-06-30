@@ -138,10 +138,14 @@ Shipped: an "Include photos (larger file)" checkbox on the Data Backup card embe
 - **B8 backend (cloud sync + sharing) — ✅ Done & LIVE (2026-06-28).** Opt-in Firebase auth + 6
   synced collections + email-shared spaces, all local-first. See **[STATUS.md](STATUS.md) → "What
   the backend does today"**, design notes in `PORTFOLIO_AUTH_SYNC.md`, as-built in `GO_LIVE_CHECKLIST.md`.
-- **B8a — sync roast-lab captures (next).** So captures auto-collect across devices and can be read
-  straight from Firestore. Needs a purpose-built per-session-doc path (the list-style synced
-  collection re-fetches the whole collection on each change — a poor fit for large captures). No
-  rules change (the per-user wildcard already covers it).
+- **B8a — sync roast-lab captures — ◐ app side shipped, read side pending a key.** Opt-in
+  **"Back up captures to cloud"** toggle (default OFF, `roastLabCloudSyncEnabled`); finalized captures
+  are tagged with an id + updatedAt and appended to a capped (last 6) personal `roastLabSessions`
+  synced collection, so they auto-collect across the user's signed-in devices. Reused the existing
+  `createSyncedCollection` (fine at a small cap — captures change once per roast; a per-session-doc
+  path is a future optimization only if it grows). No rules change (the per-user wildcard covers it;
+  emulator test added). **Read side:** `tools/pull-roast-logs.mjs` pulls the collection into
+  `roast-logs/` via firebase-admin — needs a one-time owner-supplied service-account key (gitignored).
 - **B8b — community comparison (parked → product decision).** Comparing your roast of a bean against
   other users' roasts. The backend exists now, so this is **no longer a backend blocker** — what
   remains is a product/privacy design (what's pooled, anonymisation, what's shown). Re-open candidate.

@@ -13,7 +13,8 @@ import {
 import {
     getPantry, savePantry, getRoastHistory, saveRoastHistory,
     getReferenceSamples, saveReferenceSamples, getColorTargets, saveColorTargets,
-    getBlends, saveBlends, getRoasters, saveRoasters
+    getBlends, saveBlends, getRoasters, saveRoasters,
+    getRoastLabSessions, saveRoastLabSessions
 } from './storage.js';
 
 const APP_ID = 'gi-bravo';
@@ -39,7 +40,12 @@ function defs() {
         { key: 'referenceSamples', shared: false, evt: 'settingsImported',
           adapter: adapter(getReferenceSamples, saveReferenceSamples, 'settingsImported') },
         { key: 'colorTargets', shared: false, evt: 'settingsImported',
-          adapter: adapter(getColorTargets, saveColorTargets, 'settingsImported') }
+          adapter: adapter(getColorTargets, saveColorTargets, 'settingsImported') },
+        // Roast Lab captures: personal debug/analysis trail (opt-in via the Roast Lab cloud toggle;
+        // when off, the local list stays empty so nothing syncs). Records carry their own id +
+        // updatedAt so the reconcile merges by id and several devices' captures pool together.
+        { key: 'roastLabSessions', shared: false, evt: 'roastLabSessionsUpdated',
+          adapter: adapter(getRoastLabSessions, saveRoastLabSessions, 'roastLabSessionsUpdated') }
     ];
 }
 

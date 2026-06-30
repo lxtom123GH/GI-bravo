@@ -249,6 +249,43 @@ export function getLastRoastLab() {
     try { return JSON.parse(raw); } catch { return null; }
 }
 
+// --- Roast Lab cloud sync (opt-in, default OFF) -------------------------------
+// When on, finalized captures are appended to a small capped list that the sync layer treats as a
+// personal collection (so they auto-collect across the user's signed-in devices and can be read
+// straight from Firestore). Default OFF because captures are large — never upload without consent.
+export function getRoastLabCloudSyncEnabled() {
+    return localStorage.getItem('roastLabCloudSyncEnabled') === 'true';
+}
+
+export function saveRoastLabCloudSyncEnabled(on) {
+    localStorage.setItem('roastLabCloudSyncEnabled', on ? 'true' : 'false');
+}
+
+// Keep only the most recent N captures — they're large, and this is a debug/analysis trail, not an
+// archive. Each record carries its own `id` + `updatedAt` so the sync reconcile can merge by id.
+export const ROAST_LAB_SESSIONS_MAX = 6;
+
+export function getRoastLabSessions() {
+    const raw = localStorage.getItem('roastLabSessions');
+    if (!raw) return [];
+    try { const list = JSON.parse(raw); return Array.isArray(list) ? list : []; }
+    catch { return []; }
+}
+
+export function saveRoastLabSessions(list) {
+    const capped = (Array.isArray(list) ? list : []).slice(-ROAST_LAB_SESSIONS_MAX);
+    try { localStorage.setItem('roastLabSessions', JSON.stringify(capped)); }
+    catch (e) { console.warn('[roastlab] could not persist sessions list:', e && e.message); }
+}
+
+// Append a finalized capture (already tagged with id + updatedAt) to the capped list.
+export function appendRoastLabSession(record) {
+    if (!record || !record.id) return;
+    const list = getRoastLabSessions().filter(r => r && r.id !== record.id);
+    list.push(record);
+    saveRoastLabSessions(list);
+}
+
 export function getRoasterDetectionAdjust() {
     const s = localStorage.getItem('roasterDetectionAdjust');
     return s ? JSON.parse(s) : {};
@@ -639,6 +676,7 @@ export function exportAllData() {
         detectionLearningEnabled: getDetectionLearningEnabled(),
         mfccExperimentalEnabled: getMfccExperimentalEnabled(),
         roastLabEnabled: getRoastLabEnabled(),
+        roastLabCloudSyncEnabled: getRoastLabCloudSyncEnabled(),
         roasterDetectionAdjust: getRoasterDetectionAdjust(),
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
@@ -680,6 +718,9 @@ export function importAllData(data) {
     }
     if (typeof data.roastLabEnabled === 'boolean') {
         saveRoastLabEnabled(data.roastLabEnabled);
+    }
+    if (typeof data.roastLabCloudSyncEnabled === 'boolean') {
+        saveRoastLabCloudSyncEnabled(data.roastLabCloudSyncEnabled);
     }
     if (data.roasterDetectionAdjust && typeof data.roasterDetectionAdjust === 'object') {
         saveRoasterDetectionAdjust(data.roasterDetectionAdjust);
