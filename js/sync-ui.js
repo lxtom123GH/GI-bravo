@@ -109,7 +109,7 @@ function updateSidebar(user) {
     }
 }
 
-function openCloudSync() {
+export function openCloudSync() {
     const nav = document.querySelector('.nav-links li[data-target="history"]');
     if (nav) nav.click();                       // switches tab (+ closes the mobile drawer)
     const card = document.getElementById('cloudSyncCard');

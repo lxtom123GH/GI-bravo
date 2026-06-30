@@ -16,14 +16,60 @@ import { initRoasterPanel } from './js/roaster-panel.js';
 import { initReceipts } from './js/receipts.js';
 import { initSwipe } from './js/swipe.js';
 
-// Cloud sync is OPT-IN and pulls in Firebase (~large), so load it lazily after the app
-// is interactive — the signed-out first paint stays as lean as before.
+// Cloud sync is OPT-IN and pulls in Firebase (~660 KB). Load that chunk only on real
+// intent — the user clicks the sync button, OR they have a persisted session to resume.
+// A signed-out first-time visitor never downloads Firebase, so first load stays lean
+// (this is the TBT win: previously the chunk loaded on idle for *everyone*).
+let syncReady = null;
+function loadSync() {
+    if (!syncReady) {
+        syncReady = import('./js/sync-ui.js')
+            .then((m) => { m.initSync(); return m; })
+            .catch((e) => { console.warn('[sync] module failed to load:', e?.message || e); syncReady = null; return null; });
+    }
+    return syncReady;
+}
+
+// Firebase-free probe: does Firebase Auth already have a persisted session to resume?
+// Reads Firebase's own IndexedDB (firebaseLocalStorageDb) WITHOUT loading the SDK, so a
+// returning signed-in user still auto-resumes sync. If Firebase ever renames this store
+// the probe just returns false → the user clicks the sync button instead (graceful).
+function hasPersistedAuthSession() {
+    return new Promise((resolve) => {
+        let settled = false;
+        const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+        try {
+            const req = indexedDB.open('firebaseLocalStorageDb');
+            req.onsuccess = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains('firebaseLocalStorage')) { db.close(); return done(false); }
+                try {
+                    const keysReq = db.transaction('firebaseLocalStorage', 'readonly')
+                        .objectStore('firebaseLocalStorage').getAllKeys();
+                    keysReq.onsuccess = () => { const ks = keysReq.result || []; db.close(); done(ks.some((k) => String(k).startsWith('firebase:authUser:'))); };
+                    keysReq.onerror = () => { db.close(); done(false); };
+                } catch { db.close(); done(false); }
+            };
+            req.onerror = () => done(false);
+        } catch { done(false); }
+    });
+}
+
 function initSyncLazy() {
-    const go = () => import('./js/sync-ui.js')
-        .then((m) => m.initSync())
-        .catch((e) => console.warn('[sync] module failed to load:', e?.message || e));
-    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 3000 });
-    else setTimeout(go, 1200);
+    const sideBtn = document.getElementById('syncSidebarBtn');
+    // First click loads the module AND opens the panel; once loaded, sync-ui's own
+    // handler opens it (the `wasLoading` guard avoids a double-open).
+    if (sideBtn) sideBtn.addEventListener('click', () => {
+        const wasLoading = !!syncReady;
+        loadSync().then((m) => { if (!wasLoading && m && m.openCloudSync) m.openCloudSync(); });
+    });
+    // Returning signed-in users: resume sync automatically, deferred to idle so it
+    // doesn't compete with first paint (same timing the old eager path used).
+    hasPersistedAuthSession().then((has) => {
+        if (!has) return;
+        if ('requestIdleCallback' in window) requestIdleCallback(() => loadSync(), { timeout: 3000 });
+        else setTimeout(() => loadSync(), 1200);
+    }).catch(() => {});
 }
 
 function init() {
