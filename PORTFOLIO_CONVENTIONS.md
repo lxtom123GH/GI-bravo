@@ -175,3 +175,11 @@ the explicit "harvest, don't replace" guardrail in the prompt.
   read, use it for the remaining sprints; if it's noise, drop it. Rationale: our repos are small
   enough to fit in context, and always-on graph/MCP tooling bloats context (Radar #3) — so this stays
   a load-it-then-put-it-down lens, never standing infrastructure.
+- **API key for named communities (no new key needed):** graphify's community *naming* — the part
+  that helps on an *unfamiliar* repo — needs an LLM key; code parsing is always local. Reuse the
+  existing **`GEMINI_API_KEY`** already in `aps-agency-comparator/.env`, but **re-export it as
+  `GOOGLE_API_KEY` in the same command as the `graphify` run** — graphify auto-detects
+  `GOOGLE_API_KEY` (it may not recognise the `GEMINI_` name and won't auto-load another folder's
+  `.env`), e.g. `GOOGLE_API_KEY="$(grep '^GEMINI_API_KEY=' .../aps-agency-comparator/.env | cut -d= -f2-)" graphify .`
+  Gemini's free tier covers naming ~20 communities/app at negligible cost. Without a key, communities
+  stay "Community N" (still useful for structure, just unlabelled).
