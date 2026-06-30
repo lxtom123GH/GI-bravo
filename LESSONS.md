@@ -210,14 +210,22 @@ Headline: the field converged on low-tech habits we'd *already designed* but not
   explicitly warn these *"bloat the context window, resulting in lower-quality output."* Be sparing.
 - **Subagents in parallel git worktrees — Watch.** Genuinely useful at *portfolio* scale (parallel app
   work); the tooling exists; overkill for a single small PWA today.
-- **`graphify` (codebase → knowledge graph) — Watch / trial as a disposable lens, not standing infra.**
-  Lightest of the knowledge-graph-memory category (local tree-sitter, JSON out, no DB, code needs no
-  API key; installs as a skill, exposes an MCP). Core value (navigate code too big for context)
-  doesn't fit our small repos, and an always-on graph MCP bloats context — so **don't adopt it
-  portfolio-wide**. But two slices interest us: (a) a *one-shot* structure map during the harvest
-  (`graphify .`, read `graphify-out/GRAPH_REPORT.md`, then drop it), and (b) its **PR merge-order /
-  shared-community risk** analysis (maps to our recurring stacked-PR trap). Plan: trial on golf during
-  the harvest; keep only if it earns it. (https://github.com/safishamsi/graphify)
+- **`graphify` (codebase → knowledge graph) — TRIALLED 2026-06-30; verdict: disposable harvest lens
+  for *unfamiliar* repos only, never standing infra.** Lightest of the knowledge-graph category (local
+  tree-sitter, JSON out, no DB, code needs no API key; installs as a skill, exposes an MCP — which we
+  do NOT enable, since always-on graph MCPs bloat context).
+  - **Trial on GI-bravo (`graphify js` → `cluster-only`):** 45 files → 588 nodes / 21 communities. Its
+    *blind* clustering accurately recovered the real subsystems (MFCC, shadow, colour-grader, colour-
+    correction, chart, detector-learning) and god-nodes (`getPantry`, `exportAllData`, `startRoast`),
+    and flagged `audio.js`'s 82-node init/wiring blob (cohesion 0.06) as a **split candidate** — a real,
+    if minor, finding. But to a context-aware reader it surfaced **nothing new**, produced **one false
+    edge** (`hashRecord→norm`, a name-collision INFERRED edge), plus noise (a self-cycle, isolated DOM
+    handles). Without an API key, communities stay unnamed ("Community N") — a big chunk of value lost.
+  - **Verdict:** **skip it for apps already in context** (GI-bravo); **use it (with an API key, for
+    named communities) as a one-shot onboarding lens when harvesting apps we DON'T know** (golf/aps/
+    GI-alpha), then drop the output (`graphify-out/` is git-ignored). Its **PR merge-order / shared-
+    community risk** feature (maps to our stacked-PR trap) is still worth a look separately.
+    (https://github.com/safishamsi/graphify)
 
 ---
 

@@ -9,6 +9,9 @@ roast-logs/*
 # Your own paint-chip measurements (keep the example committed)
 tools/chip-trials.json
 
+# graphify output — disposable structure-map artifacts, never committed
+graphify-out/
+
 # Local secrets / Firebase
 .env
 .env.local

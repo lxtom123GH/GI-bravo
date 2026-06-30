@@ -168,13 +168,15 @@ the explicit "harvest, don't replace" guardrail in the prompt.
   proposals** for the owner to review — then Phase 2 scaffolds the approved ones as supervised PRs.
 - **Guardrails:** read-only/audit on Phase 1; never edit another repo's domain docs unsupervised;
   never delete; never merge; one app per sprint; log what was found + anything needing a decision.
-- **Optional structure lens (`graphify`, on trial):** as a *disposable* aid during a sprint, run
-  `graphify .` once in an app to get a structure map + "god nodes" + surprising-connections report,
-  read it as input to the audit, and **don't keep it** (don't commit `graphify-out/`, don't wire the
-  always-on MCP). Trial it on **golf first**: if the map surfaces the gold/drift faster than a plain
-  read, use it for the remaining sprints; if it's noise, drop it. Rationale: our repos are small
-  enough to fit in context, and always-on graph/MCP tooling bloats context (Radar #3) — so this stays
-  a load-it-then-put-it-down lens, never standing infrastructure.
+- **Optional structure lens (`graphify`) — trialled, keep as a disposable onboarding aid:** as a
+  *disposable* aid at the start of a sprint, run `graphify .` once to get a structure map + god-nodes +
+  community clustering, read it as input to the audit, then **drop it** (`graphify-out/` is git-ignored;
+  never wire the always-on MCP). The GI-bravo trial (Radar #3) confirmed it adds little where you're
+  already context-aware, but its blind subsystem clustering was accurate enough to **speed up
+  onboarding into apps we DON'T know** — which is exactly the harvest. **Set an `*_API_KEY`** when
+  running it on the other apps so communities get *named* (the unnamed code-only output loses much of
+  the value); code stays local either way. Treat INFERRED edges with suspicion (it can conflate
+  same-named functions across files). Load-it-then-put-it-down, never standing infrastructure.
 - **API key for named communities (no new key needed):** graphify's community *naming* — the part
   that helps on an *unfamiliar* repo — needs an LLM key; code parsing is always local. Reuse the
   existing **`GEMINI_API_KEY`** already in `aps-agency-comparator/.env`, but **re-export it as
