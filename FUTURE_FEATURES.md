@@ -182,6 +182,17 @@ pattern, not naive — and shows where the real leverage is. Two big findings sh
     clipboard summary); a git-ignored `roast-logs/` drop folder lets the owner hand a capture
     straight to a local Claude session. This is the **v2 labelling/capture UX** — it turns a few
     real roasts into a labelled dataset to validate the MFCC bet before fitting a classifier.
+  - **Shadow detector bank — ✅ shipped (LOG-ONLY, rides on Roast Lab).** A pure, unit-tested
+    detector bank (`js/shadow.js`: `SHADOW_VARIANTS` + `createShadowBank`/`stepShadowBank`/
+    `summariseShadowBank`; 9 tests). When Roast Lab capture is on, `js/audio.js` advances a bank of
+    parallel crack detectors (balanced ≈ live, sensitive, strict, strict-2C-pitch, tight-cluster)
+    **every animation frame** over the same RMS + band-ratio features the live loop already
+    computes, and logs each variant's candidate 1C/2C as a `type:'shadow'` event in the capture.
+    It **never alarms, drives, or touches the live detector / roastState** — it exists only so the
+    export compares *current detector vs each variant vs the owner's Manual:Mark / ✗ ground truth*.
+    Because the heavy work is shared, N variants cost almost nothing; run the same roast on several
+    devices/positions to multiply captures from the same beans. This is the safe way to pick a
+    smarter detector before ever trusting an unproven one mid-roast.
 - **v3 — pooled/community model.** Use the shipped **cloud sync** to aggregate labelled feature
   vectors across users/sessions, train a Random-Forest/NN **offline**, ship it as a static client
   model (TinyML-style). This is where the two-device labelling + sync pays off — it builds the

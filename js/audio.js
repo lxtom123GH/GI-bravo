@@ -1,6 +1,7 @@
 import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled, getRoastLabEnabled, saveRoastLabEnabled, saveLastRoastLab, getLastRoastLab } from './storage.js';
 import { mfcc } from './mfcc.js';
 import { createSession, addFrame, addEvent, summariseRoastLab, formatRoastLabJson, formatRoastLabCsv, formatRoastLabSummaryText, roastLabFilename, ROAST_LAB_FRAME_MS } from './roastlab.js';
+import { createShadowBank, stepShadowBank, summariseShadowBank } from './shadow.js';
 import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
@@ -22,6 +23,10 @@ let lastMfccAt = 0;
 let roastLabEnabled = false;
 let labSession = null;
 let lastLabFrameAt = 0;
+// Shadow detector v2 — a bank of parallel, LOG-ONLY crack detectors. Runs alongside the live
+// detector whenever Roast Lab capture is on, logging each variant's candidate cracks into the
+// capture for offline comparison. NEVER alarms, drives, or touches the live detector / roastState.
+let shadowBank = null;
 let isRecording = false;
 let isNotifying = false;
 let animationId;
@@ -399,6 +404,27 @@ function maybeCaptureRoastLab(rms) {
     }
 }
 
+// Advance the shadow-detector bank one frame and log any candidate cracks it calls. Runs at the
+// full animation-frame rate (cracks are short — the 500ms capture throttle would miss them), but
+// it is strictly LOG-ONLY: every fired event becomes a 'shadow' entry in the Roast Lab capture and
+// nothing else. It cannot alarm, mark a phase, or change the live detector in any way.
+function maybeStepShadow(rms) {
+    if (!roastLabEnabled || !shadowBank || !labSession || !roastState.startTime) return;
+    try {
+        const t = Date.now() - roastState.startTime;
+        // Only pay for the band-ratio FFT read on loud-ish frames — the variants only consult the
+        // pitch signature when a snap is registered anyway.
+        const bandRatio = rms > 0.05 ? spectralHighRatio() : 0;
+        const events = stepShadowBank(shadowBank, { t, rms, bandRatio });
+        for (const ev of events) {
+            // Tagged 'shadow' so the export keeps it distinct from real Auto/Manual crack events.
+            logRoastLabEvent('shadow', `${ev.variantId} ${ev.kind}`, true);
+        }
+    } catch (e) {
+        console.warn('[shadow] step failed (live detection unaffected):', e && e.message);
+    }
+}
+
 // Record a crack/clear event onto the active capture (mirrors the markPhase/clearCrack calls).
 function logRoastLabEvent(type, label, auto) {
     if (!roastLabEnabled || !labSession || !roastState.startTime) return;
@@ -413,6 +439,16 @@ function finalizeRoastLab() {
     saveLastRoastLab(labSession);
     const s = summariseRoastLab(labSession);
     logMessage(`🧪 Roast Lab captured ${s.frames} frames + ${s.events} events — export from Detection settings.`);
+    if (shadowBank) {
+        // A one-line wrap-up of what each shadow variant called this roast — the real comparison
+        // happens offline against the export, but this is a useful at-a-glance sanity check.
+        const parts = summariseShadowBank(shadowBank).map(v => {
+            const fc = v.firstCrackT != null ? `1C@${Math.round(v.firstCrackT / 1000)}s` : '1C –';
+            const sc = v.secondCrackT != null ? ` 2C@${Math.round(v.secondCrackT / 1000)}s` : '';
+            return `${v.id} ${fc}${sc} (${v.transients})`;
+        });
+        logMessage(`🫥 Shadow detectors (log-only): ${parts.join(' · ')}`);
+    }
     updateRoastLabReadout();
 }
 
@@ -436,6 +472,18 @@ function updateRoastLabReadout() {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = !hasData;
     });
+
+    // Shadow-detector line: how many variants are running and what they've called so far.
+    const shadowEl = document.getElementById('shadowReadout');
+    if (shadowEl) {
+        if (!shadowBank) {
+            shadowEl.textContent = roastLabEnabled ? 'ready — starts with the next roast' : 'off (runs when Roast Lab is on)';
+        } else {
+            const sum = summariseShadowBank(shadowBank);
+            const calls = sum.filter(v => v.firstCrackT != null).length;
+            shadowEl.textContent = `${sum.length} variants · ${calls} called 1C — full detail in the export`;
+        }
+    }
 }
 
 // Download the captured session as JSON or CSV.
@@ -1153,6 +1201,8 @@ async function startRoast(manual = false) {
     roastLabEnabled = getRoastLabEnabled();
     labSession = roastLabEnabled ? createSession(buildRoastLabMeta()) : null;
     lastLabFrameAt = 0;
+    // Shadow detector rides on the capture: a fresh bank when Roast Lab is on, else nothing.
+    shadowBank = roastLabEnabled ? createShadowBank() : null;
     updateRoastLabReadout();
 
     logArea.innerHTML = '';
@@ -1454,6 +1504,7 @@ function drawAndAnalyze() {
         sampleRoastCurve(rms);
         maybeComputeMfcc(); // experimental, off by default; observes only, never changes detection
         maybeCaptureRoastLab(rms); // Roast Lab capture, off by default; observes only
+        maybeStepShadow(rms); // shadow detector bank, rides on Roast Lab; LOG-ONLY, never acts
     }
 
     // Oscilloscope visual

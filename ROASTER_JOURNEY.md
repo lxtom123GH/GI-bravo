@@ -156,6 +156,9 @@ development) + DTR; follow a reference roast with a first-crack ETA; temp/probe 
 "Start (no mic)" manual mode; keep-screen-awake; ✅ **🧪 Roast Lab** (opt-in, off by default) —
 capture each roast's feature timeline (loudness, crack pitch, MFCC fingerprint) + crack/clear
 events, then export JSON/CSV to compare roasts and tune detection. Built for an A/B weekend.
+With Roast Lab on, a ✅ **🫥 shadow detector bank** (`js/shadow.js`) also runs several
+differently-tuned crack detectors in parallel and logs what each would have called — strictly
+log-only, so a smarter detector can be validated against real cracks before it's ever trusted.
 
 **Shipped ✅ (`js/roaster-panel.js`):** a model-aware Behmor panel — a before-vs-during button
 reference (the manual's gotcha), a Behmor-model selector (2000AB Plus / 2000AB / 1600 Plus
