@@ -233,7 +233,8 @@ Shipped:
 - **Low-friction bean entry** — ✅ answers "if you buy from 1–3 places, must you retype it each
   time?" (no). `js/suggest.js` (pure, unit-tested): `buildSuggestions(pantry, history)` powers
   native `<datalist>` **autocomplete** for supplier/country/region/farm from the user's own
-  entries (+ seed origin/process vocabulary), ordered by frequency; **cascading** via
+  entries (+ seed origin/process vocabulary, and a small **Australian green-bean supplier** seed so
+  the supplier field isn't empty on day one), ordered by frequency; **cascading** via
   `bySupplier`/`byCountry` + `orderByContext` re-orders child suggestions by the chosen parent and
   `uniqueValue` auto-fills the only-ever case; `parseBeanName` splits a structured name
   ("Ethiopia Yirgacheffe Washed") into country/region/process to pre-fill on type/paste. Wired in

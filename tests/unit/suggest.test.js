@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     buildSuggestions, parseBeanName, orderByContext, uniqueValue,
-    SEED_COUNTRIES, SEED_PROCESSES,
+    SEED_COUNTRIES, SEED_PROCESSES, SEED_SUPPLIERS,
 } from '../../js/suggest.js';
 
 const PANTRY = [
@@ -12,9 +12,12 @@ const PANTRY = [
 ];
 
 describe('buildSuggestions', () => {
-    it('ranks suppliers by frequency', () => {
+    it('ranks suppliers by frequency, then fills with the AU seed', () => {
         const s = buildSuggestions(PANTRY);
-        expect(s.suppliers).toEqual(['Bean Bay', 'Cofi-Com']); // Bean Bay used 3×
+        // The user's own suppliers lead (Bean Bay used 3×, then Cofi-Com)...
+        expect(s.suppliers.slice(0, 2)).toEqual(['Bean Bay', 'Cofi-Com']);
+        // ...then the seed fills the rest so the datalist isn't empty for new fields.
+        expect(s.suppliers).toContain('BeanBay (CoffeeSnobs)');
     });
     it('puts used countries before seed values and dedupes', () => {
         const s = buildSuggestions(PANTRY);
@@ -41,9 +44,9 @@ describe('buildSuggestions', () => {
         expect(s.byCountry['Ethiopia'].regions.sort()).toEqual(['Guji', 'Yirgacheffe']);
         expect(s.byCountry['Brazil'].processes).toEqual(['Pulped Natural']);
     });
-    it('is null-safe on empty / junk input', () => {
-        expect(buildSuggestions().suppliers).toEqual([]);
-        expect(buildSuggestions([null, {}, { supplier: '  ' }]).suppliers).toEqual([]);
+    it('is null-safe on empty / junk input, falling back to the seeds', () => {
+        expect(buildSuggestions().suppliers).toEqual(SEED_SUPPLIERS);
+        expect(buildSuggestions([null, {}, { supplier: '  ' }]).suppliers).toEqual(SEED_SUPPLIERS);
         expect(buildSuggestions([]).countries).toEqual(SEED_COUNTRIES);
     });
 });
