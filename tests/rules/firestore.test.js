@@ -28,6 +28,8 @@ const spaceDoc = (db, sid) => db.collection('apps').doc(APP).collection('spaces'
 const spaceMember = (db, sid, uid) => spaceDoc(db, sid).collection('members').doc(uid);
 const spaceItem = (db, sid, name, docId) =>
     spaceDoc(db, sid).collection('data').doc(name).collection('items').doc(docId);
+const userRoastLab = (db, uid, docId) =>
+    db.collection('apps').doc(APP).collection('users').doc(uid).collection('roastLabSessions').doc(docId);
 
 describe('per-user data isolation', () => {
     it('denies unauthenticated reads/writes', async () => {
@@ -46,6 +48,19 @@ describe('per-user data isolation', () => {
         const bob = env.authenticatedContext('bob').firestore();
         await assertFails(userPantry(bob, 'alice', 'b1').get());
         await assertFails(userPantry(bob, 'alice', 'b1').set({ name: 'hijack' }));
+    });
+
+    // Roast Lab captures (B8a) are a new personal collection; confirm the per-user wildcard rule
+    // covers them — the owner can read/write their own, nobody else can, unauth is denied.
+    it('isolates roastLabSessions like any other personal collection', async () => {
+        const alice = env.authenticatedContext('alice').firestore();
+        await assertSucceeds(userRoastLab(alice, 'alice', 's1').set({ id: 's1', updatedAt: 1, meta: {} }));
+        await assertSucceeds(userRoastLab(alice, 'alice', 's1').get());
+        const bob = env.authenticatedContext('bob').firestore();
+        await assertFails(userRoastLab(bob, 'alice', 's1').get());
+        await assertFails(userRoastLab(bob, 'alice', 's1').set({ id: 's1', hacked: true }));
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(userRoastLab(anon, 'alice', 's1').get());
     });
 });
 

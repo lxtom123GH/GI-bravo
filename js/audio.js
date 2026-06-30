@@ -1,4 +1,4 @@
-import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled, getRoastLabEnabled, saveRoastLabEnabled, saveLastRoastLab, getLastRoastLab } from './storage.js';
+import { saveRoastToHistory, adjustBeanQuantity, getRoastHistory, getPantry, getDetectionSettings, saveDetectionSettings, DEFAULT_DETECTION_SETTINGS, getRoastTargets, saveRoastTargets, DEFAULT_ROAST_TARGETS, getTempUnit, saveTempUnit, getBehmorTemplate, getBehmorTemplates, getWeightUnit, getManualProfiles, getActiveRoaster, getActiveRoasterId, getDetectionLearningEnabled, saveDetectionLearningEnabled, getDetectionAdjustFor, saveDetectionAdjustFor, clearDetectionAdjustFor, getMfccExperimentalEnabled, saveMfccExperimentalEnabled, getRoastLabEnabled, saveRoastLabEnabled, saveLastRoastLab, getLastRoastLab, getRoastLabCloudSyncEnabled, saveRoastLabCloudSyncEnabled, appendRoastLabSession } from './storage.js';
 import { mfcc } from './mfcc.js';
 import { createSession, addFrame, addEvent, summariseRoastLab, formatRoastLabJson, formatRoastLabCsv, formatRoastLabSummaryText, roastLabFilename, ROAST_LAB_FRAME_MS } from './roastlab.js';
 import { createShadowBank, stepShadowBank, summariseShadowBank } from './shadow.js';
@@ -330,6 +330,13 @@ function initDetectionSettingsUI() {
     if (labCopyBtn) labCopyBtn.addEventListener('click', copyRoastLabSummary);
     const labShareBtn = document.getElementById('roastLabShareBtn');
     if (labShareBtn) labShareBtn.addEventListener('click', () => shareRoastLab('json'));
+    const labCloudToggle = document.getElementById('roastLabCloudSyncToggle');
+    if (labCloudToggle) {
+        labCloudToggle.checked = getRoastLabCloudSyncEnabled();
+        labCloudToggle.addEventListener('change', () => {
+            saveRoastLabCloudSyncEnabled(labCloudToggle.checked);
+        });
+    }
     updateRoastLabReadout();
 
     render();
@@ -439,6 +446,19 @@ function finalizeRoastLab() {
     if (!labSession) return;
     labSession.meta.endedAt = new Date().toISOString();
     saveLastRoastLab(labSession);
+    // Opt-in cloud backup: append a tagged record to the synced sessions list so it auto-collects
+    // across the user's signed-in devices. OFF by default; never uploads without consent.
+    if (getRoastLabCloudSyncEnabled()) {
+        try {
+            const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : `${labSession.meta.startedAt || 'roast'}-${Math.round(performance.now())}`;
+            appendRoastLabSession({ id, updatedAt: Date.now(), ...labSession });
+            window.dispatchEvent(new Event('roastLabSessionsUpdated')); // nudge sync to push it
+        } catch (e) {
+            console.warn('[roastlab] cloud-sync append failed (capture still saved locally):', e && e.message);
+        }
+    }
     const s = summariseRoastLab(labSession);
     logMessage(`🧪 Roast Lab captured ${s.frames} frames + ${s.events} events — export from Detection settings.`);
     if (shadowBank) {
