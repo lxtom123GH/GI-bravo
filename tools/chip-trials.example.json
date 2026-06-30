@@ -1,0 +1,25 @@
+{
+  "_comment": "Example only. Copy to tools/chip-trials.json and replace with YOUR measured chips. rgb = sRGB 0-255 sampled from each chip's centre under good daylight. Keep the paint name/code so the recommendation is buyable.",
+  "brands": {
+    "Dulux": [
+      { "name": "Vivid White",   "rgb": [246, 245, 242] },
+      { "name": "Grey Pail",     "rgb": [203, 201, 196] },
+      { "name": "Tranquil Retreat", "rgb": [150, 150, 148] },
+      { "name": "Mt Eden",       "rgb": [86, 86, 84] },
+      { "name": "Domino",        "rgb": [38, 37, 36] },
+      { "name": "Hog Bristle",   "rgb": [206, 168, 120] },
+      { "name": "Ground Cumin",  "rgb": [120, 80, 52] },
+      { "name": "Golden Sand",   "rgb": [224, 138, 44] },
+      { "name": "Blue Riband",   "rgb": [42, 86, 168] },
+      { "name": "Wasabi",        "rgb": [78, 150, 96] }
+    ],
+    "Taubmans": [
+      { "name": "White on White","rgb": [244, 244, 243] },
+      { "name": "Silver Dollar", "rgb": [190, 191, 189] },
+      { "name": "Pencil Sketch", "rgb": [128, 129, 128] },
+      { "name": "Cargo Pants",   "rgb": [70, 70, 68] },
+      { "name": "Black Flame",   "rgb": [33, 33, 33] },
+      { "name": "Toasted Almond","rgb": [198, 158, 112] }
+    ]
+  }
+}
