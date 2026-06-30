@@ -6,6 +6,9 @@ server.log
 roast-logs/*
 !roast-logs/README.md
 
+# Your own paint-chip measurements (keep the example committed)
+tools/chip-trials.json
+
 # Local secrets / Firebase
 .env
 .env.local

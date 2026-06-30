@@ -105,6 +105,12 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
   existing synced-collection (fine at a small cap — captures change once per roast); a per-session-doc
   path is a future optimization only if it grows.
 - **Photo sync** — the one user-data type the cloud pilot doesn't sync yet (Firestore-only free tier).
+- **Colour-target chip recommendations (B-CT3).** Owner is sourcing paint samples (Dulux/Taubmans/
+  British Paints) to find which specific chips make good targets, to recommend to others. **Phase-1
+  screening script ✅** (`tools/grade-chips.mjs` — runs the shipped grader over measured chips, prints
+  per-brand keep-lists + quality flags + cross-brand ranking). **Next:** Phase-2 cross-lighting
+  validation, then wire the grader into an in-app **"Test paint chips" lab** and ship the validated
+  per-brand picks as starter presets.
 - See `FUTURE_FEATURES.md` for the full backlog and the "deliberately not built" rationale.
 
 ---
@@ -114,7 +120,6 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
 - **B8b — community comparison** (compare your roast of a bean vs other users') — the backend now
   exists, so the old "needs a backend" blocker is gone; what remains is a **product/privacy design**
   (what's pooled, how it's anonymised, what's shown). Re-open candidate, not yet scoped.
-- **DIY colour-target photos / Bunnings paint chips** — on hold until the owner sources the chips.
 - **ColorChecker auto-detect** (find the chart automatically) — needs real CV; manual corner-tap works.
 - **Artisan interoperability** — needs a real round-trip test rig; generic CSV already serves export.
 - **Bluetooth scales / water-brew profiles** — per-device BLE + consumer-brew scope creep, no hardware.
