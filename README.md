@@ -222,6 +222,8 @@ js/
     spaces.js         Shared spaces + share-by-email (owner/editor/viewer roles)
 public/             PWA manifest, icons, service worker, self-hosted brand fonts (copied to dist/ on build)
 HARDWARE_GUIDE.md   DIY Bluetooth thermocouple build (ESP32 + MAX31855) + firmware
+ROAST_TEST_PROTOCOL.md  Read-on-the-day guide for a detection test session (Roast Lab capture)
+STATUS.md           Single source of truth for project status (shipped / live / next / parked)
 FUTURE_FEATURES.md  Roadmap and backlog
 ```
 
