@@ -132,6 +132,10 @@ function drawPhaseBands(ctx, t, pad, plotH, xOf, markers, totalMs) {
 
 // The lit "now" point — a glowing dot at the leading edge of the live line.
 function drawNowDot(ctx, x, y) {
+    // createRadialGradient throws on non-finite coords (e.g. a degenerate curve with
+    // totalMs 0 or a NaN rms), which surfaced as a console error on some renders.
+    // A glow dot with no valid position simply shouldn't draw.
+    if (!isFinite(x) || !isFinite(y)) return;
     ctx.save();
     const halo = ctx.createRadialGradient(x, y, 0, x, y, 13);
     halo.addColorStop(0, 'rgba(255,122,60,0.30)');
