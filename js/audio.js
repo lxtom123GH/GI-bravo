@@ -328,6 +328,8 @@ function initDetectionSettingsUI() {
     if (labCsvBtn) labCsvBtn.addEventListener('click', () => exportRoastLab('csv'));
     const labCopyBtn = document.getElementById('roastLabCopyBtn');
     if (labCopyBtn) labCopyBtn.addEventListener('click', copyRoastLabSummary);
+    const labShareBtn = document.getElementById('roastLabShareBtn');
+    if (labShareBtn) labShareBtn.addEventListener('click', () => shareRoastLab('json'));
     updateRoastLabReadout();
 
     render();
@@ -468,7 +470,7 @@ function updateRoastLabReadout() {
         }
     }
     const hasData = !!(session && session.frames && session.frames.length);
-    ['roastLabExportJsonBtn', 'roastLabExportCsvBtn', 'roastLabCopyBtn'].forEach(id => {
+    ['roastLabExportJsonBtn', 'roastLabExportCsvBtn', 'roastLabCopyBtn', 'roastLabShareBtn'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = !hasData;
     });
@@ -517,6 +519,34 @@ function copyRoastLabSummary() {
     } else {
         updateStatus(text);
     }
+}
+
+// Share the captured session as a file via the native share sheet — the simplest way to get a
+// capture off a phone/tablet (Mail to yourself, AirDrop to a Mac, Save to Files) without wrestling
+// with iOS's clunky Blob downloads. Falls back to a normal download when Web Share with files isn't
+// available (e.g. desktop Firefox). Defaults to JSON (richest for analysis).
+async function shareRoastLab(kind = 'json') {
+    const session = labSession || getLastRoastLab();
+    if (!session || !session.frames || !session.frames.length) {
+        updateStatus('No Roast Lab capture yet — run a roast with Roast Lab on first.');
+        return;
+    }
+    const text = kind === 'csv' ? formatRoastLabCsv(session) : formatRoastLabJson(session);
+    const mime = kind === 'csv' ? 'text/csv' : 'application/json';
+    const name = roastLabFilename(session.meta, kind);
+    try {
+        const file = new File([text], name, { type: mime });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: name, text: 'GI-bravo Roast Lab capture' });
+            updateStatus('Shared the Roast Lab capture.');
+            return;
+        }
+    } catch (e) {
+        if (e && e.name === 'AbortError') { updateStatus('Share cancelled.'); return; } // user closed the sheet
+        // anything else → fall through to the download fallback
+    }
+    exportRoastLab(kind);
+    updateStatus('Native share not available here — downloaded the file instead.');
 }
 
 // Effective detection = base settings + this roaster's learned offset (when
