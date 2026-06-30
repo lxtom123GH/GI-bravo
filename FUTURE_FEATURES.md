@@ -229,6 +229,14 @@ Sources: ScienceDirect *Acoustic-Based Crack Detection* (MFCC/Random Forest); Re
 first-crack ID; interactiveaudiolab *Human-in-the-Loop Sound Event Detection*; arXiv self-learning /
 continual on-device audio classification; GitHub *RoastLearner*.
 
+## Refactor candidates (tech debt, not user-facing)
+
+- **Split `audio.js`'s init/UI-wiring blob.** Surfaced by the graphify trial (2026-06-30): `audio.js`
+  is by far the most overloaded module — mic capture + crack detection + Roast Lab + shadow detector +
+  MFCC + probe wiring + settings UI + export — and its init/wiring cluster scored very low cohesion
+  (~0.06, 82 nodes). Candidate to peel the **UI wiring** (settings/readout/button init) out of the
+  **detection engine**. Low priority, no behaviour change; do it only when next touching that area.
+
 ## Competitive landscape research (2026-06)
 
 Surveyed Artisan, RoasTime/Roast.World (Aillio), Cropster, RoastLog/RoastPATH, and Beanconqueror.
