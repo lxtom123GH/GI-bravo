@@ -4,6 +4,7 @@
 // (Freshness still matters: roast ~what you'll drink in ~2 weeks — see ROASTER_JOURNEY.md.)
 
 import { getActiveRoaster, getLastGreenWeight } from './storage.js';
+import { escapeHtml } from './escape.js';
 
 // Drum capacity per roaster MODEL (grams), the default when a profile doesn't set its own.
 // Behmor 2000AB Plus: ~100 g min (it roasts 1/4 lb / ~113 g and ~100 g samples) to 454 g
@@ -92,8 +93,8 @@ export function openPlanModal(beanName, amountG) {
         : '';
 
     modal.innerHTML = `
-        <h3>Roast plan — ${beanName}</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">${amount} g on ${roaster.name} (drum ${cap.min}–${cap.max} g). Roast ~what you'll drink in ~2 weeks.</p>
+        <h3>Roast plan — ${escapeHtml(beanName)}</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">${amount} g on ${escapeHtml(roaster.name)} (drum ${cap.min}–${cap.max} g). Roast ~what you'll drink in ~2 weeks.</p>
         <p><strong>Even splits (little/no leftover):</strong></p>
         <ul>${evenRows}</ul>
         ${targetLine}

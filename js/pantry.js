@@ -5,6 +5,7 @@ import { fefoLotOrder } from './lots.js';
 import { priceHistory, priceTrend } from './sourcebook.js';
 import { summariseLedger, LEDGER_DIRS } from './ledger.js';
 import { openPlanModal } from './planner.js';
+import { escapeHtml } from './escape.js';
 
 const LOW_STOCK_THRESHOLD_G = 250;
 
@@ -12,14 +13,6 @@ const LOW_STOCK_THRESHOLD_G = 250;
 // words "today"/"yesterday", which read wrong with a trailing " ago".
 function boughtPhrase(text) {
     return (text === 'today' || text === 'yesterday') ? `bought ${text}` : `bought ${text} ago`;
-}
-
-// Escape user-entered text before it goes into innerHTML (bean name, origin, supplier…), so a
-// name like "<b>x" renders as literal text instead of breaking — or injecting — the card markup.
-function escapeHtml(s) {
-    return String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 export function initPantry() {

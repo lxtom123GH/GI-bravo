@@ -3,6 +3,7 @@
 // onto the Active Roast screen in one tap. Photos are downscaled and stored inline.
 
 import { getPantry, getPrepBatches, addPrepBatch, deletePrepBatch } from './storage.js';
+import { escapeHtml } from './escape.js';
 import { fileToScaledDataURL } from './photos.js';
 
 export function initPrep() {
@@ -22,7 +23,7 @@ export function initPrep() {
     if (sel) sel.addEventListener('change', () => applyPrepBatch(sel.value));
 }
 
-const fmtBean = (b) => `${b.name}${b.process ? ` (${b.process})` : ''}`;
+const fmtBean = (b) => `${escapeHtml(b.name)}${b.process ? ` (${escapeHtml(b.process)})` : ''}`;
 
 // --- Pantry view: cards of prepped batches -------------------------------------
 function renderPrepList() {
@@ -43,8 +44,8 @@ function renderPrepList() {
             : '<div style="height: 110px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">No photo</div>';
         card.innerHTML = `
             ${img}
-            <div style="font-weight: bold; margin-top: 6px;">${batch.beanName || 'Bean'}</div>
-            <div style="color: var(--text-muted); font-size: 0.85rem;">${batch.grams} g${batch.note ? ` · ${batch.note}` : ''}</div>
+            <div style="font-weight: bold; margin-top: 6px;">${batch.beanName ? escapeHtml(batch.beanName) : 'Bean'}</div>
+            <div style="color: var(--text-muted); font-size: 0.85rem;">${batch.grams} g${batch.note ? ` · ${escapeHtml(batch.note)}` : ''}</div>
             <button class="prep-del danger" data-id="${batch.id}" style="font-size: 0.75rem; padding: 4px 10px; margin-top: 8px;">Delete</button>
         `;
         card.querySelector('.prep-del').addEventListener('click', () => {
@@ -66,7 +67,7 @@ function renderPrepDashboard() {
     row.style.display = batches.length ? 'block' : 'none';
     const keep = sel.value;
     sel.innerHTML = '<option value="">None</option>' +
-        batches.map(b => `<option value="${b.id}">${b.beanName} — ${b.grams} g${b.note ? ` (${b.note})` : ''}</option>`).join('');
+        batches.map(b => `<option value="${b.id}">${escapeHtml(b.beanName)} — ${b.grams} g${b.note ? ` (${escapeHtml(b.note)})` : ''}</option>`).join('');
     if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
 }
 

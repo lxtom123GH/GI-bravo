@@ -10,6 +10,7 @@ import {
 } from './storage.js';
 import { roasterCapacity } from './planner.js';
 import { BEHMOR_MODELS } from './roaster-panel.js';
+import { escapeHtml } from './escape.js';
 
 const MODEL_LABELS = { behmor: 'Behmor 2000AB Plus', kkto: 'KKTO' };
 
@@ -40,7 +41,7 @@ function renderRoasterControl() {
         const sel = document.createElement('select');
         sel.id = 'roasterSelect';
         sel.innerHTML = roasters.map(r =>
-            `<option value="${r.id}" ${r.id === active.id ? 'selected' : ''}>${r.name} · ${MODEL_LABELS[r.model] || r.model}</option>`
+            `<option value="${r.id}" ${r.id === active.id ? 'selected' : ''}>${escapeHtml(r.name)} · ${MODEL_LABELS[r.model] || r.model}</option>`
         ).join('');
         sel.addEventListener('change', () => { saveActiveRoasterId(sel.value); announce(); });
         mount.appendChild(sel);
@@ -48,7 +49,7 @@ function renderRoasterControl() {
         // Single-roaster: just the name, no picker.
         const line = document.createElement('div');
         line.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 0;';
-        line.innerHTML = `<strong>${active.name}</strong> <span style="color: var(--text-muted); font-size: 0.85rem;">${MODEL_LABELS[active.model] || active.model}</span>`;
+        line.innerHTML = `<strong>${escapeHtml(active.name)}</strong> <span style="color: var(--text-muted); font-size: 0.85rem;">${MODEL_LABELS[active.model] || active.model}</span>`;
         mount.appendChild(line);
     }
 
@@ -111,7 +112,7 @@ function openRoasterModal() {
             const isActive = r.id === activeId;
             row.innerHTML = `
                 <button class="pick-roaster ${isActive ? 'active' : ''}" data-id="${r.id}" style="flex: 1; text-align: left; font-size: 0.9rem;">
-                    ${isActive ? '✓ ' : ''}${r.name} · ${MODEL_LABELS[r.model] || r.model}
+                    ${isActive ? '✓ ' : ''}${escapeHtml(r.name)} · ${MODEL_LABELS[r.model] || r.model}
                 </button>
                 <button class="del-roaster danger" data-id="${r.id}" style="font-size: 0.75rem; padding: 5px 8px;" ${roasters.length <= 1 ? 'disabled' : ''}>Delete</button>
             `;

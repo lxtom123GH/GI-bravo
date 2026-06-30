@@ -3,6 +3,7 @@
 // so you can check what you paid later; it's also the foundation for OCR parsing down the track.
 
 import { addPurchase, getPurchases, deletePurchase, addBeanToPantry } from './storage.js';
+import { escapeHtml } from './escape.js';
 import { addPhoto, getPhotos, deletePhotosForRoast, fileToScaledDataURL } from './photos.js';
 
 // PURE: total spend of a purchase = Σ (kg × cost/kg). Used in the list + tests.
@@ -121,12 +122,12 @@ async function renderRecentPurchases() {
             const photos = await getPhotos(photoKey(p.id));
             if (photos && photos.length) thumb = `<img src="${photos[0].dataURL}" alt="receipt" class="rcpt-thumb" data-src="${photos[0].dataURL}" style="width:48px; height:48px; object-fit:cover; border-radius:4px; cursor:pointer; flex:0 0 auto;">`;
         } catch (e) { /* no photo */ }
-        const items = (p.items || []).map(i => i.name).join(', ');
+        const items = (p.items || []).map(i => escapeHtml(i.name)).join(', ');
         const total = p.total != null ? p.total : purchaseTotal(p.items);
         return `<div style="display:flex; gap:10px; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-color);">
             ${thumb || '<div style="width:48px;height:48px;flex:0 0 auto;"></div>'}
             <div style="flex:1; min-width:0;">
-                <small style="color:var(--text-muted);">${p.date || ''}${p.note ? ' · ' + p.note : ''}</small><br>
+                <small style="color:var(--text-muted);">${escapeHtml(p.date || '')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</small><br>
                 <span style="font-size:0.9rem;">${(p.items || []).length} bean(s)${total ? ` · ${Number(total).toFixed(2)}` : ''}</span>
                 <br><small style="color:var(--text-muted);">${items}</small>
             </div>

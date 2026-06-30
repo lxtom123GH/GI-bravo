@@ -6,6 +6,7 @@ import { upsertTasting, latestTasting, toNotes, personalPeak } from './tasting.j
 import { drawRoastCurve, drawRoastCurves, drawTrend } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, computeWeightLoss, formatPct, weightLabel } from './metrics.js';
 import { addPhoto, getPhotos, deletePhoto, deletePhotosForRoast, fileToScaledDataURL, createCalibratedPhoto, measureImageColor, getRoastColorIndex, getAllPhotos, replaceAllPhotos, createColorCheckerPhoto, calibrateCustomTarget, createCustomTargetPhoto } from './photos.js';
+import { escapeHtml } from './escape.js';
 
 const COMPARE_COLOR_A = '#ff9800';
 const COMPARE_COLOR_B = '#2196f3';
@@ -281,8 +282,8 @@ function buildComparisonTable(roastA, roastB, pantry, idxA, idxB) {
         <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-top:10px;">
             <thead><tr>
                 <th style="text-align:left;padding:4px 8px;">Metric</th>
-                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_A};">${a.name}</th>
-                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_B};">${b.name}</th>
+                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_A};">${escapeHtml(a.name)}</th>
+                <th style="text-align:right;padding:4px 8px;color:${COMPARE_COLOR_B};">${escapeHtml(b.name)}</th>
             </tr></thead>
             <tbody>
                 ${row('Total Time', formatMs(a.m.totalMs), formatMs(b.m.totalMs))}
@@ -445,7 +446,7 @@ function renderHistoryList() {
         const dateStr = new Date(roast.date).toLocaleString();
 
         const roasterDisplay = roast.roasterName || (roast.roaster || '').toUpperCase();
-        let roasterInfo = `<strong>Roaster:</strong> ${roasterDisplay}`;
+        let roasterInfo = `<strong>Roaster:</strong> ${escapeHtml(roasterDisplay)}`;
         if (roast.roaster === 'behmor' && roast.settings) {
             roasterInfo += ` (${weightLabel(roast.settings.weight, getWeightUnit())}, ${roast.settings.profile})`;
         }
@@ -526,7 +527,7 @@ function renderHistoryList() {
 
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between;">
-                <h3>${bean.name}</h3>
+                <h3>${escapeHtml(bean.name)}</h3>
                 <div style="text-align: right;"><small>${dateStr}</small>${restBadge}</div>
             </div>
             <p>${roasterInfo}</p>
@@ -543,7 +544,7 @@ function renderHistoryList() {
             <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
                 <h4>Tasting Notes</h4>
                 <div style="margin-bottom: 5px;">${flavorsHtml}</div>
-                <p style="font-size: 0.9rem; color: var(--text-muted);">${notes.text || '<em>No notes added.</em>'}</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">${notes.text ? escapeHtml(notes.text) : '<em>No notes added.</em>'}</p>
                 <button class="edit-notes-btn" data-id="${roast.id}" style="margin-top: 10px; font-size: 0.8rem; padding: 5px 10px;">Edit Notes</button>
             </div>
 
