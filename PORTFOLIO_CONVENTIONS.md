@@ -110,3 +110,68 @@ conventions) **and** the shared `FALSE_POSITIVES`/`LESSONS` first. This is the c
 4. tempovibes/GI-charlie: a tiny `AGENTS.md` pointer only (or skip until they grow).
 
 Each app's adoption is its own small PR; nothing is forced and no product behaviour changes.
+
+## 6. Execution plan — lean rollout without losing the gold (2026-06-30)
+
+Refines §4–§5 with the 2026 SOTA scan (see GI-bravo `LESSONS.md` → Radar #3): the goal is **lean
+standardisation**, not more governance. We unify the **meta** (where status / lessons / decisions
+live) and **never** the **product gold** — each app's hard-won domain knowledge stays put.
+
+### 6a. The gold we must NOT lose (preserve, don't flatten)
+Each app has unique, valuable context that standardisation must carry forward verbatim:
+- **golf** — the "Sydney protocol" state model + **Known False Positives FP-01…10** (the most mature
+  self-learning asset in the portfolio — *this seeds the standard*) + `DECISIONS.md` `[D-xx]` history.
+- **aps-agency-comparator / aps-mobility-engine** — the **offline-extraction contract**, the
+  `model_workflow.md` **offload ledger**, numbered design-decision log, `PIR_log.md`, `PROJECT_ANCHOR.md`.
+- **GI-alpha** — cognitive-accessibility / Framer rules; "Gemini PM + Jules executor" model; `VISION.md`.
+- **GI-bravo** — local-first roasting UX, the detector/Roast-Lab lineage, the merge-order / dist-LF /
+  stranded-push lessons.
+Rule: the rollout is **additive** — it adds a lean spine (AGENTS.md / STATUS.md / FALSE_POSITIVES),
+seeded *from* this gold; it deletes nothing and rewrites no domain doc.
+
+### 6b. Step 1 — HARVEST & AUDIT first (read-only; this is the gold-protection step)
+**Yes, a doc/code review of each app is a prerequisite** — GI-bravo just proved you can't trust an
+app's docs until you audit doc-vs-code (its "live" backend read as "parked"). So before touching
+anything, per app:
+1. **Doc-vs-code drift audit** (the GI-bravo method): find contradictions, stale "not built" claims,
+   aspiration-layer drift, manifest gaps.
+2. **Gold inventory:** list every lesson / decision / FP / domain rule / convention worth keeping.
+3. **Output:** a per-app findings report + a *proposed* lean target (what its STATUS.md / AGENTS.md /
+   FALSE_POSITIVES would contain, seeded from the harvest). **No edits to the app yet.**
+
+### 6c. Step 2 — SCAFFOLD (supervised, additive PRs, after the owner reads the harvest)
+Per app, one small PR: rename `CLAUDE.md` → `AGENTS.md` + shim (single lean source, symlinked so
+Claude *and* Antigravity read it), add `STATUS.md` (single status owner) + `FALSE_POSITIVES.md`
+(seeded from the harvest) + a one-line pointer to these shared conventions. Keep all existing content;
+verify the app's own tests still pass.
+
+### 6d. Step 3 — CLOSE THE LOOP (the bit that's been missing)
+Adopt the promote-habit: a lesson learned in one app → app `FALSE_POSITIVES`/`DECISIONS`; if general →
+promoted here. Each `AGENTS.md` opens with *"Follows portfolio-conventions vN — App-specific deltas
+below."* Bias lessons toward **failure → preventative rule** (ReasoningBank pattern).
+
+### 6e. Sequence (most-mature first, so it seeds the standard)
+GI-bravo (✅ done) → **golf** (harvest its FP/DECISIONS to *define* the standard) → **aps-\*** (rich
+decision/offload logs) → **GI-alpha** → **tempovibes / GI-charlie** (tiny — pointer only or skip).
+
+### 6f. Running the harvest as an overnight loop (20-min heartbeat)
+Mirror last night's GI-bravo build loop, but **two important differences** for a *cross-repo* run:
+**(i) Phase 1 is AUDIT-ONLY** — read + report, **no edits to other repos** (an unsupervised run must
+not restructure six repos' docs and risk the gold); scaffolding PRs (Phase 2) come *after* the owner
+reads the harvest. **(ii) Preconditions:** all repos reachable locally (cloned in one workspace) +
+the explicit "harvest, don't replace" guardrail in the prompt.
+- **Queue (one app per sprint):** golf → aps-agency-comparator → aps-mobility-engine → GI-alpha →
+  tempovibes.
+- **On each wake:** read the shared progress log; pick the next un-audited app; run 6b (drift audit +
+  gold inventory + proposed lean target); append its findings; schedule the next wake ~1200 s.
+- **Output:** a consolidated **gold inventory + per-app drift findings + draft lean-structure
+  proposals** for the owner to review — then Phase 2 scaffolds the approved ones as supervised PRs.
+- **Guardrails:** read-only/audit on Phase 1; never edit another repo's domain docs unsupervised;
+  never delete; never merge; one app per sprint; log what was found + anything needing a decision.
+- **Optional structure lens (`graphify`, on trial):** as a *disposable* aid during a sprint, run
+  `graphify .` once in an app to get a structure map + "god nodes" + surprising-connections report,
+  read it as input to the audit, and **don't keep it** (don't commit `graphify-out/`, don't wire the
+  always-on MCP). Trial it on **golf first**: if the map surfaces the gold/drift faster than a plain
+  read, use it for the remaining sprints; if it's noise, drop it. Rationale: our repos are small
+  enough to fit in context, and always-on graph/MCP tooling bloats context (Radar #3) — so this stays
+  a load-it-then-put-it-down lens, never standing infrastructure.
