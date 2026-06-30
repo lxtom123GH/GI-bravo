@@ -1,7 +1,8 @@
 # Roadmap & Future Features
 
-This document tracks the Coffee Roasting Tracker's shipped features and the
-outstanding backlog. _Last reviewed: 2026-06-29._
+This document holds the **detailed backlog + design notes + research** behind each item. For the
+authoritative "what's built / live / next" status, see **[STATUS.md](STATUS.md)** — the single
+source of truth. _Last reviewed: 2026-06-30._
 
 ---
 
@@ -88,8 +89,9 @@ Data model (`tastingNotes`): `emoji`, `flavors[]`, `scores{aroma,flavor,aftertas
 
 ## Roadmap items
 
-Everything below is shipped (✅) **except B8** (parked — needs a backend) and the
-small follow-ups noted under B3/B4. Items keep their implementation notes for reference.
+Everything below is shipped (✅) **except B8b** (community comparison — now a product/privacy
+question, no longer a backend blocker; see below) and the small follow-ups noted under B3/B4. The
+**cloud-sync backend itself is built and LIVE** (since 2026-06-28). Items keep their notes for reference.
 
 ### B1. Full SCA 100-point cupping form — ✅ Done
 Shipped: the Expert cupping form uses the official protocol — 7 quality attributes (6.00–10.00, 0.25 steps), Uniformity/Clean Cup/Sweetness (default 10), minus taint (×2)/fault (×4) defects = final /100. Backward-compatible with the earlier /80 records via stored `total`/`max`.
@@ -132,8 +134,17 @@ Shipped: `README.md` (purpose, features, dev/build, data model, PWA/HTTPS notes,
 ### B7. Optional photo inclusion in JSON backup — ✅ Done
 Shipped: an "Include photos (larger file)" checkbox on the Data Backup card embeds all IndexedDB photos (as data URLs) into the JSON export; import restores them into IndexedDB (via `getAllPhotos`/`replaceAllPhotos`). Off by default to keep the file small.
 
-### B8. Cloud sync / community comparison (requires backend — out of current scope)
-Research surfaced demand for comparing roasts of the same bean with other users. This needs a server, which conflicts with the current browser-only, no-backend design. Parked unless that constraint changes.
+### B8. Cloud sync / community comparison
+- **B8 backend (cloud sync + sharing) — ✅ Done & LIVE (2026-06-28).** Opt-in Firebase auth + 6
+  synced collections + email-shared spaces, all local-first. See **[STATUS.md](STATUS.md) → "What
+  the backend does today"**, design notes in `PORTFOLIO_AUTH_SYNC.md`, as-built in `GO_LIVE_CHECKLIST.md`.
+- **B8a — sync roast-lab captures (next).** So captures auto-collect across devices and can be read
+  straight from Firestore. Needs a purpose-built per-session-doc path (the list-style synced
+  collection re-fetches the whole collection on each change — a poor fit for large captures). No
+  rules change (the per-user wildcard already covers it).
+- **B8b — community comparison (parked → product decision).** Comparing your roast of a bean against
+  other users' roasts. The backend exists now, so this is **no longer a backend blocker** — what
+  remains is a product/privacy design (what's pooled, anonymisation, what's shown). Re-open candidate.
 
 ### Environment / ET logging (Expert tier) — ✅ Done
 Shipped: an Expert-tier "Log ET" input records timestamped environment-temperature readings into `roastState.envTemps` (timeline entries, count shown in history, `env_<unit>` column in the CSV export). Saved with the roast and in backup.
@@ -219,8 +230,9 @@ continual on-device audio classification; GitHub *RoastLearner*.
 Surveyed Artisan, RoasTime/Roast.World (Aillio), Cropster, RoastLog/RoastPATH, and Beanconqueror.
 Field direction: AI predictions (Cropster Smart Predictions), the SCA **CVA 2024** cupping form,
 cloud + community profile sharing, and linked inventory↔production↔cupping. Opportunities found
-that fit a browser-only app were all built (below); the big remaining differentiator others have
-is **cloud/community**, which needs a backend (B8).
+that fit a browser-only app were all built (below). The **cloud** half of the big differentiator
+(sync + sharing) is now built and live; the remaining **community** half (B8b) is a product/privacy
+question, not a backend one.
 
 Shipped from the research:
 - **Roast phase breakdown** — ✅ Dry End marker → drying / Maillard / development time + %.
@@ -328,6 +340,8 @@ Deliberately not built (rationale):
 - **Production scheduling** (Cropster) — aimed at commercial roasteries; low value for the home/hobby focus.
 - **Artisan interoperability** — deferred. Artisan's importer expects specific CSV/`.alog` schemas that can't be validated here; the existing generic CSV (time, energy, temp, RoR, ET, power, events) already serves spreadsheet analysis. Revisit only with a real Artisan round-trip test.
 - **B4 — auto-detect the ColorChecker** — won't-do for now. Reliable chart detection needs real computer vision; the 4-corner tap is a pragmatic, dependency-free alternative.
-- **B8 — cloud sync / community comparison** — parked; needs a backend, which conflicts with the browser-only design.
+- **B8b — community comparison** — parked on a **product/privacy decision**, not a backend one (the
+  cloud-sync backend is built and live). Comparing your roast of a bean against other users' roasts
+  needs an anonymisation/pooling design before it's worth building.
 - **Repo hygiene** — ✅ **done.** `dist/` is now `.gitignore`d and untracked; Vercel rebuilds from
   source, so committing the bundle only caused merge drift/conflicts. No more `dist` in PRs.

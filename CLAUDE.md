@@ -11,11 +11,14 @@ When you add or change a feature, treat it as **incomplete** until you have also
    - the **Help tab** content in `index.html` (the casual user reads this, not the repo docs).
    - the **guided tour** (`js/tour.js`) if the feature is on a main path.
    - the **demo** (`js/demo.js`) if it changes the core roast flow.
-2. **Docs** — update every doc the change touches:
-   - `README.md` — feature list + project structure.
-   - `USER_GUIDE.md` — how a person actually uses it.
-   - `FUTURE_FEATURES.md` — move the item to "done" / record deferrals.
-   - `ROASTER_JOURNEY.md` — flip ✨/◐ to ✅ as roadmap items ship.
+2. **Docs** — `STATUS.md` is the **single source of truth for status**; always update it, then only
+   the role-specific docs the change actually touches (don't restate status across all of them — that
+   caused real drift, see the 2026-06-30 reconciliation):
+   - `STATUS.md` — **always.** Move the item to ✅ Shipped / 🔜 Next / ⏸️ Parked.
+   - `README.md` — only if the **feature list or project-structure manifest** changed.
+   - `USER_GUIDE.md` — only if **how a person uses it** changed.
+   - `FUTURE_FEATURES.md` — the **detailed backlog/design note** (not the headline status).
+   - `ROASTER_JOURNEY.md` — only the **narrative** entry (and flip its ✨/◐ to ✅ when it ships).
    - `HANDOFF.md` — only for cross-session threads/decisions.
 3. **Backup** — if it adds persisted data, include it in `exportAllData`/`importAllData`
    (`js/storage.js`).

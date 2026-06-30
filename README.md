@@ -3,11 +3,14 @@
 A browser-based (PWA) tool for home coffee roasters. It listens to your roast
 through the microphone to detect **first and second crack**, plots a live
 **roast curve**, and keeps a journal of beans, roasts, metrics, tasting notes,
-and photos — all stored locally in your browser with no backend.
+and photos — **local-first** (everything works in your browser with no account), with an
+**optional** cloud sign-in to back up and sync across devices and share with a household.
 
 🌐 Live app: https://gi-bravo.vercel.app
 
 📖 New here? See the **[User Guide](USER_GUIDE.md)** for a simple step-by-step walkthrough.
+
+📍 **What's built / live / next?** See **[STATUS.md](STATUS.md)** — the single source of truth for project status.
 
 Built for the **Behmor 2000AB Plus** and **KKTO** roasters, but the audio
 analysis and logging work with any roaster. You can register **one roaster** (the
@@ -179,6 +182,7 @@ js/
   roasters.js       Roaster profiles (single/multi machine, per-roast machine tag)
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
+  detector-learning.js  Opt-in auto-tune — learns each roaster's sensitivity from your ✗/Mark corrections (pure)
   mfcc.js           Experimental MFCC feature extraction (FFT/mel/DCT, pure) — opt-in, no effect on detection yet
   roastlab.js       Roast Lab — capture/summarise/export a per-roast feature timeline (pure) — opt-in, observational
   shadow.js         Shadow detector bank — parallel, differently-tuned crack detectors (pure) — LOG-ONLY, rides on Roast Lab
@@ -202,8 +206,20 @@ js/
   metrics.js        DTR, RoR, weight-loss, weight units, time formatting
   flavors.js        SCA flavor-wheel data
   photos.js         IndexedDB photo storage + reference-card white balance
-  colorcheck.js     N-patch colour-correction matrix (ColorChecker or DIY target)
   bluetooth.js      Web Bluetooth connection to a DIY temperature probe
+  serial.js         Web Serial (USB) path to the same DIY temperature probe
+  wakelock.js       Keep-screen-awake during a roast
+  hints.js          💡 Show-hints system (data-hint tooltips)
+  tour.js           Guided tour of the main path
+  demo.js           Simulated demo roast (no mic)
+  sync-ui.js        Cloud sync UI — sign-in affordance, space picker, share-by-email, wiring
+  sync/             Reusable opt-in cloud-sync module (app-agnostic):
+    index.js          Public API barrel
+    auth.js           Email/Google auth
+    firebase-config.js  Firebase init (config from .env / emulator)
+    synced-collection.js  Local-first collection ↔ Firestore (reconcile + onSnapshot)
+    reconcile.js      Pure local↔cloud merge math (unit-tested)
+    spaces.js         Shared spaces + share-by-email (owner/editor/viewer roles)
 public/             PWA manifest, icons, service worker, self-hosted brand fonts (copied to dist/ on build)
 HARDWARE_GUIDE.md   DIY Bluetooth thermocouple build (ESP32 + MAX31855) + firmware
 FUTURE_FEATURES.md  Roadmap and backlog

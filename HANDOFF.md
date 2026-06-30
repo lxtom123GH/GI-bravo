@@ -85,12 +85,12 @@ tab for usage, `HARDWARE_GUIDE.md` for the DIY probe. The entire roadmap is done
 
 ## Thread 1 — Portfolio backend decision (was B8) — ✅ decided, code-complete, **LIVE** (pilot done)
 **Decided 2026-06-27: standardize the portfolio on Firebase**, local-first + opt-in cloud
-sync, GI-bravo as the pilot. Full plan + as-built status in **`PORTFOLIO_AUTH_SYNC.md`**
-(see §7). The **pilot is implemented** in GI-bravo against the Firebase Local Emulator Suite
-(reusable `js/sync/` module + opt-in UI + rules + tests); no live project wired yet — the PR
-carries a NEEDS-HUMAN checklist (create `lx-apps-hub`, enable email/password + Google, paste
-`.env`, deploy rules) — now captured step-by-step in **`GO_LIVE_CHECKLIST.md`**. Going live is the
-immediate next step; rollout to the other apps follows.
+sync, GI-bravo as the pilot. **Went LIVE 2026-06-28** on the shared `lx-apps` hub (the console steps
+in `GO_LIVE_CHECKLIST.md` are done — project created, email/password + Google enabled, `.env` set,
+rules deployed, go-live rules bug fixed + regression-tested). The reusable `js/sync/` module + opt-in
+UI + rules + tests are in `main`. Current state lives in **[STATUS.md](STATUS.md)**; design rationale
+in **`PORTFOLIO_AUTH_SYNC.md`** (§7), as-built in **`GO_LIVE_CHECKLIST.md`**. **Next:** roll the
+`js/sync/` pattern out to the other portfolio apps (GI-alpha → tempovibes → migrate golf last).
 
 A portfolio-wide survey corrected the original premise: it is **not** "no backend everywhere."
 Firebase is already the incumbent in three repos — `golf-handicap-tracker` already ships the

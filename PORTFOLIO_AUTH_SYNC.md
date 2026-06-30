@@ -191,9 +191,11 @@ public paths later (golf already shows the `visibility == "public"` pattern).
 
 ## 7. Implementation status (pilot — GI-bravo)
 
-Built against the **Firebase Local Emulator Suite only** (no live project, no secrets, no
-deploy). Cloud sync is **opt-in and lazy-loaded** (Firebase is code-split into its own chunk),
-so the signed-out first paint is unchanged.
+**Now LIVE (2026-06-28)** on the `lx-apps` hub — see the §Status line above and `GO_LIVE_CHECKLIST.md`.
+Originally built and tested against the **Firebase Local Emulator Suite** (the notes below describe
+that build); it has since been wired to the live project (console steps done, `.env` set, rules
+deployed). Cloud sync is **opt-in and lazy-loaded** (Firebase is code-split into its own chunk), so
+the signed-out first paint is unchanged.
 
 **Module (app-agnostic, `js/sync/`)**
 - `firebase-config.js` — `initializeApp` + `getAuth` + `initializeFirestore` with
