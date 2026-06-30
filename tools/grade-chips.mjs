@@ -37,7 +37,27 @@ function normaliseBrands(data) {
 }
 
 function withIds(chips, brand) {
-    return (chips || []).map((c, i) => ({ id: c.id || `${brand}-${i + 1}`, name: c.name || `chip ${i + 1}`, rgb: c.rgb }));
+    return (chips || []).map((c, i) => ({ id: c.id || `${brand}-${i + 1}`, name: c.name || `chip ${i + 1}`, rgb: c.rgb, brand }));
+}
+
+// Render a grade's recommended slot layout as a buyable shopping list. `withBrand` shows which brand
+// each chip is from (used for the cross-brand mixed set). Only prints slots that got a chip.
+function shoppingList(g, chipById, withBrand) {
+    return g.slots
+        .filter(s => s.chipId)
+        .map(s => {
+            const c = chipById.get(s.chipId);
+            const tag = withBrand && c ? ` (${c.brand})` : '';
+            return `      ${s.role.padEnd(13)} → ${c ? c.name : s.chipId}${tag}`;
+        });
+}
+
+function flagSummary(g) {
+    const miss = [];
+    if (!g.quality.greyRamp) miss.push('grey ramp');
+    if (!g.quality.coffeeAnchor) miss.push('a warm/coffee anchor');
+    if (!g.quality.conditioned) miss.push('more colour spread (add a saturated cool chip)');
+    return miss.length ? `needs: ${miss.join(', ')}` : 'all checks pass';
 }
 
 // Lexicographic ranking key: count of passing quality flags, then the (continuous) conditioning
@@ -66,31 +86,38 @@ async function main() {
     }
 
     const brands = normaliseBrands(raw);
-    const ranked = [];
+    const graded = [];          // { brand, chips, g }
+    const allChips = [];        // every chip, tagged with its brand
+    const chipById = new Map();
 
+    // ── Per-brand: the "buy it all from one shop" kit ──
     for (const [brand, chipsIn] of Object.entries(brands)) {
         const chips = withIds(chipsIn, brand);
+        chips.forEach(c => { allChips.push(c); chipById.set(c.id, c); });
         const g = gradeTarget(chips);
-        ranked.push({ brand, g });
+        graded.push({ brand, chips, g });
 
-        const keep = g.chips.filter(c => c.keep);
-        console.log(`\n══ ${brand}  (${chips.length} chips measured) ══`);
-        console.log(`   quality: ramp ${tick(g.quality.greyRamp)}  coffee-anchor ${tick(g.quality.coffeeAnchor)}  conditioned ${tick(g.quality.conditioned)}  → overall ${tick(g.quality.overall)}`);
-        console.log(`   grey ramp: ${g.greyRamp.ramp.length} steps, L* range ${Math.round(g.greyRamp.rangeL)}, evenness ${(g.greyRamp.evenness * 100).toFixed(0)}%`);
-        console.log(`   matrix conditioning: ${(g.conditioning.ratio).toExponential(2)} (needs ≥ 5e-3) ${tick(g.conditioning.ok)}`);
-        console.log(`   KEEP (${keep.length}):`);
-        for (const c of keep) console.log(`     • ${c.name}  [${c.kind}, L*${c.L} hue ${c.hue}°] — ${c.reason}`);
-        const drop = g.chips.filter(c => !c.keep);
-        if (drop.length) console.log(`   drop (${drop.length}): ${drop.map(c => c.name).join(', ')}`);
+        console.log(`\n══ ${brand}  (${chips.length} chips measured) — single-brand kit ══`);
+        console.log(`   overall ${tick(g.quality.overall)}  ·  ${flagSummary(g)}`);
+        console.log(`   grey ramp ${g.greyRamp.ramp.length} steps / L* range ${Math.round(g.greyRamp.rangeL)} / evenness ${(g.greyRamp.evenness * 100).toFixed(0)}%  ·  conditioning ${g.conditioning.ratio.toExponential(2)} ${tick(g.conditioning.ok)}`);
+        console.log(`   shopping list (${g.slots.filter(s => s.chipId).length} chips):`);
+        shoppingList(g, chipById, false).forEach(l => console.log(l));
     }
 
-    ranked.sort((a, b) => compareRankKeys(rankKey(a.g), rankKey(b.g)));
-    console.log(`\n══ Cross-brand ranking (best target first) ══`);
-    ranked.forEach((r, i) => {
-        const keepNames = r.g.chips.filter(c => c.keep).map(c => c.name).join(', ');
-        console.log(`   ${i + 1}. ${r.brand} — overall ${tick(r.g.quality.overall)} — recommend: ${keepNames}`);
-    });
-    console.log(`\nNote: this is the Phase-1 *screening* (are the chips technically good?). Phase 2 — shoot the`);
+    // ── If you only want ONE brand: the best single-brand choice ──
+    graded.sort((a, b) => compareRankKeys(rankKey(a.g), rankKey(b.g)));
+    const top = graded[0];
+    console.log(`\n🏆 BEST FROM A SINGLE BRAND (one trip): ${top.brand} ${tick(top.g.quality.overall)}`);
+    console.log(`   → ${top.chips.filter(c => top.g.slots.some(s => s.chipId === c.id)).map(c => c.name).join(', ')}`);
+
+    // ── Best possible: cherry-pick the best chip per role across ALL brands ──
+    const gMix = gradeTarget(allChips);
+    console.log(`\n🌈 BEST MIXED SET (cherry-pick across brands) ${tick(gMix.quality.overall)}  ·  ${flagSummary(gMix)}`);
+    shoppingList(gMix, chipById, true).forEach(l => console.log(l));
+    const gaps = gMix.slots.filter(s => !s.chipId).map(s => s.role);
+    if (gaps.length) console.log(`   (unfilled roles — nothing suitable in your samples: ${gaps.join(', ')})`);
+
+    console.log(`\nNote: this is Phase-1 *screening* (are the chips technically good?). Phase 2 — shoot the`);
     console.log(`shortlisted cards on a fixed reference under 2–3 different lights and compare the corrected`);
     console.log(`readings — proves they actually hold up before you recommend them.`);
 }

@@ -106,6 +106,17 @@ Go to **Roast History** and find the roast (newest first):
    card you calibrate once under daylight — see below).
 4. **Export** – copy a summary to the clipboard, or export a **CSV** for spreadsheets.
 
+### How accurate do you want the colour to be? (pick your level)
+
+Colour accuracy is a ladder — spend as little or as much as you like. **Lower roast-colour number = darker roast.**
+
+1. **Just a record (free):** **Add Photo.** No correction; fine for a visual diary, but room light makes batches hard to compare.
+2. **Recommended for most people:** **Add Colour-Corrected Photo** with a **neutral grey card.** This is the sweet spot — a proper photographer's **18% grey card** is only a few dollars, far more reliable than DIY, and far cheaper than a ColorChecker. Photograph the grey card, then the beans, **under the same light**. Done.
+3. **Budget DIY (no card to buy):** **Add Custom-Target Photo** with a card of paint chips (next section). Good if you'd rather raid the paint-sample rack than buy a grey card.
+4. **Going all out / most accurate:** a real **24-patch ColorChecker** (≈ $80+) via **Add ColorChecker Photo** — photograph it with the beans and tap the 4 corners. Overkill for most home roasters, but the gold standard if you want it.
+
+**Rule of thumb:** if you just want consistent comparisons, get a **grey card** (option 2). Only go DIY or ColorChecker if you specifically want to. Whichever you pick, the key habit is the same — **shoot your reference (grey card / chips / ColorChecker) under the same light as the beans, every time.**
+
 ### DIY custom colour target
 
 Don't have a ColorChecker? Make a swatch card with **4–6 paint chips** (a neutral
