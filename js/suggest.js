@@ -21,6 +21,15 @@ export const SEED_PROCESSES = [
     'Washed', 'Natural', 'Honey', 'Pulped Natural', 'Anaerobic', 'Wet-Hulled', 'Monsooned', 'Decaf',
 ];
 
+// A small starter list of Australian green-bean suppliers home roasters commonly buy from, so the
+// supplier autocomplete is useful on day one before any purchase history exists. Like the other
+// seeds, these are only suggestions — the user's own suppliers (from history) always rank first,
+// and typing anything else just adds it. Prune/replace freely; nothing here is special-cased.
+export const SEED_SUPPLIERS = [
+    'BeanBay (CoffeeSnobs)', 'Direct Coffee Supplies', 'Cape Coffee Beans', 'Bun Coffee',
+    'Suncoast Coffee', 'The Roasters Pack',
+];
+
 function norm(s) { return String(s == null ? '' : s).trim(); }
 
 // Order distinct values by frequency (most-used first), then alphabetically for ties.
@@ -49,7 +58,7 @@ function mergeWithSeed(ranked, seed) {
 export function buildSuggestions(pantry = [], history = []) {
     const beans = Array.isArray(pantry) ? pantry : [];
 
-    const suppliers = rankByFrequency(beans.map(b => b && b.supplier));
+    const suppliers = mergeWithSeed(rankByFrequency(beans.map(b => b && b.supplier)), SEED_SUPPLIERS);
     const countries = mergeWithSeed(rankByFrequency(beans.map(b => b && b.country)), SEED_COUNTRIES);
     const processes = mergeWithSeed(rankByFrequency(beans.map(b => b && b.process)), SEED_PROCESSES);
     const regions = rankByFrequency(beans.map(b => b && b.region));
