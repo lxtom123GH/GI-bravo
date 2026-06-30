@@ -190,6 +190,29 @@ and Gemini**._
 - Radar #1/#2 tracked this as "Watch." The working environment is now Antigravity
   (`.gemini/antigravity/…`), so update doc references from "Gemini CLI" to "Antigravity CLI" when touched.
 
+### SOTA scan (2026-06 web research) — what's worth it at solo/small scale
+A targeted scan of current agentic-coding practice (filtered for solo dev / hobbyist, not enterprise).
+Headline: the field converged on low-tech habits we'd *already designed* but not executed.
+
+- **Lean, living context file — capture mistakes inline, resist bloat — Adopt.** Consensus: one
+  `AGENTS.md`, pruned, **updated with recurring mistakes in the same session**, "just enough context —
+  excess context *lowers* quality." This both reinforces Radar #1's never-done AGENTS.md rename AND
+  corrects our own habit of doc *sprawl* — keep the always-loaded file lean; the radar/lessons are the
+  durable log beside it. (Sources: timdeschryver "Keep Agentic AI Simple"; Stack Overflow guidelines.)
+- **Lessons biased to *failures* as preventative rules — Adopt.** Hottest research area (Google
+  **ReasoningBank**, mem0): distil failed runs into "always verify X before Y" rules; each failure →
+  a rule → changes the next run = compounding. This *is* our LESSONS + golf's `FALSE_POSITIVES`; the
+  job is to **close the loop**, not invent it. (Our stranded-push + doc-drift entries are textbook.)
+- **Spec-driven by feature size — Adopt.** Formal spec (proposal → plan → tasks, human gate between)
+  for **big** features only (e.g. B8b community, a real v2 detector); **skip it for small fixes**.
+- **The enterprise trap — Ignore (for solo).** Knowledge-graph codebase memory, orchestration
+  frameworks (LangGraph/CrewAI/AutoGPT), and **many MCP servers / custom agents** — the sources
+  explicitly warn these *"bloat the context window, resulting in lower-quality output."* Be sparing.
+- **Subagents in parallel git worktrees — Watch.** Genuinely useful at *portfolio* scale (parallel app
+  work); the tooling exists; overkill for a single small PWA today.
+
 ---
 
-_Next: act on the Radar #3 portfolio items (STATUS.md + the self-learning loop) across the other apps._
+_Next: act on the Radar #3 portfolio items — the **lean** rollout (one slim AGENTS.md + STATUS.md +
+failure-biased FALSE_POSITIVES per app, close the promotion loop), preceded by a per-app harvest/audit
+so no app's gold is lost. Plan + overnight-loop spec in `PORTFOLIO_CONVENTIONS.md` §6._
