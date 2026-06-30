@@ -220,10 +220,10 @@ trends and side-by-side roast compare.
 
 ## Stage 7 — Optimisation: what to buy next (monthly)
 **Today ✅:** consumption & spend dashboard (kg, avg weight-loss, spend).
-**The metric you asked about ✨ — "tastiness per dollar".**
-- Define **value = tasting score ÷ cost per cup** (cost/kg → cost per ~18 g dose). Rank beans and
-  blends on a **value leaderboard**: "Brazil X scores 7.5 at $0.31/cup → best value; the Geisha
-  scores 9 but $1.40/cup → treat."
+**The metric you asked about ✅ — "tastiness per dollar" (shipped, `js/value.js`).**
+- **value = tasting score ÷ cost per cup** (cost/kg → cost per ~18 g dose). Ranks beans and
+  blends on a **value leaderboard** in Roast History: "Brazil X scores 7.5 at $0.31/cup → best value;
+  the Geisha scores 9 but $1.40/cup → treat."
 - Feed it back into buying: "re-order these 3 (great value, running low); skip that one."
 - Caveat to show honestly: scores are subjective and prices vary by lot — treat it as a guide.
 
@@ -231,9 +231,10 @@ trends and side-by-side roast compare.
 
 ## Stage 8 — Solo vs collective (the social layer)
 You roast alone, or with/for others (sharing roasted beans, roasting together).
-**Today ◐:** foundation exists — the Firebase **auth + shared "spaces"** pilot (a space can own a
-pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console steps).
-**Ideas ✨:**
+**Today ✅ (LIVE since 2026-06-28):** opt-in Firebase **auth + shared "spaces"** — a space can own a
+pantry/roaster/roasts/blends, shared by email with owner/editor/viewer roles; local-first, fully
+usable signed out (`js/sync/`, `js/sync-ui.js`). See [STATUS.md](STATUS.md) → "What the backend does today".
+**Ideas ✨ (built on the live sync):**
 - **Shared roastery space** — a household/collective shares a pantry, roaster profiles, and a
   **roast feed** ("Mum roasted the Guji at 12% loss"); borrowed-bean ledger (Stage 1).
 - **Comparative cupping** — several people score the *same* roast; compare palates.
@@ -266,9 +267,9 @@ pantry/roaster/roasts; opt-in, local-first). Not live yet (needs the console ste
    dated tasting log (coffee changes as it rests/ages); the modal shows the history and defaults to
    today; `tastingNotes` stays = the latest for back-compat. _(+ Behmor sub-model now stored on the
    roaster profile — the #4 follow-up.)_
-8. ◐ **Collective space** — CODE COMPLETE (`js/sync/`): opt-in cloud sync (email/Google), a
-   shared pantry/roastHistory/blends/roasters scoped to a space you can share by email; personal
-   calibration stays per-device. Runs on the emulator now; **going live needs the Firebase console
-   steps in `GO_LIVE_CHECKLIST.md`.**
+8. ✅ **Collective space — LIVE (2026-06-28)** (`js/sync/`, `js/sync-ui.js`): opt-in cloud sync
+   (email/Google), a shared pantry/roastHistory/blends/roasters scoped to a space you can share by
+   email (owner/editor/viewer); personal calibration stays per-device. (As-built record in
+   `GO_LIVE_CHECKLIST.md`.)
 
-Most of 1–3, 5, 7 are local-first and need no backend; 8 builds on the sync pilot.
+Most of 1–3, 5, 7 are local-first and need no backend; 8 builds on the now-live sync.
