@@ -232,3 +232,97 @@ Headline: the field converged on low-tech habits we'd *already designed* but not
 _Next: act on the Radar #3 portfolio items — the **lean** rollout (one slim AGENTS.md + STATUS.md +
 failure-biased FALSE_POSITIVES per app, close the promotion loop), preceded by a per-app harvest/audit
 so no app's gold is lost. Plan + overnight-loop spec in `PORTFOLIO_CONVENTIONS.md` §6._
+
+---
+
+## 2026-07-01 — Monthly Retro #1
+
+Covers Radar runs #1–#3 (2026-06-27 → 2026-06-30). Today's date: 2026-07-01.
+
+---
+
+### Adoption status — proposed vs executed
+
+| Finding | Radar | Verdict | Status |
+|---|---|---|---|
+| AGENTS.md rename + CLAUDE.md shim | #1 | Adopt | ❌ **Never done** — GI-bravo still uses `CLAUDE.md` |
+| Keep agent docs concise (≤200 lines) | #1 | Adopt | ✅ `CLAUDE.md` ≈ 60 lines; holding |
+| Claude / Gemini division of labour | #1 | Adopt | ✅ Pattern followed in practice |
+| PWA: `vite-plugin-pwa` migration | #1 → #2 | Watch → Adopt when migrating | ⏳ Still Watch; current SW functional |
+| Behmor capacity + KKTO corrections | #1 | Adopt | ✅ Shipped (#59, #60) |
+| Behmor model-aware panel | #1 | Adopt | ✅ Shipped |
+| Stacked-PR merge trap | #1 | Adopt | ⚠️ Rule written + added to `CLAUDE.md` — but **recurred 2026-06-29** (#74 → CSS branch, not `main`); auto-retarget nuance documented as second entry. Pattern is *known*, not yet *reflexive* |
+| Pushes-after-merge are stranded | #1 | Adopt | ✅ Rule added to `CLAUDE.md`; no recurrence |
+| Compact sessions at 60% context | #2 | Adopt | ✅ Followed |
+| `fallbackModel` config in `~/.claude/settings.json` | #2 | Adopt | ❓ Personal setting — unverifiable here; flagged for owner to confirm |
+| Writer/Reviewer two-session pattern | #2 | Adopt | ✅ Used in practice |
+| Gemini CLI → Antigravity rename | #2 | Watch → Adopt (#3) | ⏳ Working env confirmed Antigravity; doc references not yet swept |
+| AGENTS.md: write it yourself, don't AI-generate | #2 | Adopt | ✅ `CLAUDE.md` remains hand-written |
+| `vite-plugin-pwa`: prefer `prompt` over `autoUpdate` | #2 | Adopt when migrating | ⏳ Pending migration |
+| STATUS.md as single source of truth | #3 | Adopt | ✅ Shipped (#95) — clean recovery from the doc-drift incident |
+| Delete aspiration text on ship | #3 | Adopt | ✅ Done in the #95 audit |
+| "Adopt ≠ executed" — track adoption | #3 | Adopt | ✅ This retro exists because of it |
+| Lean, living context file (SOTA) | #3 | Adopt | ⏳ Same as AGENTS.md rename — written, not executed |
+| Lessons biased to failures | #3 | Adopt | ✅ LESSONS.md entries are failure-first; loop closing is the gap |
+| Spec-driven by feature size | #3 | Adopt | ✅ Followed — no heavy spec for small fixes this month |
+| Enterprise trap → Ignore | #3 | Ignore | ✅ Held |
+| Subagents in parallel git worktrees | #3 | Watch | ⏳ Still Watch |
+| graphify verdict (disposable harvest lens) | #3 | One-shot trial | ✅ Verdict rendered; not tracking further |
+
+**Score: 12 / 20 actually executed.** The 4 still-open items are all non-code changes (a rename, a settings file, a doc sweep, a portfolio rollout) — none require a build.
+
+---
+
+### What specifically didn't close
+
+**The AGENTS.md rename** is the single most glaring gap. It was Radar #1's opening "Adopt", discussed again in #2 and #3, and still hasn't happened. Root cause: it's purely a portfolio-level admin action with no immediate payoff visible in a single session, so it keeps getting deprioritised when real features are in flight. Recommended action: make this a one-line item on the *next* session's opening checklist, not a radar entry.
+
+**The stacked-PR trap recurring** is a more interesting failure: the rule was written correctly, added to `CLAUDE.md`, and then the *exact same mistake* happened two days later. Writing the rule into docs doesn't prevent muscle-memory errors mid-session. The second-entry nuance (delete-then-merge) was only discovered by recovering from the second incident. The rule is now complete and correct — but the prevention mechanism (reading CLAUDE.md at session start) may need to be reinforced, not the rule itself.
+
+**`fallbackModel`** — owner should verify this was actually added to `~/.claude/settings.json`. If not, it's a 3-line addition.
+
+---
+
+### Are we learning the right kinds of things?
+
+**Yes, on balance.** The three target areas are:
+
+| Area | Coverage | Quality |
+|---|---|---|
+| Dev best-practice (Claude Code, workflow) | Strong — 3 Claude-Code-specific findings, 2 PR-process lessons | High: concrete, immediately testable |
+| Claude + Gemini features | Good — capabilities comparison, Antigravity rename, AGENTS.md spec research | Medium: features accurate, adoption uneven |
+| Our stack (Vite, PWA, Firebase) | Light — only the `vite-plugin-pwa` thread | Low volume but appropriate: stack is stable |
+
+The coffee-domain corrections (Behmor, KKTO) were valuable bonuses that fell naturally out of active development — not radar targets but worth capturing. Keeping that.
+
+One thing to stop: **depth-first tool exploration** (the graphify deep-dive) consumed a full radar run and produced one minor finding. A 3-bullet "trialled, verdict: disposable" entry would have been enough. Future trials of one-shot tools: report findings in ≤5 lines.
+
+---
+
+### Cadence assessment
+
+The three radars ran on consecutive days (June 27, 29, 30) during an intense development push — that was appropriate for establishing the radar format while the project was moving fast. But daily-to-every-other-day isn't sustainable or necessary.
+
+**Recommended going forward:**
+- **Weekly radar** remains the target cadence, but treat it as a *ceiling*, not a *floor*. If nothing shipped and no new Claude/stack releases dropped, skip the run rather than padding it.
+- **Monthly retro** (this document, appended here) stays — review adoption rate, drop items that clearly won't move, and set a 3-item "must close this month" list.
+- **Per-session opening check:** read the pending-adoption list below before starting any significant feature work. Costs 30 seconds; prevents the AGENTS.md pattern of indefinite deferral.
+
+---
+
+### Pending adoption list — must close before Retro #2
+
+These items are decided and require only non-code work:
+
+- [ ] **AGENTS.md rename** — add an `AGENTS.md` that `@include`s (or shim-redirects from) `CLAUDE.md`; or simply rename `CLAUDE.md` → `AGENTS.md` and add a one-line `CLAUDE.md` that reads `@AGENTS.md`. Scope: ~10 min.
+- [ ] **`fallbackModel` config** — owner confirms whether `claude-opus-4-8 → claude-sonnet-4-6 → claude-haiku-4-5` chain is in `~/.claude/settings.json`. If not, add it.
+- [ ] **Antigravity doc sweep** — search-and-replace "Gemini CLI" → "Antigravity CLI" in docs when next touching them. Not urgent enough to open a solo PR.
+
+---
+
+### New search topics for Radar #4+
+
+- **Firestore free-tier limits in practice** — we're live on Spark; worth a read to understand when we'd actually hit the ceiling given usage patterns (reads/writes per day per user, etc.).
+- **Web Serial / Web Bluetooth stability** — shipped in GI-bravo but still flagged as experimental in some browsers; track any standardisation news.
+- **Accessibility heading-hierarchy** — STATUS.md flags a follow-up (a11y 88, heading pass outstanding); a quick best-practice read before doing that pass would sharpen the fix.
+- **No new Claude/Antigravity features this week** — defer unless a specific release note warrants it; avoid radar padding.
