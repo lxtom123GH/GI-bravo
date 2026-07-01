@@ -681,6 +681,7 @@ export function exportAllData() {
         roastTargets: getRoastTargets(),
         referenceSamples: getReferenceSamples(),
         colorTargets: getColorTargets(),
+        roastLabSessions: getRoastLabSessions(),
         prepBatches: getPrepBatches(),
         purchases: getPurchases(),
         blends: getBlends(),
@@ -733,6 +734,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.colorTargets)) {
         saveColorTargets(data.colorTargets);
+    }
+    if (Array.isArray(data.roastLabSessions)) {
+        saveRoastLabSessions(data.roastLabSessions);
     }
     if (Array.isArray(data.prepBatches)) {
         savePrepBatches(data.prepBatches);
