@@ -89,7 +89,11 @@ The backend is **built and live in production** (since 2026-06-28), not a plan. 
   couple/household share one pantry + roast history (`js/sync/spaces.js`).
 - **Security rules** (`firestore.rules`): per-user data under `apps/{appId}/users/{uid}/**` (owner
   only, via a wildcard so any personal collection is covered); shared data under a space's
-  `data/{name}/items` (members read, editors/owners write); fail-closed.
+  `data/{name}/items` (members read, editors/owners write); fail-closed. The **`emailIndex`** lookup
+  now binds each row's doc-id to the caller's own token email (`SEC-2a` share-hijack fix) — you can
+  only claim the index entry for *your* email, not someone else's; covered by rules tests. *(Hardening
+  follow-up: also require a **verified** email once sign-up sends a verification link — today it
+  doesn't, so requiring it would lock out Email-Password users.)*
 - **Free-tier limits / not yet synced:** Firestore-only — **no Cloud Functions** (needs Blaze), and
   **photos are not synced** (IndexedDB; a follow-up). Roast-lab captures are not synced yet either
   (that's B8a, below).

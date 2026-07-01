@@ -53,10 +53,21 @@ service cloud.firestore {
     }
 
     // Lookup table mapping an email -> uid so a "share by email" flow can resolve a
-    // recipient. The record is keyed by the owner's email and self-owned.
+    // recipient. The record is keyed by the owner's (lowercased) email and self-owned.
+    //
+    // SEC-2a: the doc-id {email} MUST equal the caller's own token email — otherwise any
+    // authed user could write emailIndex/victim@example.com pointing at their OWN uid, so a
+    // later "share with victim@example.com" would silently resolve to the attacker
+    // (share-hijack). We compare against token.email.lower() because auth.js writes the id as
+    // email.toLowerCase(). (Hardening follow-up: also require request.auth.token.email_verified
+    // once sign-up sends a verification email — today it doesn't, so requiring it here would
+    // lock out every Email-Password user's index write.)
     match /emailIndex/{email} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && request.resource.data.uid == request.auth.uid;
+      allow write: if isAuthed()
+        && request.resource.data.uid == request.auth.uid
+        && email == request.auth.token.email.lower();
+      allow delete: if isAuthed() && email == request.auth.token.email.lower();
     }
 
     // ---- per-app namespace -------------------------------------------------
