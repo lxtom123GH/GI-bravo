@@ -1,0 +1,26 @@
+name: CI
+
+# Runs the unit tests + production build on every PR to main (and on pushes to
+# feature branches). Mirrors the local "definition of done" so a regression in
+# escaping (PR #102), a11y markup (PR #103), or the build can't land silently.
+# Note: the Firestore rules tests (npm run test:rules) need the Firebase
+# emulator and are intentionally left out of this lightweight gate for now.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main] # PRs already cover main; avoid a duplicate run on the merge commit
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
