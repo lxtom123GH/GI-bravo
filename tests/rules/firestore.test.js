@@ -73,10 +73,41 @@ describe('shared identity profile + emailIndex', () => {
         await assertFails(bob.collection('users').doc('alice').set({ uid: 'alice', hacked: true }));
     });
 
-    it('emailIndex write must point to self uid', async () => {
-        const alice = env.authenticatedContext('alice').firestore();
-        await assertSucceeds(alice.collection('emailIndex').doc('a@x.com').set({ uid: 'alice', email: 'a@x.com' }));
-        await assertFails(alice.collection('emailIndex').doc('b@x.com').set({ uid: 'bob', email: 'b@x.com' }));
+    // emailIndex maps email -> uid for share-by-email. The doc-id must be the caller's OWN
+    // (lowercased) token email — see SEC-2a in firestore.rules.
+    const emailIdx = (db, id) => db.collection('emailIndex').doc(id);
+
+    it('lets a user map THEIR OWN email (lowercased) to their uid', async () => {
+        const alice = env.authenticatedContext('alice', { email: 'a@x.com' }).firestore();
+        await assertSucceeds(emailIdx(alice, 'a@x.com').set({ uid: 'alice', email: 'a@x.com' }));
+    });
+
+    it('matches case-insensitively (id is lowercased; token may be mixed case)', async () => {
+        // auth.js writes the id as email.toLowerCase(); the rule compares token.email.lower().
+        const alice = env.authenticatedContext('alice', { email: 'Alice@X.com' }).firestore();
+        await assertSucceeds(emailIdx(alice, 'alice@x.com').set({ uid: 'alice', email: 'alice@x.com' }));
+    });
+
+    it('DENIES mapping someone else\'s email to yourself (share-hijack, SEC-2a)', async () => {
+        // The core hole: alice, pointing at her OWN uid, tries to claim victim's email doc.
+        const alice = env.authenticatedContext('alice', { email: 'a@x.com' }).firestore();
+        await assertFails(emailIdx(alice, 'victim@x.com').set({ uid: 'alice', email: 'victim@x.com' }));
+    });
+
+    it('DENIES writing an index row that points at another uid', async () => {
+        const alice = env.authenticatedContext('alice', { email: 'a@x.com' }).firestore();
+        await assertFails(emailIdx(alice, 'a@x.com').set({ uid: 'bob', email: 'a@x.com' }));
+    });
+
+    it('lets a user delete only their OWN email index row', async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            const db = ctx.firestore();
+            await emailIdx(db, 'a@x.com').set({ uid: 'alice', email: 'a@x.com' });
+            await emailIdx(db, 'victim@x.com').set({ uid: 'victim', email: 'victim@x.com' });
+        });
+        const alice = env.authenticatedContext('alice', { email: 'a@x.com' }).firestore();
+        await assertSucceeds(emailIdx(alice, 'a@x.com').delete());
+        await assertFails(emailIdx(alice, 'victim@x.com').delete());
     });
 });
 
