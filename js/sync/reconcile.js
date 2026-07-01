@@ -86,15 +86,24 @@ export function reconcile({ local, cloud, lastSynced = {}, now, idOf, updatedAtO
 
         // Local only.
         if (l && !c) {
-            if (s) { plan.localDeletes.push(id); }      // existed before -> cloud deleted it
-            else { const w = stamp(l); plan.cloudUpserts.push(w); record(w); } // new local -> push up
+            // Present locally, gone from cloud. Honour the cloud's delete only if the
+            // local copy is UNTOUCHED since the last sync. If we edited it here since
+            // then, this is an edit-vs-delete conflict: a delete must not silently
+            // discard a concurrent edit, so resurrect it by re-pushing the edit up
+            // (edit wins over delete — deletions are tombstone-free, so there is no
+            // delete timestamp to last-write-wins against).
+            if (s && hashRecord(l) === s.hash) { plan.localDeletes.push(id); }
+            else { const w = stamp(l); plan.cloudUpserts.push(w); record(w); }
             continue;
         }
 
         // Cloud only.
         if (!l && c) {
-            if (s) { plan.cloudDeletes.push(id); }       // existed before -> local deleted it
-            else { plan.localUpserts.push(c); record(c); } // new cloud -> pull down
+            // Mirror of the above: gone locally, present in cloud. Honour the local
+            // delete only if the cloud copy is untouched since the last sync; if the
+            // cloud copy was edited, preserve that edit by pulling it back down.
+            if (s && hashRecord(c) === s.hash) { plan.cloudDeletes.push(id); }
+            else { plan.localUpserts.push(c); record(c); }
             continue;
         }
 

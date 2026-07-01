@@ -127,3 +127,32 @@ describe('deletes (inferred from last-synced snapshot)', () => {
         expect(p.cloudUpserts.map(idOf)).toEqual(['a']);
     });
 });
+
+describe('edit-vs-delete conflict (CORR-1: a delete must not discard a concurrent edit)', () => {
+    const synced = (rec) => ({ [rec.id]: { updatedAt: rec.updatedAt || 0, hash: hashRecord(rec) } });
+
+    it('local edited + cloud deleted -> resurrects the local edit (no silent data loss)', () => {
+        const original = { id: 'a', name: 'Yirg', notes: '' };
+        const edited = { id: 'a', name: 'Yirg', notes: 'washed, floral' }; // edited here since last sync
+        const p = run([edited], [], synced(original));                     // cloud deleted it meanwhile
+        expect(p.localDeletes).toEqual([]);                                // NOT silently deleted
+        expect(p.cloudUpserts).toEqual([expect.objectContaining({ id: 'a', notes: 'washed, floral' })]);
+        expect(p.nextSynced.a).toBeDefined();                              // stays tracked -> in sync next round
+    });
+
+    it('cloud edited + local deleted -> resurrects the cloud edit (no silent data loss)', () => {
+        const original = { id: 'a', name: 'Yirg', notes: '' };
+        const edited = { id: 'a', name: 'Yirg', notes: 'from another device' };
+        const p = run([], [edited], synced(original));                     // local deleted it meanwhile
+        expect(p.cloudDeletes).toEqual([]);
+        expect(p.localUpserts).toEqual([expect.objectContaining({ id: 'a', notes: 'from another device' })]);
+        expect(p.nextSynced.a).toBeDefined();
+    });
+
+    it('unchanged local + cloud deleted -> still honours the delete (no needless resurrection)', () => {
+        const rec = { id: 'a', v: 1 };
+        const p = run([rec], [], synced(rec));                             // local untouched since sync
+        expect(p.localDeletes).toEqual(['a']);
+        expect(p.cloudUpserts).toEqual([]);
+    });
+});
