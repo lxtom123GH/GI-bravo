@@ -326,3 +326,12 @@ These items are decided and require only non-code work:
 - **Web Serial / Web Bluetooth stability** — shipped in GI-bravo but still flagged as experimental in some browsers; track any standardisation news.
 - **Accessibility heading-hierarchy** — STATUS.md flags a follow-up (a11y 88, heading pass outstanding); a quick best-practice read before doing that pass would sharpen the fix.
 - **No new Claude/Antigravity features this week** — defer unless a specific release note warrants it; avoid radar padding.
+
+---
+
+### Post-retro corrections (2026-07-02)
+
+The snapshot above is preserved as-written, but two items moved the same day it was drafted:
+
+- **AGENTS.md rename — ✅ DONE** (PR #110, merged 2026-07-01). The adoption table's "❌ Never done" and the pending-list `[ ]` were accurate when written that morning; the rename (`CLAUDE.md` → `AGENTS.md` + a `@AGENTS.md` shim) shipped that evening. So the "indefinite deferral" pattern this retro flagged was actually closed within hours of being named — the naming worked.
+- The other two pending items (`fallbackModel` config, Antigravity doc sweep) remain open for Retro #2.
