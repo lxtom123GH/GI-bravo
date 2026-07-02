@@ -59,14 +59,16 @@ service cloud.firestore {
     // authed user could write emailIndex/victim@example.com pointing at their OWN uid, so a
     // later "share with victim@example.com" would silently resolve to the attacker
     // (share-hijack). We compare against token.email.lower() because auth.js writes the id as
-    // email.toLowerCase(). (Hardening follow-up: also require request.auth.token.email_verified
-    // once sign-up sends a verification email — today it doesn't, so requiring it here would
-    // lock out every Email-Password user's index write.)
+    // email.toLowerCase(). We ALSO require a verified email: sign-up now sends a verification
+    // link (auth.js sendEmailVerification), so an attacker can't register an unclaimed email they
+    // don't own and squat the index. Google sign-in is always verified; Email-Password users get
+    // their index row on the first sign-in AFTER they verify (the write no-ops until then).
     match /emailIndex/{email} {
       allow read: if isAuthed();
       allow write: if isAuthed()
         && request.resource.data.uid == request.auth.uid
-        && email == request.auth.token.email.lower();
+        && email == request.auth.token.email.lower()
+        && request.auth.token.email_verified == true;
       allow delete: if isAuthed() && email == request.auth.token.email.lower();
     }
 

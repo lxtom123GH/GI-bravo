@@ -6,7 +6,7 @@
 
 import {
     onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut as fbSignOut, updateProfile, sendPasswordResetEmail,
+    signOut as fbSignOut, updateProfile, sendPasswordResetEmail, sendEmailVerification,
     GoogleAuthProvider, signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -34,6 +34,11 @@ export async function signUp({ email, password, displayName }) {
     const { auth, db } = getFirebase();
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     if (displayName) await updateProfile(cred.user, { displayName });
+    // Send a verification link so the user can become email_verified — the emailIndex rule
+    // (SEC-2a) requires it. Non-fatal: sign-up succeeds even if the mail send hiccups. The
+    // emailIndex write in ensureProfile no-ops while unverified and lands on the first sign-in
+    // after they verify; the rest of the app (personal sync) works regardless.
+    await sendEmailVerification(cred.user).catch(() => {});
     await ensureProfile(db, cred.user);
     return toPublicUser(cred.user);
 }
