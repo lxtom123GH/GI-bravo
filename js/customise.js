@@ -14,7 +14,8 @@ export const SECTIONS = [
     { key: 'temp', label: 'Temperature & probe logging', desc: 'Log bean temps by hand or stream them from a Bluetooth probe.', sel: '[data-section="temp"]' },
     { key: 'reference', label: 'Follow a reference roast', desc: 'Overlay a past roast’s curve to reproduce a good batch.', sel: '[data-section="reference"]' },
     { key: 'detection', label: 'Detection settings', desc: 'Fine-tune crack-detection sensitivity and pitch.', sel: '[data-section="detection"]' },
-    { key: 'logactions', label: 'Behmor Prog A–D buttons', desc: 'Quick log buttons for the Behmor’s A/B/C/D functions.', sel: '[data-section="logactions"]' }
+    { key: 'scope', label: 'Live audio waveform', desc: 'The raw microphone view while listening for cracks.', sel: '[data-section="scope"]' },
+    { key: 'curve', label: 'Live roast curve', desc: 'The roast’s audio-energy curve, drawn as it happens.', sel: '[data-section="curve"]' }
 ];
 
 export function getHidden() {

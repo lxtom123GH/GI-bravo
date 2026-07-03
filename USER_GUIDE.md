@@ -14,7 +14,7 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    bar (desktop) or **Share → Add to Home Screen** (phone). It then opens like a
    normal app and works offline.
 3. **Allow the microphone** when the browser asks (the first time you start a roast).
-4. **Pick your Mode** (bottom of the left sidebar):
+4. **Pick your Mode** (left sidebar → **⚙ Preferences**):
    - **Easy** – just the basics.
    - **Moderate** – recommended starting point (crack times, DTR, flavour notes).
    - **Expert** – everything (temperature/RoR, roast targets, cupping scores).
@@ -48,7 +48,10 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 2. *(Optional)* Under **Follow reference roast**, pick a previous roast or a saved
    Behmor template to overlay its curve and get a heads-up ~10 s before its cracks.
 3. Tap **Start Roast & Listening**. The timer starts and the app listens.
-4. **During the roast:**
+4. **During the roast, the screen simplifies:** setup and pre-roast options tuck away,
+   leaving a **big timer**, a **phase strip** (Drying → Maillard → Development, ticking
+   over as you mark dry end / first crack), the crack buttons, power logging and
+   **Stop Roast**.
    - It **automatically detects first and second crack** and logs them. You'll
      hear a beep and see a note in the timeline.
    - If it misses one, tap **Manual: Mark 1st Crack** / **2nd Crack** yourself.
@@ -56,7 +59,9 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    - *(Expert)* Type bean temperatures into **Log Temp** as you read them — the app
      works out the Rate of Rise. Or connect a Bluetooth probe to do it automatically.
 5. Tap **Stop Roast** when you drop the beans. The roast is **saved to history**
-   automatically, and the bean's quantity is reduced by the batch weight.
+   automatically, and the bean's quantity is reduced by the batch weight. A
+   **Roast saved** card shows your times and DTR — **type the roasted weight right
+   on the card** once the beans are cool, and jump to notes/photos from there.
 
 > Tip: if it's detecting too many or too few cracks, open **Detection Settings**
 > and adjust the **sensitivity** slider — or turn on **Auto-tune from my corrections**,
@@ -94,7 +99,8 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
 
 ## After the roast
 
-Go to **Roast History** and find the roast (newest first):
+Tap **Log roasted weight & notes →** on the *Roast saved* card (it jumps straight to
+the right roast), or go to **Roast History** and find the roast (newest first):
 
 1. **Log Roasted Weight** – weigh the cooled beans and enter the grams to get your
    **weight-loss %** (a key consistency number; usually 12–20%).
@@ -205,7 +211,8 @@ an official Agtron number.
   shows the right button behaviour.
 - **Make the screen yours:** tap **👆 Personalise by swiping** (on Active Roast under “Customise
   this screen”, or in Help) and swipe each optional control **right to keep / left to hide** — a
-  quick way to declutter. You can redo it any time, or fine-tune with the checkboxes.
+  quick way to declutter. You can redo it any time, or fine-tune with the checkboxes. The **live
+  waveform** and **roast curve** are hideable too, if you'd rather roast by ear and numbers.
 - **Back up your data (important!):** everything lives only in your browser. Use
   **Roast History → Data Backup → Export Backup** every so often to save a file
   (tick *Include photos* if you want them too). **Import** it to restore or to move

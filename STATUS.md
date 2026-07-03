@@ -65,6 +65,23 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
 **Platform & UX**
 - PWA (manifest, icons, offline SW), responsive mobile layout, complexity tiers (Easy/Moderate/
   Expert) with per-feature overrides, "Ember" design system, onboarding (demo, tour, hints, Help).
+- **Stage-aware roast screen** (`js/stage.js`) — the owner's pre/during/post direction: while a
+  roast runs, setup and pre-roast tooling hide, leaving a big timer + mark/clear-crack buttons +
+  power logging + Stop; stopping shows a **"Roast saved" summary card** (times, DTR, one-tap jump
+  to log the roasted weight/notes in Roast History) instead of the old blocking alert. The Behmor/
+  KKTO button-reference tables fold behind a "What each button does" disclosure, and the Pantry/
+  History tabs are **content-first** (your beans / your roasts above the tooling cards). Also:
+  first-run **tour offer banner** (replaces the auto-launched tour; the tour now skips hidden
+  targets, switches tabs for dashboard steps, and lost its laggy animated spotlight — the giant
+  transitioned box-shadow + measure-during-smooth-scroll were why some steps crawled). A live
+  **phase strip** (Drying → Maillard → Development) runs during the roast; the roasted weight is
+  entered **inline on the Roast saved card**; **↻ Roast again** on a history card sets up a repeat;
+  the flow's blocking `alert()`/`prompt()` dialogs (calibration, set-default, roasted weight, demo
+  guard) became inline feedback; and the History tab **renders lazily** (skipped while hidden,
+  per-card curve/photos drawn on scroll-into-view via IntersectionObserver),
+  sidebar footer folded into **⚙ Preferences**, the **waveform + live curve are hideable** via
+  Customise/swipe, canvases show what-appears-here hints instead of blank boxes, and the bean
+  selector explains itself when the pantry is empty.
 - **Accessibility** — semantic `<nav>`/`<main>` landmarks, named form controls, and AA-contrast
   controls; verified with a live axe-core + Lighthouse pass (a11y 88; remaining: a document-wide
   heading-hierarchy pass, tracked as a follow-up).

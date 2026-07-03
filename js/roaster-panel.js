@@ -131,33 +131,49 @@ function renderBehmorPanel(mount) {
 
     const setupGuide = mode === 'setup' ? `
         <p style="margin:6px 0;"><strong>Setup sequence:</strong> 1) <em>Weight</em> → 2) <em>Profile</em> (P1 hottest … P5 coolest) → 3) <em>Start</em>.</p>` : `
-        <p style="margin:6px 0;color:var(--success);"><strong>● Live roast</strong> — buttons now do their <em>during-roast</em> jobs (right column).</p>`;
+        <p style="margin:6px 0;color:var(--success);"><strong>● Live roast</strong> — buttons now do their <em>during-roast</em> jobs. Log your presses below.</p>`;
 
+    // The full button table is a reference manual — folded away so the roast
+    // screen stays calm; the summary line above carries the everyday guidance.
     mount.innerHTML = `
         <div class="card" style="margin:0;">
             <h3>🎛️ Behmor control panel <span style="font-weight:normal;font-size:0.8rem;color:var(--text-muted);">— ${mode === 'live' ? 'live' : 'setup'} guide</span></h3>
-            <p style="color:var(--text-muted);font-size:0.85rem;">The same Behmor buttons do different things before vs during a roast. This shows both, and (during a roast) logs your presses.</p>
-            <label style="font-size:0.85rem;">Your Behmor model
-                <select id="rpModel" style="width:auto;margin:0 0 8px;">${modelOptions}</select>
-            </label>
-            ${uncertain ? '<p style="color:var(--text-muted);font-size:0.8rem;">Model functions vary a little — please double-check against your own manual.</p>' : ''}
             ${setupGuide}
-            <div style="overflow-x:auto;">
-            <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
-                <thead><tr style="text-align:left;color:var(--text-muted);">
-                    <th style="padding:6px 8px;">Button</th><th style="padding:6px 8px;">Before roast</th><th style="padding:6px 8px;">During roast</th>
-                </tr></thead>
-                <tbody>${refRows}</tbody>
-            </table>
-            </div>
-            <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;">${safety}</p>
             ${liveControls}
+            <details id="rpGuide" style="margin-top:10px;" ${isGuideOpen() ? 'open' : ''}>
+                <summary style="cursor:pointer;color:var(--text-muted);font-size:0.9rem;">📖 What each button does (before vs during a roast)</summary>
+                <div style="padding-top:8px;">
+                    <p style="color:var(--text-muted);font-size:0.85rem;">The same Behmor buttons do different things before vs during a roast. This shows both.</p>
+                    <label style="font-size:0.85rem;">Your Behmor model
+                        <select id="rpModel" style="width:auto;margin:0 0 8px;">${modelOptions}</select>
+                    </label>
+                    ${uncertain ? '<p style="color:var(--text-muted);font-size:0.8rem;">Model functions vary a little — please double-check against your own manual.</p>' : ''}
+                    <div style="overflow-x:auto;">
+                    <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+                        <thead><tr style="text-align:left;color:var(--text-muted);">
+                            <th style="padding:6px 8px;">Button</th><th style="padding:6px 8px;">Before roast</th><th style="padding:6px 8px;">During roast</th>
+                        </tr></thead>
+                        <tbody>${refRows}</tbody>
+                    </table>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;">${safety}</p>
+                </div>
+            </details>
         </div>`;
 
     const modelSel = mount.querySelector('#rpModel');
     if (modelSel) modelSel.addEventListener('change', () => { saveBehmorModel(modelSel.value); renderPanel(mount); });
-
+    bindGuideToggle(mount);
     bindLive(mount);
+}
+
+// Remember whether the button-reference guide is open (per device), so people who
+// still lean on it keep it open across visits, and everyone else keeps it tucked away.
+const GUIDE_KEY = 'rpGuideOpen';
+function isGuideOpen() { return localStorage.getItem(GUIDE_KEY) === '1'; }
+function bindGuideToggle(mount) {
+    const guide = mount.querySelector('#rpGuide');
+    if (guide) guide.addEventListener('toggle', () => localStorage.setItem(GUIDE_KEY, guide.open ? '1' : '0'));
 }
 
 // Shared: live-mode buttons log a timestamped action onto the roast.
@@ -219,17 +235,23 @@ function renderKktoPanel(mount) {
     mount.innerHTML = `
         <div class="card" style="margin:0;">
             <h3>🎛️ KKTO control guide <span style="font-weight:normal;font-size:0.8rem;color:var(--text-muted);">— ${mode === 'live' ? 'live' : 'setup'}</span></h3>
-            <p style="color:var(--text-muted);font-size:0.85rem;">The KKTO is a manual DIY roaster — you steer the roast with <strong>heat</strong> and <strong>airflow</strong> (turbo oven), with the agitator keeping beans moving. There are no fixed programs; builds vary, so set your drum capacity under ⚙ Manage roasters.</p>
             ${mode === 'live' ? '<p style="margin:6px 0;color:var(--success);"><strong>● Live roast</strong> — log your heat/airflow changes below.</p>' : ''}
-            <div style="overflow-x:auto;">
-            <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
-                <thead><tr style="text-align:left;color:var(--text-muted);"><th style="padding:6px 8px;">Control</th><th style="padding:6px 8px;">What it does</th></tr></thead>
-                <tbody>${refRows}</tbody>
-            </table>
-            </div>
-            <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;">Capacity ~300–700 g (sweet spot 500–650 g). Heat/airflow controls depend on your build.</p>
             ${liveControls}
+            <details id="rpGuide" style="margin-top:10px;" ${isGuideOpen() ? 'open' : ''}>
+                <summary style="cursor:pointer;color:var(--text-muted);font-size:0.9rem;">📖 How the KKTO controls work</summary>
+                <div style="padding-top:8px;">
+                    <p style="color:var(--text-muted);font-size:0.85rem;">The KKTO is a manual DIY roaster — you steer the roast with <strong>heat</strong> and <strong>airflow</strong> (turbo oven), with the agitator keeping beans moving. There are no fixed programs; builds vary, so set your drum capacity under ⚙ Manage roasters.</p>
+                    <div style="overflow-x:auto;">
+                    <table class="rp-table" style="border-collapse:collapse;font-size:0.85rem;width:100%;">
+                        <thead><tr style="text-align:left;color:var(--text-muted);"><th style="padding:6px 8px;">Control</th><th style="padding:6px 8px;">What it does</th></tr></thead>
+                        <tbody>${refRows}</tbody>
+                    </table>
+                    </div>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;">Capacity ~300–700 g (sweet spot 500–650 g). Heat/airflow controls depend on your build.</p>
+                </div>
+            </details>
         </div>`;
 
+    bindGuideToggle(mount);
     bindLive(mount);
 }
