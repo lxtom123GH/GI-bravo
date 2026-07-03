@@ -9,7 +9,8 @@ const KEY = 'dashboardHidden';
 // The optional sections offered for hiding. `sel` may match multiple elements
 // (grouped rows) via a data-section attribute, or a single element by id.
 export const SECTIONS = [
-    { key: 'calibrate', label: 'Calibrate Noise button', desc: 'Sample room noise before a roast to improve crack detection.', sel: '#calibrateBtn' },
+    // NOTE: 'calibrate' was removed when the button moved inside Detection
+    // Settings (auto-calibration made it a fallback); stale saved keys are harmless.
     { key: 'dryend', label: 'Mark: Dry End button', desc: 'Log the “dry end” / yellowing point during a roast.', sel: '#markDryEndBtn' },
     { key: 'temp', label: 'Temperature & probe logging', desc: 'Log bean temps by hand or stream them from a Bluetooth probe.', sel: '[data-section="temp"]' },
     { key: 'reference', label: 'Follow a reference roast', desc: 'Overlay a past roast’s curve to reproduce a good batch.', sel: '[data-section="reference"]' },

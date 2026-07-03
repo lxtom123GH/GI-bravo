@@ -36,8 +36,13 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    roaster"* and add them; pick the active one before each roast and it's tagged on
    the saved roast. (Behmor) set your usual batch size with **Set as default**, and
    switch grams/pounds with the unit dropdown.
-7. **Calibrate noise (optional, improves detection).** Tap **Calibrate Noise** and
-   stay quiet for 3 seconds so the app learns your room's background noise.
+7. **Noise calibration is automatic.** Once the mic has been permitted (after your
+   first roast or a manual calibrate), the app quietly measures the room's background
+   noise while you set up — a rolling last-45-seconds window, shown with a 🎙 note —
+   and **freezes it the moment you start the roast**, so it includes your roaster
+   warming up. It never triggers the mic-permission prompt by itself, and nothing is
+   recorded — it only reads a loudness number. Prefer manual (or want to turn it
+   off)? **Detection Settings → Auto-calibrate / Calibrate now**.
 
 ---
 
@@ -237,7 +242,7 @@ an official Agtron number.
 | Problem | Fix |
 | --- | --- |
 | Mic / "allow permissions" error | Use Chrome or Edge, and the `https://` link (not a saved file). Allow the mic when asked. |
-| Too many / too few cracks detected | **Detection Settings** → lower/raise **sensitivity**; **Calibrate Noise** first; reduce background noise. |
+| Too many / too few cracks detected | **Detection Settings** → lower/raise **sensitivity**; auto-calibration sets the noise floor while you set up (or tap **Calibrate now** there); reduce background noise. |
 | Second crack not detected | It needs higher-pitched, faster cracking ~20 s+ after first crack — or mark it manually. |
 | My data disappeared | It's per-browser/device and is cleared if you wipe browser data — keep **backups**, or **sign in** (sidebar → ☁️) to sync it to the cloud. |
 | "…has no account yet" when sharing | Ask that person to **sign in once** first (so they can be found by email), then share again. |

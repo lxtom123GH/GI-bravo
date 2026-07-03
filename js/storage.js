@@ -185,7 +185,8 @@ export const DEFAULT_DETECTION_SETTINGS = {
     thresholdMultiplier: 1.5, // spike must exceed baseline noise by this factor (lower = more sensitive)
     cracksRequired: 3,        // snaps within the cluster window needed to confirm a crack phase
     secondCrackPitch: 0.5,    // high-band energy share above which cracking reads as second crack
-    calibrationSeconds: 8     // how long Calibrate Noise samples the room (longer catches intermittent talking)
+    calibrationSeconds: 8,    // how long Calibrate Noise samples the room (longer catches intermittent talking)
+    autoCalibrate: true       // rolling pre-roast noise floor (only runs once the mic is already permitted)
 };
 
 export function getDetectionSettings() {

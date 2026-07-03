@@ -155,11 +155,17 @@
                 <button id="ackAlarmBtn" type="button" style="display: none; width: 100%; margin-bottom: 12px; padding: 14px; font-size: 1.1rem; background-color: #e53935; box-shadow: 0 0 8px #e53935;">🔔 Crack detected — tap to silence</button>
 
                 <div class="roast-controls">
-                    <button id="calibrateBtn" class="secondary stage-pre" data-hint="Sample 3s of room noise so crack detection adapts to your environment.">Calibrate Noise</button>
                     <button id="startBtn" class="stage-pre" data-hint="Start the roast and listen for first and second crack automatically. You can still mark cracks and log power yourself.">Start Roast & Listening</button>
                     <button id="startManualBtn" class="secondary stage-pre" data-hint="Start the roast timer WITHOUT the microphone — no automatic crack detection. Mark first/second crack yourself and log power changes. Use this if the mic won't work.">Start (no mic)</button>
                     <button id="stopBtn" disabled class="danger stage-live">Stop Roast</button>
                     <button class="demo-btn secondary stage-pre" type="button">Try a demo (no mic)</button>
+                </div>
+
+                <!-- Honest mic indicator: shown only while auto-calibration is sampling. -->
+                <div id="autoCalStatus" class="stage-pre" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-muted);"
+                    data-hint="The mic quietly measures the room's background noise while you set up (a rolling 45-second window, 90th percentile). It's frozen the moment you start the roast — so it includes your roaster warming up. Nothing is recorded or stored; it only reads a loudness number.">
+                    <span>🎙 Listening to room noise so crack detection is tuned when you start — nothing is recorded.</span>
+                    <button id="autoCalOffBtn" type="button" class="secondary" style="font-size: 0.8rem; padding: 4px 10px;">Turn off</button>
                 </div>
 
                 <details class="stage-pre" style="margin-bottom: 15px;">
@@ -229,6 +235,15 @@
                 <details class="tier-moderate" data-section="detection" style="margin-bottom: 15px;">
                     <summary style="cursor: pointer;">Detection Settings</summary>
                     <div style="padding: 15px 5px 5px;">
+                        <div style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                            <label for="autoCalToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="autoCalToggle" style="width: auto; margin: 0;" data-hint="On by default. Once the mic is permitted, the app keeps a rolling 45-second noise floor while you set up and freezes it when you start the roast — so it hears your roaster warming up, and forgets earlier clatter like the grinder. It never triggers the mic-permission prompt by itself.">
+                                <strong>Auto-calibrate from room noise</strong>
+                            </label>
+                            <small style="color: var(--text-muted); display: block; margin-top: 4px;">While you set up (and only once the mic is already permitted), the noise floor updates from the <strong>last 45 s</strong> of room sound and is <strong>frozen when you start</strong> — including your roaster warming up. A 🎙 note shows whenever it's listening.</small>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">Noise floor: <span id="autoCalReadout">—</span></div>
+                            <button id="calibrateBtn" class="secondary" style="font-size: 0.8rem; padding: 5px 10px; margin-top: 8px;" data-hint="Manual fallback: sample the room for a fixed few seconds and set the noise floor from that. Auto-calibration then carries on from your sample.">Calibrate now</button>
+                        </div>
                         <div style="margin-bottom: 15px;">
                             <label for="thresholdSetting">
                                 <strong>Sensitivity threshold:</strong> <span id="thresholdValue">1.5×</span>
@@ -569,7 +584,7 @@
                     <li><strong>Your roaster:</strong> on Active Roast it shows your machine — most people use one, so there's nothing to set up. If you use more than one (yours, a friend's, a different Behmor/KKTO), tap <strong>⚙ Manage roasters</strong> to add them; each roast is then tagged with the machine it was done on.</li>
                     <li>Add beans in <strong>Bean Pantry</strong> — just a <strong>name and grams</strong> is enough; tap <strong>＋ Add detail</strong> for optional origin/process/cost (and <strong>⚙ Customise fields</strong> there hides the optional fields you don't track). Or use <strong>📷 Quick-add from receipt</strong> to snap a receipt and add several at once. Then weigh out a batch and roast on <strong>Active Roast</strong>.</li>
                     <li><strong>Adding beans you've bought before is quick:</strong> the supplier, country, region and farm boxes <strong>suggest what you've typed before</strong> — and they work together. Pick a <strong>supplier</strong> and the countries you usually buy from it move to the top (and fill in if there's only one); pick a <strong>country</strong> and its usual region/process follow. Typing or pasting a full name like <em>"Ethiopia Yirgacheffe Washed"</em> fills in country, region and process for you.</li>
-                    <li>Optional: tap <strong>Calibrate Noise</strong> and stay quiet for 3 s to improve crack detection.</li>
+                    <li><strong>Noise calibration is automatic:</strong> once the mic is permitted (after your first roast), the app quietly measures the room while you set up — a 🎙 note shows when it's listening — and locks the level in when you start, so it hears your roaster warming up. Prefer manual? <strong>Detection Settings → Calibrate now</strong>.</li>
                 </ol>
             </div>
 
@@ -655,7 +670,7 @@
                 <h3>Troubleshooting</h3>
                 <ul>
                     <li><strong>“Start” seems to do nothing / mic error:</strong> the status bar now shows the reason. On iPhone/iPad use <strong>Safari</strong> and allow the mic (not the home-screen icon); on desktop use Chrome/Edge over the https link. Either way, <strong>Start (no mic)</strong> lets you roast without auto-detection.</li>
-                    <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em> and calibrate noise. Or turn on <em>Auto-tune from my corrections</em> there — then just clear any false crack (✗) and use <strong>Manual: Mark</strong> for any it misses, and the app quietly tunes the sensitivity for that roaster over time.</li>
+                    <li><strong>Too many/few cracks:</strong> adjust <em>Detection Settings → sensitivity</em>. Auto-calibration handles the noise floor while you set up (or tap <em>Calibrate now</em> there for a manual sample). Or turn on <em>Auto-tune from my corrections</em> there — then just clear any false crack (✗) and use <strong>Manual: Mark</strong> for any it misses, and the app quietly tunes the sensitivity for that roaster over time.</li>
                     <li><strong>🧪 Experimental — MFCC features:</strong> Detection Settings has an optional <em>Compute MFCC features</em> toggle (off by default). It computes the audio's timbre fingerprint alongside detection as groundwork for a future, more accurate crack detector — it <strong>doesn't change detection</strong> today. Safe to leave off.</li>
                     <li><strong>🧪 Roast Lab — capture &amp; compare roasts:</strong> Detection Settings has a <em>Roast Lab</em> toggle (off by default). When on, each roast records a timeline of what the detector hears — loudness, crack pitch and the MFCC fingerprint — plus every crack and cleared false-alarm. It <strong>doesn't change detection</strong>. Afterwards, use <em>Export JSON / CSV</em> (or <em>Copy summary</em>) to save and compare roasts — or on a phone/tablet tap <em>📤 Share capture</em> to send it straight to yourself (Mail / AirDrop / Save to Files), which is the easiest way to collect captures from several devices after the same roast. Handy for an A/B weekend: roast 1 baseline, roast 2 watch the numbers, roast 3 tweak the sensitivity and compare. Drop the exported file into the repo's <code>roast-logs/</code> folder to analyse it later. If you're <strong>signed in</strong>, ticking <em>☁️ Back up captures to cloud</em> (off by default) backs each capture up to your account so they collect automatically across your devices. For a step-by-step test session (e.g. a few roasts in a row), see <code>ROAST_TEST_PROTOCOL.md</code> in the repo.</li>
                     <li><strong>🫥 Shadow detectors (inside Roast Lab):</strong> while Roast Lab is on, a small bank of experimental crack detectors runs <em>alongside</em> the real one — each tuned differently (more/less sensitive, stricter 2C pitch, tighter clustering). They quietly log what <em>they</em> would have called, tagged by variant, into the same capture. They <strong>never alarm and never change your detection</strong> — they exist purely so the export can compare each variant against the real detector and your own crack/✗ marks. That comparison is how a smarter detector gets chosen safely, without ever trusting an unproven one mid-roast. Tip for testing: run the same roast on a couple of devices/positions and export each — more captures, same beans.</li>
