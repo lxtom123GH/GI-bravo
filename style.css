@@ -133,7 +133,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 /* ---------- Live readouts ---------- */
 /* Big calm elapsed timer = light display face (remove the inline
    font-family:monospace / font-weight:bold on #liveTimer in index.html). */
-#liveTimer { font-family: var(--font-display); font-weight: var(--weight-regular); letter-spacing: -0.01em; }
+.analyzer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
+.analyzer-readouts { display: flex; gap: 20px; align-items: center; }
+#liveTimer { font-family: var(--font-display); font-weight: var(--weight-regular); letter-spacing: -0.01em; font-size: 1.5rem; color: var(--color-text); }
+#liveDtr { font-size: var(--text-base); color: var(--color-text-muted); }
 #liveDtr, #liveRor, #logArea { font-family: var(--font-mono); }
 .status-indicator { font-weight: var(--weight-bold); color: var(--color-accent); margin-bottom: var(--space-4); }
 
@@ -164,6 +167,51 @@ canvas { width: 100%; height: 150px; background-color: var(--color-bg); border: 
 body[data-tier="easy"] .tier-moderate,
 body[data-tier="easy"] .tier-expert,
 body[data-tier="moderate"] .tier-expert { display: none !important; }
+
+/* ---------- Roast stages (js/stage.js) ----------
+   pre  = setting up: everything shows, Stop hidden.
+   live = roasting: pre-roast tooling (.stage-pre) hides so the screen is calm —
+          a big timer, the mark/clear-crack buttons, power logging, and Stop. */
+body[data-roast-stage="live"] .stage-pre { display: none !important; }
+body:not([data-roast-stage="live"]) .stage-live { display: none !important; }
+
+/* Live header: timer front and centre; status wraps below so its text changes
+   never shove the numbers around. */
+body[data-roast-stage="live"] .analyzer-header { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+body[data-roast-stage="live"] .analyzer-header h3 { display: none; }
+body[data-roast-stage="live"] .analyzer-readouts { flex-wrap: wrap; row-gap: var(--space-1); width: 100%; }
+body[data-roast-stage="live"] #liveTimer { font-size: 3.2rem; line-height: 1.1; }
+body[data-roast-stage="live"] .status-indicator { flex-basis: 100%; }
+body[data-roast-stage="live"] #stopBtn { flex: 1 1 100%; padding: 14px; font-size: 1.05rem; }
+body[data-roast-stage="live"] .mark-btn { padding: 16px 10px; font-size: 1rem; }
+
+/* Mark buttons: coloured only when they can actually be pressed. */
+#markDryEndBtn:not(:disabled) { background-color: #8d6e63; }
+#markFirstCrackBtn:not(:disabled) { background-color: #2196F3; }
+#markSecondCrackBtn:not(:disabled) { background-color: #9C27B0; }
+
+/* ---------- Live roast-phase strip (js/audio.js) ---------- */
+#phaseStrip { display: flex; gap: 4px; margin-bottom: var(--space-4); }
+#phaseStrip span {
+  flex: 1; text-align: center; font-size: var(--text-sm); padding: 6px 4px;
+  border-radius: var(--radius-pill); background: var(--color-surface-raised);
+  color: var(--color-text-faint);
+}
+#phaseStrip span.phase-done { color: var(--color-text-muted); }
+#phaseStrip span.phase-done::before { content: '✓ '; }
+#phaseStrip span.phase-active { color: #fff; font-weight: var(--weight-bold); }
+#phaseStrip span.phase-active[data-phase="drying"] { background: var(--roast-drying); }
+#phaseStrip span.phase-active[data-phase="maillard"] { background: var(--roast-maillard); }
+#phaseStrip span.phase-active[data-phase="development"] { background: var(--roast-development); color: #1a120b; }
+
+/* ---------- Post-roast summary (js/stage.js) ---------- */
+#postRoastCard { border-color: var(--color-success-border); }
+.post-roast-metrics { display: flex; gap: var(--space-5); flex-wrap: wrap; margin-bottom: var(--space-2); }
+.post-roast-metric span { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
+.post-roast-metric strong { font-family: var(--font-mono); font-size: var(--text-xl); }
+
+/* Spotlight the just-saved roast when arriving from the post-roast card. */
+.roast-card-flash { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-soft); transition: border-color 0.4s ease, box-shadow 0.4s ease; }
 
 /* ---------- Roast layout helpers ---------- */
 .roast-controls { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }

@@ -212,7 +212,7 @@ export function drawRoastCurve(canvas, curve, markers = {}) {
     const baseY = pad.top + plotH;
 
     if (!curve || curve.length < 2) {
-        emptyMessage(ctx, t, width, height, 'No roast curve data');
+        emptyMessage(ctx, t, width, height, markers.emptyMsg || 'No roast curve data');
         return;
     }
 

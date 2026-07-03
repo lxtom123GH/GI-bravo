@@ -1,5 +1,6 @@
 // Entry point: wires together all UI modules for the Coffee Roasting Tracker.
 import { initTabs, initTier } from './js/ui.js';
+import { initStage } from './js/stage.js';
 import { initDemo } from './js/demo.js';
 import { initTour } from './js/tour.js';
 import { initHints } from './js/hints.js';
@@ -75,6 +76,7 @@ function initSyncLazy() {
 function init() {
     initTier();
     initTabs();
+    initStage();
     initRoasters();
     initRoastDashboard();
     initRoasterPanel();

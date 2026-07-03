@@ -77,7 +77,14 @@ function tastingSummary(notes) {
 export function initHistory() {
     renderHistoryList();
     window.addEventListener('pantryUpdated', renderHistoryList);
-    document.querySelector('[data-target="history"]').addEventListener('click', renderHistoryList);
+    // Roast saves / weight edits / sync updates: re-render live when the tab is
+    // visible, otherwise renderHistoryList just marks itself dirty.
+    window.addEventListener('historyUpdated', renderHistoryList);
+    // Render deferred changes when the tab is opened (renderHistoryList marks
+    // itself dirty instead of rendering while the tab is hidden).
+    document.querySelector('[data-target="history"]').addEventListener('click', () => {
+        if (historyDirty) renderHistoryList();
+    });
     initBackup();
     initCompare();
     initTrends();
@@ -415,7 +422,28 @@ function importSharedRoast(data) {
     alert(`Imported shared roast${data.beanName ? ` of ${data.beanName}` : ''}.`);
 }
 
+// Rendering every roast card (each with a canvas draw + async photo loads) on
+// every data event was the tab's main cost — so while the History tab is hidden
+// we only note that it's stale, and render on the next visit.
+let historyDirty = true;
+
+// Draw a card's expensive parts (curve canvas, photos, colour index) only when
+// it scrolls into view; a long history then costs nothing to open.
+const cardObserver = ('IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => {
+            if (!e.isIntersecting) return;
+            if (e.target._lazyDraw) { e.target._lazyDraw(); e.target._lazyDraw = null; }
+            obs.unobserve(e.target);
+        });
+    }, { rootMargin: '300px' })
+    : null;
+
 function renderHistoryList() {
+    const pane = document.getElementById('history');
+    if (pane && !pane.classList.contains('active')) { historyDirty = true; return; }
+    historyDirty = false;
+
     const historyContainer = document.getElementById('historyContainer');
     if (!historyContainer) return;
 
@@ -565,6 +593,7 @@ function renderHistoryList() {
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                <button class="roast-again-btn" data-id="${roast.id}" data-hint="Set up a repeat of this roast in one tap — loads its bean, green weight and Behmor settings onto Active Roast.">↻ Roast again</button>
                 <button class="log-yield-btn" data-id="${roast.id}" data-hint="Weigh the cooled beans and enter the grams to get your weight-loss % — a key consistency number (usually 12–20%).">Log Roasted Weight</button>
                 ${roast.roaster === 'behmor' && roast.timeline.curve && roast.timeline.curve.length >= 2 ? `<button class="save-template-btn" data-id="${roast.id}">Save as Behmor template</button>` : ''}
                 ${roast.timeline.powerLog && roast.timeline.powerLog.length ? `<button class="save-manual-btn" data-id="${roast.id}">Save manual profile</button>` : ''}
@@ -577,23 +606,32 @@ function renderHistoryList() {
 
         historyContainer.appendChild(card);
 
-        // Render the saved roast curve (older roasts may not have curve data).
-        const curveCanvas = card.querySelector('.history-curve');
-        const startMs = roast.timeline.startTime;
-        drawRoastCurve(curveCanvas, roast.timeline.curve, {
-            dryEndMs: roast.timeline.dryEndTime ? roast.timeline.dryEndTime - startMs : null,
-            firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - startMs : null,
-            secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - startMs : null,
-            totalMs: roast.timeline.endTime - startMs
-        });
+        const drawCard = () => {
+            // Render the saved roast curve (older roasts may not have curve data).
+            const curveCanvas = card.querySelector('.history-curve');
+            const startMs = roast.timeline.startTime;
+            drawRoastCurve(curveCanvas, roast.timeline.curve, {
+                dryEndMs: roast.timeline.dryEndTime ? roast.timeline.dryEndTime - startMs : null,
+                firstCrackMs: roast.timeline.firstCrackTime ? roast.timeline.firstCrackTime - startMs : null,
+                secondCrackMs: roast.timeline.secondCrackTime ? roast.timeline.secondCrackTime - startMs : null,
+                totalMs: roast.timeline.endTime - startMs
+            });
 
-        renderPhotos(roast.id, card.querySelector('.roast-photos'));
+            renderPhotos(roast.id, card.querySelector('.roast-photos'));
 
-        // Fill the roast-colour index (from IndexedDB) once available.
-        getRoastColorIndex(roast.id).then(idx => {
-            const el = card.querySelector('.roast-color-index');
-            if (el && idx) el.textContent = `— roast colour ${idx.brightness} (lower = darker)`;
-        }).catch(() => {});
+            // Fill the roast-colour index (from IndexedDB) once available.
+            getRoastColorIndex(roast.id).then(idx => {
+                const el = card.querySelector('.roast-color-index');
+                if (el && idx) el.textContent = `— roast colour ${idx.brightness} (lower = darker)`;
+            }).catch(() => {});
+        };
+
+        if (cardObserver) {
+            card._lazyDraw = drawCard;
+            cardObserver.observe(card);
+        } else {
+            drawCard();
+        }
     });
 
     document.querySelectorAll('.add-photo-btn').forEach(btn => {
@@ -643,7 +681,18 @@ function renderHistoryList() {
     });
 
     document.querySelectorAll('.log-yield-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => logRoastedWeight(e.target.dataset.id));
+        btn.addEventListener('click', (e) => logRoastedWeight(e.target.dataset.id, e.target));
+    });
+
+    document.querySelectorAll('.roast-again-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const roast = getRoastHistory().find(r => r.id === e.target.dataset.id);
+            if (!roast) return;
+            // roast.js fills the setup; then jump to the dashboard.
+            window.dispatchEvent(new CustomEvent('roastAgain', { detail: roast }));
+            const dashLink = document.querySelector('.nav-links li[data-target="dashboard"]');
+            if (dashLink) dashLink.click();
+        });
     });
 
     document.querySelectorAll('.save-template-btn').forEach(btn => {
@@ -1458,33 +1507,55 @@ function saveBehmorTemplateFromRoast(id) {
     alert(`Saved as the Behmor ${profile} @ ${label} template. It will auto-load when you select that profile and weight.`);
 }
 
-function logRoastedWeight(id) {
+// Inline roasted-weight editor: replaces the button with a small input row (no
+// blocking prompt). An unusual weight loss asks for a second Save tap instead
+// of a confirm() dialog.
+function logRoastedWeight(id, btn) {
     const roast = getRoastHistory().find(r => r.id === id);
-    if (!roast) return;
+    if (!roast || !btn) return;
 
-    const current = roast.roastedWeightG || '';
-    const input = prompt('Roasted (post-cool) weight in grams:', current);
-    if (input === null) return; // cancelled
+    const wrap = document.createElement('span');
+    wrap.style.cssText = 'display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap;';
+    wrap.innerHTML = `
+        <input type="number" min="0" step="1" placeholder="grams" value="${roast.roastedWeightG || ''}"
+            aria-label="Roasted (post-cool) weight in grams" style="width: 110px; margin: 0;">
+        <button type="button" class="yield-save">Save</button>
+        <button type="button" class="yield-cancel">Cancel</button>
+        <small class="yield-msg" style="color: var(--text-muted);"></small>`;
+    btn.replaceWith(wrap);
 
-    const trimmed = input.trim();
-    if (trimmed === '') {
-        delete roast.roastedWeightG; // clearing the value
-    } else {
-        const grams = parseFloat(trimmed);
-        if (isNaN(grams) || grams <= 0) { alert('Enter a positive number of grams.'); return; }
-        roast.roastedWeightG = grams;
-        if (roast.greenWeightG) {
-            const loss = computeWeightLoss(roast.greenWeightG, grams);
-            if (loss != null && (loss < 0 || loss > 30)) {
-                if (!confirm(`Weight loss of ${loss.toFixed(1)}% looks unusual (typical is 12–20%). Save anyway?`)) return;
+    const input = wrap.querySelector('input');
+    const msg = wrap.querySelector('.yield-msg');
+    let unusualArmed = false; // second Save tap confirms an unusual weight loss
+    input.focus();
+
+    const save = () => {
+        const trimmed = input.value.trim();
+        if (trimmed === '') {
+            delete roast.roastedWeightG; // clearing the value
+        } else {
+            const grams = parseFloat(trimmed);
+            if (isNaN(grams) || grams <= 0) { msg.textContent = 'Enter a positive number of grams.'; return; }
+            if (roast.greenWeightG) {
+                const loss = computeWeightLoss(roast.greenWeightG, grams);
+                if (loss != null && (loss < 0 || loss > 30) && !unusualArmed) {
+                    unusualArmed = true;
+                    msg.textContent = `Loss of ${loss.toFixed(1)}% looks unusual (typical 12–20%) — tap Save again to keep it.`;
+                    return;
+                }
             }
+            roast.roastedWeightG = grams;
         }
-    }
+        updateRoastInHistory(roast);
+        renderHistoryList();
+        // Roasted weight feeds the Pantry's Roasted-stock list — let it refresh.
+        window.dispatchEvent(new Event('historyUpdated'));
+    };
 
-    updateRoastInHistory(roast);
-    renderHistoryList();
-    // Roasted weight feeds the Pantry's Roasted-stock list — let it refresh.
-    window.dispatchEvent(new Event('historyUpdated'));
+    wrap.querySelector('.yield-save').addEventListener('click', save);
+    wrap.querySelector('.yield-cancel').addEventListener('click', () => wrap.replaceWith(btn));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    input.addEventListener('input', () => { unusualArmed = false; msg.textContent = ''; });
 }
 
 function exportRoastCsv(id) {

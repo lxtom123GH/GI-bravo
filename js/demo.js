@@ -29,7 +29,11 @@ export function initDemo() {
 function runDemo() {
     if (demoRunning) return;
     const stopBtn = document.getElementById('stopBtn');
-    if (stopBtn && !stopBtn.disabled) { alert('Please stop the current roast before running the demo.'); return; }
+    if (stopBtn && !stopBtn.disabled) {
+        const status = document.getElementById('status');
+        if (status) status.textContent = 'Status: stop the current roast before running the demo.';
+        return;
+    }
 
     // Make sure the dashboard is visible.
     const dashLink = document.querySelector('.nav-links li[data-target="dashboard"]');
@@ -39,7 +43,9 @@ function runDemo() {
     const logArea = document.getElementById('logArea');
     const status = document.getElementById('status');
     const timer = document.getElementById('liveTimer');
+    const dtr = document.getElementById('liveDtr');
     if (!canvas || !logArea) return;
+    if (dtr) dtr.textContent = 'DTR --'; // clear any leftover readout from a previous roast
 
     demoRunning = true;
     logArea.innerHTML = '';

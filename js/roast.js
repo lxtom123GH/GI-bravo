@@ -71,7 +71,11 @@ export function initRoastDashboard() {
     if (setDefaultBtn) {
         setDefaultBtn.addEventListener('click', () => {
             const active = document.querySelector('.behmor-weight.active');
-            if (active) { saveDefaultWeight(active.dataset.weight); alert(`Default batch size set to ${weightLabel(active.dataset.weight, getWeightUnit())}.`); }
+            if (!active) return;
+            saveDefaultWeight(active.dataset.weight);
+            // Confirm on the button itself — no blocking dialog.
+            setDefaultBtn.textContent = `✓ ${weightLabel(active.dataset.weight, getWeightUnit())} is the default`;
+            setTimeout(() => { setDefaultBtn.textContent = 'Set as default'; }, 1800);
         });
     }
 
@@ -91,6 +95,25 @@ export function initRoastDashboard() {
         selectWeight(getDefaultWeight(), { prefill: false });
         notifyConfigChanged();
     });
+
+    // "Roast again" from a history card: load that roast's bean, green weight and
+    // Behmor settings so a repeat is one tap away (history.js switches the tab).
+    window.addEventListener('roastAgain', (e) => {
+        const roast = e.detail || {};
+        const beanSelect = document.getElementById('beanSelect');
+        if (beanSelect && roast.beanId && [...beanSelect.options].some(o => o.value === roast.beanId)) {
+            beanSelect.value = roast.beanId;
+        }
+        if (greenWeightInput && roast.greenWeightG) greenWeightInput.value = roast.greenWeightG;
+        if (roast.roaster === 'behmor' && roast.settings) {
+            if (BEHMOR_GRAMS[roast.settings.weight]) selectWeight(roast.settings.weight, { prefill: false });
+            if (roast.settings.profile) {
+                profileBtns.forEach(b => b.classList.toggle('active', b.dataset.profile === roast.settings.profile));
+            }
+        }
+        notifyConfigChanged();
+    });
+
     notifyConfigChanged();
 }
 
@@ -101,7 +124,10 @@ function populateBeanSelect() {
     const pantry = getPantry();
     const currentValue = beanSelect.value;
 
-    beanSelect.innerHTML = '<option value="">Select beans from pantry...</option>';
+    // First-run guidance: an empty pantry shouldn't read like a broken dropdown.
+    beanSelect.innerHTML = pantry.length
+        ? '<option value="">Select beans from pantry...</option>'
+        : '<option value="">No beans yet — add them in Bean Pantry (optional)</option>';
 
     pantry.forEach(bean => {
         const option = document.createElement('option');

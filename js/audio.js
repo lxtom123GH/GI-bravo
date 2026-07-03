@@ -138,13 +138,37 @@ let refAnnounced = { fc: false, sc: false };
 const REF_LEAD_MS = 10000;     // announce an upcoming crack this far ahead
 const REF_COLOR = '#888';      // faint background colour for the reference curve
 
+// Highlight the current roast phase on the live strip (Drying → Maillard →
+// Development), derived from the dry-end / first-crack marks.
+function updatePhaseStrip() {
+    const strip = document.getElementById('phaseStrip');
+    if (!strip) return;
+    const order = ['drying', 'maillard', 'development'];
+    const current = roastState.firstCrackTime ? 'development' : roastState.dryEndTime ? 'maillard' : 'drying';
+    strip.querySelectorAll('span').forEach(s => {
+        s.classList.toggle('phase-active', s.dataset.phase === current);
+        s.classList.toggle('phase-done', order.indexOf(s.dataset.phase) < order.indexOf(current));
+    });
+}
+
+// Idle state for the oscilloscope: a quiet hint instead of a blank black box.
+function drawScopeIdle() {
+    if (!canvasCtx) return;
+    canvasCtx.fillStyle = '#121212';
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    canvasCtx.fillStyle = '#777';
+    canvasCtx.font = '12px monospace';
+    canvasCtx.textAlign = 'center';
+    canvasCtx.fillText('Live microphone waveform shows here while roasting or calibrating', canvas.width / 2, canvas.height / 2);
+    canvasCtx.textAlign = 'left';
+}
+
 export function initAudioSystem() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    canvasCtx.fillStyle = '#121212';
-    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    drawScopeIdle();
 
-    drawRoastCurve(curveCanvas, [], {});
+    drawRoastCurve(curveCanvas, [], { emptyMsg: 'Your roast curve draws here once a roast starts' });
 
     detectionSettings = getDetectionSettings();
     initDetectionSettingsUI();
@@ -1192,11 +1216,11 @@ async function startCalibration() {
             baselineNoiseRMS = sorted[Math.min(sorted.length - 1, Math.floor(0.9 * sorted.length))];
         }
 
-        updateStatus(`Ready — baseline set from ${secs}s of room noise (RMS ${baselineNoiseRMS.toFixed(3)}).`);
+        // The status line is the feedback — no blocking dialog.
+        updateStatus(`✓ Calibrated from ${secs}s of room noise — detection now ignores sounds up to that level.`);
         calibrateBtn.disabled = false;
         startBtn.disabled = false;
         if (startManualBtn) startManualBtn.disabled = false;
-        alert(`Calibration complete (${secs}s). Detection will now ignore sounds up to your room's noise level.`);
     }, secs * 1000);
 
     drawAndAnalyze();
@@ -1259,6 +1283,7 @@ async function startRoast(manual = false) {
     logMessage('Roast Started.');
 
     isRecording = true;
+    updatePhaseStrip();
     window.dispatchEvent(new Event('roastStarted')); // switch the Behmor panel to live mode
     // Keep the screen awake for the whole roast — crack detection runs in
     // requestAnimationFrame, which the browser pauses if the screen locks.
@@ -1278,10 +1303,10 @@ async function startRoast(manual = false) {
     manualPowerBtns.forEach(b => b.disabled = false);
     if (manualPowerStatus) manualPowerStatus.textContent = '';
 
-    // Reveal the power-logging buttons for any active Behmor roast (not just Expert),
-    // so power changes like P5 → P3 can be logged in a normal mic roast too.
-    const powerRow = document.querySelector('#behmorControls .tier-expert');
-    if (powerRow) powerRow.style.display = 'flex';
+    // The manual-power row is stage-gated (visible during a live roast only) —
+    // here we just keep it Behmor-specific, since KKTO has its own live controls.
+    const powerRow = document.getElementById('manualPowerRow');
+    if (powerRow) powerRow.style.display = (getActiveRoaster() || { model: 'behmor' }).model === 'behmor' ? 'flex' : 'none';
 
     if (manual) {
         updateStatus('Manual roast — no auto-detection. Use “Manual: Mark” for cracks and the power buttons.');
@@ -1317,6 +1342,7 @@ async function startRoast(manual = false) {
             }
         }
 
+        updatePhaseStrip();
         checkTargetAlarms(elapsed, metrics);
         checkReferenceCues(Date.now() - roastState.startTime);
 
@@ -1349,14 +1375,13 @@ function stopRoast() {
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
-    // Revert the power-row reveal back to tier control.
-    const powerRow = document.querySelector('#behmorControls .tier-expert');
+    // Back to the stage default (hidden outside a live roast).
+    const powerRow = document.getElementById('manualPowerRow');
     if (powerRow) powerRow.style.display = '';
 
     if (animationId) cancelAnimationFrame(animationId);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-    canvasCtx.fillStyle = '#121212';
-    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    drawScopeIdle();
 
     updateStatus('Finished');
 
@@ -1396,7 +1421,7 @@ function saveFinalRoast() {
         tastingNotes: { flavors: [], text: '' } // To be filled later in History tab
     };
 
-    saveRoastToHistory(finalRoastData);
+    const saved = saveRoastToHistory(finalRoastData);
     window.dispatchEvent(new Event('historyUpdated'));
 
     // Deduct the green weight used from the selected bean's pantry stock.
@@ -1404,10 +1429,12 @@ function saveFinalRoast() {
     if (beanId && greenWeightG > 0) {
         const remaining = adjustBeanQuantity(beanId, -greenWeightG);
         window.dispatchEvent(new Event('pantryUpdated'));
-        if (remaining != null) stockMsg = `\n${greenWeightG} g deducted (remaining: ${remaining} g).`;
+        if (remaining != null) stockMsg = `${greenWeightG} g deducted from the pantry (remaining: ${remaining} g).`;
     }
 
-    alert('Roast saved to history!' + stockMsg);
+    // The post-roast summary card (js/stage.js) shows the save + next steps —
+    // no blocking alert.
+    window.dispatchEvent(new CustomEvent('roastSaved', { detail: { roast: saved, stockMsg } }));
 }
 
 function calculateRMS(dataArray) {

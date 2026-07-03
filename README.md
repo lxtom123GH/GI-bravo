@@ -175,6 +175,7 @@ theme.golf.css      Proof the theme seam works — swap-in skin for the sibling 
 components.css      Portable component classes (.btn/.chip/.card/.field/.meter…) for new UI
 js/
   ui.js             Tabs, mobile drawer, complexity-tier toggles
+  stage.js          Roast stages — pre/live screen focus + post-roast "Roast saved" summary card
   customise.js      Hide/show optional dashboard controls (shared state)
   beanfields.js     "Customise fields" — hide unused optional add-bean fields (reuses customise.decide)
   swipe.js          Swipe-style personaliser over the customise sections
