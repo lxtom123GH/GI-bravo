@@ -22,6 +22,12 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
 **Roasting & detection**
 - Mic crack detection (1C/2C via low/high FFT bands), live roast curve, DTR, RoR, target alarms,
   reference-roast follow mode with a first-crack ETA, "Start (no mic)" manual mode (`js/audio.js`).
+- **Auto-calibration** (`js/calibration.js`) — once the mic is already permitted, a rolling
+  last-45-s noise floor (90th percentile, matching the manual button) runs during pre-roast setup
+  with a visible 🎙 indicator + turn-off, and is **frozen at Start** so it includes the roaster
+  warming up; recency-weighted so prep clatter is forgotten. Never triggers the permission prompt;
+  pauses when the tab is hidden or a roast runs. Manual **Calibrate now** (moved into Detection
+  Settings) seeds the same window. On by default (`detectionSettings.autoCalibrate`), unit-tested.
 - Opt-in **auto-tune** that learns each roaster's sensitivity from your ✗/Mark corrections
   (`js/detector-learning.js`).
 - 🧪 **MFCC features** — experimental, opt-in, default OFF; computes a timbre fingerprint alongside

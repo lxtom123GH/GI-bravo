@@ -3,6 +3,7 @@ import { mfcc } from './mfcc.js';
 import { createSession, addFrame, addEvent, summariseRoastLab, formatRoastLabJson, formatRoastLabCsv, formatRoastLabSummaryText, roastLabFilename, ROAST_LAB_FRAME_MS } from './roastlab.js';
 import { createShadowBank, stepShadowBank, summariseShadowBank } from './shadow.js';
 import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
+import { createNoiseFloor } from './calibration.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
@@ -97,6 +98,16 @@ let baselineNoiseRMS = 0.05; // Default safe value
 let isCalibrating = false;
 let calibrationSamples = [];
 
+// Auto-calibration: a rolling pre-roast noise floor (js/calibration.js). Runs
+// only when the mic is ALREADY permitted (never triggers the permission
+// prompt), samples a few times a second while you set up, and is frozen into
+// baselineNoiseRMS the moment a roast starts — so the floor includes the
+// roaster warming up. Recency beats duration: the window forgets prep clatter.
+const AUTO_CAL_TICK_MS = 250;
+let noiseFloor = createNoiseFloor();
+let autoCalTimer = null;
+let autoCalTickCount = 0;
+
 // Transient Detection settings
 // We look for sudden broadband spikes that exceed the baseline.
 let recentRMSHistory = [];
@@ -172,6 +183,7 @@ export function initAudioSystem() {
 
     detectionSettings = getDetectionSettings();
     initDetectionSettingsUI();
+    initAutoCalUI();
     recomputeEffectiveDetection();
     // Follow the active roaster: re-tune + refresh the readout when it changes.
     window.addEventListener('behmorConfigChanged', () => { recomputeEffectiveDetection(); updateLearningReadout(); });
@@ -1183,6 +1195,107 @@ async function setupAudio() {
     }
 }
 
+// --- Auto-calibration (rolling pre-roast noise floor) ---
+
+// True when the mic can be opened WITHOUT prompting: either it's already open
+// this session, or the Permissions API says it's granted. Where the API can't
+// tell us (older Safari), we stay off until a roast/manual calibrate opens it.
+async function micAlreadyPermitted() {
+    if (audioContext) return true;
+    try {
+        if (navigator.permissions && navigator.permissions.query) {
+            const st = await navigator.permissions.query({ name: 'microphone' });
+            return st.state === 'granted';
+        }
+    } catch { /* permission name unsupported */ }
+    return false;
+}
+
+async function maybeStartAutoCalibration() {
+    if (autoCalTimer || isRecording) return;
+    if (detectionSettings && detectionSettings.autoCalibrate === false) return;
+    if (!(await micAlreadyPermitted())) return;
+
+    const ready = await setupAudio();
+    if (!ready) return;
+    // Without a user gesture the context can sit 'suspended' (autoplay policy);
+    // the tick skips silent reads, and the next tap anywhere resumes it.
+    if (audioContext.state === 'suspended') {
+        try { await audioContext.resume(); } catch {}
+        if (audioContext.state === 'suspended') {
+            document.addEventListener('pointerdown', () => { if (audioContext) audioContext.resume().catch(() => {}); }, { once: true });
+        }
+    }
+
+    autoCalTimer = setInterval(autoCalTick, AUTO_CAL_TICK_MS);
+    renderAutoCalIndicator();
+}
+
+function stopAutoCalibration() {
+    if (autoCalTimer) { clearInterval(autoCalTimer); autoCalTimer = null; }
+    renderAutoCalIndicator();
+}
+
+function autoCalTick() {
+    if (isRecording || !analyser) return;
+    // A suspended context reads all-128 (silence) — sampling it would drive the
+    // floor to zero and make detection hair-triggered.
+    if (!audioContext || audioContext.state !== 'running') return;
+    analyser.getByteTimeDomainData(dataArray);
+    noiseFloor.add(Date.now(), calculateRMS(dataArray));
+    autoCalTickCount += 1;
+    if (autoCalTickCount % 8 === 0) updateAutoCalReadout(); // ~every 2 s
+}
+
+function renderAutoCalIndicator() {
+    const el = document.getElementById('autoCalStatus');
+    if (el) el.style.display = autoCalTimer ? 'flex' : 'none';
+    updateAutoCalReadout();
+}
+
+function updateAutoCalReadout(frozenText) {
+    const el = document.getElementById('autoCalReadout');
+    if (!el) return;
+    if (frozenText) { el.textContent = frozenText; return; }
+    if (!autoCalTimer) { el.textContent = detectionSettings && detectionSettings.autoCalibrate === false ? 'off' : 'waiting for mic permission (start a roast or calibrate once)'; return; }
+    const b = noiseFloor.baseline();
+    el.textContent = b != null ? `${b.toFixed(3)} (rolling, last 45 s)` : 'listening…';
+}
+
+function initAutoCalUI() {
+    const toggle = document.getElementById('autoCalToggle');
+    if (toggle) {
+        toggle.checked = detectionSettings.autoCalibrate !== false;
+        toggle.addEventListener('change', () => {
+            detectionSettings.autoCalibrate = toggle.checked;
+            saveDetectionSettings(detectionSettings);
+            if (toggle.checked) maybeStartAutoCalibration(); else stopAutoCalibration();
+        });
+    }
+    const offBtn = document.getElementById('autoCalOffBtn');
+    if (offBtn) offBtn.addEventListener('click', () => {
+        detectionSettings.autoCalibrate = false;
+        saveDetectionSettings(detectionSettings);
+        if (toggle) toggle.checked = false;
+        stopAutoCalibration();
+    });
+
+    // Don't hold the mic/timer while the app is in the background; pick the
+    // window back up when the user returns.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopAutoCalibration();
+        else maybeStartAutoCalibration();
+    });
+
+    window.addEventListener('settingsImported', () => {
+        if (toggle) toggle.checked = detectionSettings.autoCalibrate !== false;
+        if (detectionSettings.autoCalibrate === false) stopAutoCalibration(); else maybeStartAutoCalibration();
+    });
+
+    updateAutoCalReadout(); // show "waiting for permission" / "off" before the first start
+    maybeStartAutoCalibration();
+}
+
 async function startCalibration() {
     const ready = await setupAudio();
     if (!ready) return;
@@ -1221,6 +1334,10 @@ async function startCalibration() {
         calibrateBtn.disabled = false;
         startBtn.disabled = false;
         if (startManualBtn) startManualBtn.disabled = false;
+        // Keep the rolling floor consistent with the manual result, then let
+        // auto-calibration carry on from there (mic is clearly permitted now).
+        noiseFloor.seed(Date.now(), calibrationSamples);
+        maybeStartAutoCalibration();
     }, secs * 1000);
 
     drawAndAnalyze();
@@ -1236,6 +1353,17 @@ async function startRoast(manual = false) {
         updateStatus('Starting — please allow the microphone…');
         const ready = await setupAudio();
         if (!ready) return; // setupAudio already showed a specific on-screen reason
+
+        // Freeze the auto-calibrated floor for this roast: it reflects the room
+        // as it sounds RIGHT NOW (roaster warming up included). If the rolling
+        // window hasn't gathered enough yet, keep the previous baseline.
+        if (detectionSettings.autoCalibrate !== false) {
+            const autoBase = noiseFloor.baseline();
+            if (autoBase != null) {
+                baselineNoiseRMS = autoBase;
+                updateAutoCalReadout(`${autoBase.toFixed(3)} (frozen for this roast)`);
+            }
+        }
 
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
@@ -1282,6 +1410,7 @@ async function startRoast(manual = false) {
     logArea.innerHTML = '';
     logMessage('Roast Started.');
 
+    stopAutoCalibration(); // no background sampling while a roast runs
     isRecording = true;
     updatePhaseStrip();
     window.dispatchEvent(new Event('roastStarted')); // switch the Behmor panel to live mode
@@ -1390,6 +1519,10 @@ function stopRoast() {
 
     finalizeRoastLab(); // persist the Roast Lab capture so it can be exported (no-op when off)
     saveFinalRoast();
+
+    // Back to the pre-roast stage: resume the rolling noise floor for next time.
+    noiseFloor.reset();
+    maybeStartAutoCalibration();
 }
 
 function saveFinalRoast() {
