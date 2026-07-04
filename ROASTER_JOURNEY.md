@@ -149,10 +149,15 @@ fulfil, matched by origin keyword, each **"Use this recipe"** pre-filling the bl
 Flow: pull beans → weigh into containers → roast → drop. We've built a lot here.
 
 **Today ✅:** weigh-out **prep batches** (bean + grams + photo) → load onto Active Roast in a tap;
-green-weight remembers your usual (450 g); Behmor 100/200/400 g buttons + profiles; mic crack
-detection with adjustable sensitivity + longer/percentile calibration; manual crack marking +
-false-positive clear; repeating first-crack alarm with tones; phase breakdown (drying/Maillard/
-development) + DTR; follow a reference roast with a first-crack ETA; temp/probe (BT/USB) logging;
+green-weight remembers your usual (450 g); Behmor 100/200/400 g buttons + profiles; a
+**stage-aware roast screen** — setup and tooling tuck away while roasting, leaving a big timer,
+a live **Drying → Maillard → Development phase strip**, the crack buttons and Stop (the pre/
+during/post split you asked for); **auto-calibration** — once the mic is permitted, a rolling
+last-45-s noise floor runs while you set up (visible 🎙 note) and freezes at Start, so it hears
+the roaster warming up (manual **Calibrate now** kept in Detection Settings); mic crack detection
+with adjustable sensitivity; manual crack marking + false-positive clear; repeating first-crack
+alarm with tones; DTR; follow a reference roast with a first-crack ETA; **↻ Roast again** on any
+past roast (one-tap repeat setup); temp/probe (BT/USB) logging;
 "Start (no mic)" manual mode; keep-screen-awake; ✅ **🧪 Roast Lab** (opt-in, off by default) —
 capture each roast's feature timeline (loudness, crack pitch, MFCC fingerprint) + crack/clear
 events, then export JSON/CSV to compare roasts and tune detection. Built for an A/B weekend.
@@ -191,7 +196,9 @@ home for the per-machine variants (Mark's KKTO, Stuart's Behmor).
 ## Stage 5 — Post-roast: rest, grind, cut (hours → ~2 weeks)
 The questions you raised — rest how long? grind fresh? cut/blend when? test single or mixed?
 
-**Today ◐:** colour-corrected photo + roast-colour index; the roast is saved.
+**Today ◐:** colour-corrected photo + roast-colour index; stopping shows a **"Roast saved" card**
+(times + DTR, roasted weight entered right there, one-tap jump to notes/photos) instead of a
+dead-end alert.
 **Shipped ✅ (`js/freshness.js` + `js/tasting.js`):** the per-roast **rest/peak badge** gives a
 deliberately **soft, approximate** hint (research found published per-method rest tables conflict and
 experts reject fixed numbers), and — once a roast has ≥2 dated tastings — surfaces the user's **own
