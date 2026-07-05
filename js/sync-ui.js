@@ -318,6 +318,8 @@ export function initSync() {
         onAuthState(async (user) => {
             currentUser = user;
             updateSidebar(user);
+            // Let owner-only Dev mode (js/devmode.js) react without importing Firebase itself.
+            window.dispatchEvent(new CustomEvent('authUserChanged', { detail: { user } }));
             try {
                 if (user) {
                     activeSpaceId = loadDefaultScope();   // resume last-used scope

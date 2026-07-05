@@ -57,6 +57,25 @@ export function initRoastDashboard() {
             const g = parseFloat(greenWeightInput.value);
             if (g > 0) saveLastGreenWeight(g);
         });
+
+        // ±5 g stepper — tap to nudge to the exact roast weight without fiddling with the
+        // number pad. From empty it seeds the usual weight (last used, or 420 g) so the
+        // first tap lands somewhere sensible rather than 5 g.
+        const WEIGHT_STEP = 5;
+        const DEFAULT_GREEN_WEIGHT = 420;
+        const stepWeight = (delta) => {
+            const cur = parseFloat(greenWeightInput.value);
+            let next;
+            if (!(cur > 0)) next = getLastGreenWeight() || DEFAULT_GREEN_WEIGHT; // seed the default
+            else next = Math.max(0, cur + delta);
+            greenWeightInput.value = next;
+            if (next > 0) saveLastGreenWeight(next);
+            notifyConfigChanged();
+        };
+        const minusBtn = document.getElementById('greenWeightMinus');
+        const plusBtn = document.getElementById('greenWeightPlus');
+        if (minusBtn) minusBtn.addEventListener('click', () => stepWeight(-WEIGHT_STEP));
+        if (plusBtn) plusBtn.addEventListener('click', () => stepWeight(WEIGHT_STEP));
     }
 
     weightBtns.forEach(btn => {

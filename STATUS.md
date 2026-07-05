@@ -37,6 +37,16 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
 - 🫥 **Shadow detector bank** — LOG-ONLY; runs several differently-tuned crack detectors alongside
   the live one (when Roast Lab is on) and logs what each *would* have called, for offline comparison.
   Never alarms or changes detection (`js/shadow.js`).
+- 🧪 **Dev/Test mode** — owner-only, **login-gated** (`js/devmode.js`). While the owner is signed in,
+  it force-locks **Roast Lab + MFCC on** (which also wakes the shadow sweep) so every test roast
+  captures data without flipping toggles mid-roast, and shows a purple banner. Invisible to everyone
+  else — this *is* the Dev→Production boundary (production = "not the owner"). Reacts to a window
+  `authUserChanged` event so it never pulls the Firebase chunk into the main bundle; sticky per-device
+  so a brief auth gap can't stop capture mid-roast.
+- **Detection UX from the first real test roast (2026-07-06):** the **✗ Clear 1st/2nd crack** buttons
+  now appear only *after* that crack is recorded (hidden, not just disabled — calmer live screen,
+  unmissable when needed); the **"snaps to confirm a crack"** range now goes **1–10** (was 1–6) so
+  chatter/knocks can be tuned out; and green weight has a **±5 g stepper** (seeds 420 g from empty).
 
 **Beans, pantry & history**
 - Bean pantry with **green lots** (dated/priced, weighted-avg cost, FEFO drawdown — `js/lots.js`),
@@ -142,6 +152,19 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
   per-brand keep-lists + quality flags + cross-brand ranking). **Next:** Phase-2 cross-lighting
   validation, then wire the grader into an in-app **"Test paint chips" lab** and ship the validated
   per-brand picks as starter presets.
+- **Detection intelligence — from the 2026-07-06 test roast (research in `FUTURE_FEATURES.md`).**
+  Data-gathering is now automatic in Dev mode; the tuning work sits on top of the captures:
+  - **Tune the defaults** from captured shadow-bank data (likely a higher cracks-required + threshold
+    to reject talking / a phone set on the bench).
+  - **"Still 1st crack" continuity** — model first crack as a *sustained* period (it can run 30–60 s+),
+    so late snaps aren't misread as 2nd crack; likely a manual "still 1st crack" marker that also
+    teaches the detector.
+  - **Bean-origin transition priors** — some coffees roll straight 1C→2C, others pause; let the
+    expected gap depend on the selected bean (origin/density/process) instead of a fixed rule.
+  - **Door-"burp" awareness** — opening the roaster door between 1C and 2C removes acoustic shielding,
+    so cracks get louder; the detector should expect a level shift rather than treat it as new cracks.
+  - **Two-device beep guard** — one device's alarm being heard by another's mic (same-device is already
+    handled via the `isNotifying` deaf-window).
 - See `FUTURE_FEATURES.md` for the full backlog and the "deliberately not built" rationale.
 
 ---

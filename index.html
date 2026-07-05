@@ -93,7 +93,11 @@
                     </div>
                     <div style="flex: 1;">
                         <label for="greenWeightInput"><strong>Green weight (g)</strong></label>
-                        <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 454">
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button type="button" id="greenWeightMinus" class="secondary" style="font-size: 1rem; padding: 6px 12px; margin-bottom: 0; min-width: 44px;" data-hint="Tap down 5 g at a time to reach your exact roast weight. From empty it seeds your usual weight (420 g) so you can nudge from there.">−5</button>
+                            <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 420" style="flex: 1; margin-bottom: 0;">
+                            <button type="button" id="greenWeightPlus" class="secondary" style="font-size: 1rem; padding: 6px 12px; margin-bottom: 0; min-width: 44px;" data-hint="Tap up 5 g at a time to reach your exact roast weight. From empty it seeds your usual weight (420 g) so you can nudge from there.">+5</button>
+                        </div>
                     </div>
                 </div>
 
@@ -189,8 +193,8 @@
                     <button id="markSecondCrackBtn" class="mark-btn" style="flex: 1; min-width: 120px;" disabled>Manual: Mark 2nd Crack</button>
                 </div>
                 <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <button id="undoFirstCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="False alarm? Clear the recorded first crack and keep listening for the real one.">✗ Clear 1st crack</button>
-                    <button id="undoSecondCrackBtn" disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="Clear a wrongly-detected second crack and keep listening.">✗ Clear 2nd crack</button>
+                    <button id="undoFirstCrackBtn" hidden disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="False alarm? Clear the recorded first crack and keep listening for the real one. It only appears once a first crack has been recorded.">✗ Clear 1st crack</button>
+                    <button id="undoSecondCrackBtn" hidden disabled style="font-size: 0.8rem; padding: 6px 12px; background: var(--border-color);" data-hint="Clear a wrongly-detected second crack and keep listening. It only appears once a second crack has been recorded.">✗ Clear 2nd crack</button>
                 </div>
 
                 <!-- Manual power (Behmor manual mode): shown during a live Behmor roast only
@@ -255,8 +259,8 @@
                             <label for="cracksSetting">
                                 <strong>Snaps to confirm a crack:</strong> <span id="cracksValue">3</span>
                             </label>
-                            <input type="range" id="cracksSetting" min="1" max="6" step="1" value="3">
-                            <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared.</small>
+                            <input type="range" id="cracksSetting" min="1" max="10" step="1" value="3">
+                            <small style="color: var(--text-muted);">How many snaps within 5s are needed before a crack phase is declared. Raise it (e.g. 6–10) if chatter or knocks are triggering false cracks.</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label for="pitchSetting">
@@ -591,12 +595,12 @@
             <div class="card">
                 <h3>Doing a roast</h3>
                 <ol>
-                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings.</li>
+                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings. For the <strong>green weight</strong>, type it in or tap <strong>−5 / +5</strong> to nudge to the exact grams (from empty the first tap seeds your usual weight, e.g. 420 g).</li>
                     <li>Optional: pick a <strong>Follow reference roast</strong> to overlay a past curve with pre-crack cues.</li>
                     <li>Tap <strong>Start Roast &amp; Listening</strong> and <strong>allow the microphone</strong> — cracks are detected automatically (beep + timeline), and you can also press <strong>Manual: Mark</strong> and log power changes (P5 → P3) during the roast. If the mic won't work, tap <strong>Start (no mic)</strong> to run the timer and mark everything yourself.</li>
                     <li><strong>On iPhone/iPad:</strong> open the app in <strong>Safari</strong> (the browser) and allow the microphone when asked. Mic access can be unreliable when launched from a home-screen icon — if Start can't get the mic, the status bar tells you why, and <strong>Start (no mic)</strong> always works.</li>
                     <li>New to your roaster? The <strong>🎛️ control panel</strong> guides it: for a <strong>Behmor</strong> it shows what each button does <em>before</em> vs <em>during</em> a roast (pick your model — they differ); for a <strong>KKTO</strong> it explains heat/airflow and the roast-phase flow. During a roast it logs what you change onto the timeline.</li>
-                    <li><strong>While roasting, the screen simplifies:</strong> setup and options tuck away, leaving a big timer, a <strong>phase strip</strong> (Drying → Maillard → Development), the crack buttons (mark / ✗ clear), power logging and <strong>Stop Roast</strong>. Everything comes back when the roast ends.</li>
+                    <li><strong>While roasting, the screen simplifies:</strong> setup and options tuck away, leaving a big timer, a <strong>phase strip</strong> (Drying → Maillard → Development), the crack buttons (mark, plus a <strong>✗ clear</strong> that appears only <em>after</em> a crack is recorded, so there's nothing extra to hunt for beforehand), power logging and <strong>Stop Roast</strong>. Everything comes back when the roast ends.</li>
                     <li>Watch the live timer and DTR. (Expert) log bean temps for Rate of Rise, or connect a Bluetooth probe.</li>
                     <li>Tap <strong>Stop Roast</strong> to drop — it's saved to history automatically, and a <strong>Roast saved</strong> card shows your times, lets you <strong>enter the roasted weight right there</strong>, and jumps to notes/photos.</li>
                 </ol>
