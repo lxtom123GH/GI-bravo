@@ -229,6 +229,47 @@ Sources: ScienceDirect *Acoustic-Based Crack Detection* (MFCC/Random Forest); Re
 first-crack ID; interactiveaudiolab *Human-in-the-Loop Sound Event Detection*; arXiv self-learning /
 continual on-device audio classification; GitHub *RoastLearner*.
 
+### Detection intelligence — from the first real test roast (2026-07-06; research-grounded)
+
+The owner's first live Behmor session (3 caffeinated batches ~420 g) surfaced four detection gaps.
+Dev mode now auto-captures every roast, so the *data* to build these is being collected; the notes
+below are the design. **Web research (2026-07-06) corrected some folk assumptions — see numbers.**
+
+1. **"Still 1st crack" continuity (1C is a period, not an event).** First crack is a **tapering
+   ~1–2 min cluster of intermittent pops**, not one bang; late pops were sometimes misread as 2nd
+   crack. Model 1C as a **windowed cluster** (rising→falling pop-rate) and, after declaring 1C-start,
+   open a **wide ~2–7 min watch window** for 2C rather than a fixed timer. Add a manual **"still 1st
+   crack"** marker so the user can say "these pops are still 1C" — which both suppresses a premature
+   2C call and feeds the learner (`js/detector-learning.js`).
+2. **Bean-origin transition priors — but fix the folk model.** The owner's guess (Ethiopian pauses /
+   Brazilian rolls straight through) is **essentially backwards**. Density (which tracks altitude)
+   drives it: **dense high-grown beans (Ethiopia washed, Kenya) hold a *longer*, stretchable 1C→2C
+   window; soft low-grown beans (Brazil naturals) *accelerate and run* into 2C** (roasters drop them
+   early). Quantified rule of thumb: **~2 min (soft) to ~7 min (hard/dense)**. **Biggest caveat:**
+   heat application / RoR matters *more* than origin — origin only predisposes. So don't hard-code an
+   origin lookup; prefer a **self-calibrating per-bean gap learned from the user's own logs**, with
+   origin/density only as a weak prior.
+3. **Door-"burp" awareness.** Opening the Behmor door between 1C and 2C (to slow the roast / shed
+   heat / vent smoke) **removes acoustic shielding → cracks read louder**, and injects door/fan/chaff
+   transients + a real RoR shift. This is a classic false-trigger for a naive amplitude threshold.
+   Defend by: (a) gate on **crack *rate* + low-frequency band energy (~800 Hz for 1C)**, not raw
+   loudness (we already do band classification — lean on it harder); (b) **re-baseline the noise floor
+   mid-roast** when it steps up (extend the existing auto-calibration beyond setup); (c) optional
+   **time/temp prior** (ROEST ships a 5-crack + 185 °C gate before it will call 1C); (d) briefly
+   **raise the confidence threshold for ~1–2 s** after a detected door/airflow step-change.
+4. **Two-device beep guard.** Same-device beep can't self-trigger (the `isNotifying` deaf-window in
+   `js/audio.js`), but on the weekend one device's alarm was heard by another's mic. Options: a
+   distinctive/ultrasonic-ish alarm signature the detector can notch out, a shared "someone is
+   alarming" flag over the sync channel, or simply recommend one listening device + one silent.
+
+Acoustics are well-sourced (peer-reviewed): 1C is low-frequency (~800 Hz), ~15% higher peak pressure
+than 2C; 2C is higher-pitched at ~5× the pop rate; and "other roasting noise does not impact the use
+of these signals" — i.e. **rate + band-energy is the robust discriminator**, raw loudness is not.
+Sources: JASA *Coffee roasting acoustics* (pubs.aip.org/asa/jasa/article/135/6/EL265); Sweet Maria's
+*Roasting Brazils* / *Roasting Kenyas* / *First Crack FAQ*; Perfect Daily Grind *roasting different
+origins*; Cropster *6 roasters on one Brazilian*; ROEST *First crack detection v2*; Mill City *How to
+vent a roaster*. Ties into the [B — detector tuning] captures and the batch-session work below.
+
 ## Refactor candidates (tech debt, not user-facing)
 
 - **Split `audio.js`'s init/UI-wiring blob.** Surfaced by the graphify trial (2026-06-30): `audio.js`

@@ -378,6 +378,37 @@ function initDetectionSettingsUI() {
     render();
 }
 
+// Show a crack's "✗ Clear" button only once that crack has actually been recorded.
+// Before then there's nothing to clear, so keeping it hidden (not just disabled) keeps
+// the live screen calm — and makes it unmissable exactly when it becomes usable.
+function showClearCrackBtn(btn, show) {
+    if (!btn) return;
+    btn.hidden = !show;
+    btn.disabled = !show;
+}
+
+// --- Dev/Test mode capture lock (owner-only; driven by js/devmode.js) --------
+// When the owner is signed in, Dev mode force-enables capture so every test roast
+// records data without anyone having to remember to flip toggles mid-roast. This
+// locks Roast Lab + MFCC on (which also wakes the shadow-detector sweep); passing
+// `false` restores the user's own saved preferences. It only touches CAPTURE
+// (observational) — it never changes crack detection itself.
+export function setDevModeCaptureLock(on) {
+    const roastLabToggle = document.getElementById('roastLabToggle');
+    const mfccToggle = document.getElementById('mfccExperimentalToggle');
+    if (on) {
+        roastLabEnabled = true;
+        mfccEnabled = true;
+    } else {
+        roastLabEnabled = getRoastLabEnabled();
+        mfccEnabled = getMfccExperimentalEnabled();
+    }
+    if (roastLabToggle) { roastLabToggle.checked = roastLabEnabled; roastLabToggle.disabled = on; }
+    if (mfccToggle) { mfccToggle.checked = mfccEnabled; mfccToggle.disabled = on; }
+    updateRoastLabReadout();
+    updateMfccReadout();
+}
+
 // Refresh the experimental MFCC readout/toggle state in the settings panel.
 function updateMfccReadout() {
     const readout = document.getElementById('mfccReadout');
@@ -897,9 +928,10 @@ function markPhase(phaseName, stateKey) {
         (stateKey === 'firstCrackTime' || stateKey === 'secondCrackTime')) {
         applyLearningSignal('missed');
     }
-    // Enable the matching "clear" (false-positive) button now that a crack is recorded.
-    if (stateKey === 'firstCrackTime' && undoFirstCrackBtn) undoFirstCrackBtn.disabled = false;
-    if (stateKey === 'secondCrackTime' && undoSecondCrackBtn) undoSecondCrackBtn.disabled = false;
+    // Reveal the matching "clear" (false-positive) button now that a crack is recorded —
+    // before this there's nothing to clear, so it stays hidden to keep the live screen calm.
+    if (stateKey === 'firstCrackTime') showClearCrackBtn(undoFirstCrackBtn, true);
+    if (stateKey === 'secondCrackTime') showClearCrackBtn(undoSecondCrackBtn, true);
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
     notifyUser(`${phaseName} recorded!`);
@@ -918,10 +950,10 @@ function clearCrack(stateKey) {
     // Clearing first crack also clears second (2C can't precede 1C).
     if (stateKey === 'firstCrackTime') {
         roastState.secondCrackTime = null;
-        if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
-        if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;
-    } else if (undoSecondCrackBtn) {
-        undoSecondCrackBtn.disabled = true;
+        showClearCrackBtn(undoSecondCrackBtn, false);
+        showClearCrackBtn(undoFirstCrackBtn, false);
+    } else {
+        showClearCrackBtn(undoSecondCrackBtn, false);
     }
     // Reset detection so the real crack can still be found.
     transientClusterCount = 0;
@@ -1424,8 +1456,8 @@ async function startRoast(manual = false) {
     if (markDryEndBtn) markDryEndBtn.disabled = false;
     markFirstCrackBtn.disabled = false;
     markSecondCrackBtn.disabled = false;
-    if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;  // nothing to clear yet
-    if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
+    showClearCrackBtn(undoFirstCrackBtn, false);  // nothing to clear yet — hidden until a crack is recorded
+    showClearCrackBtn(undoSecondCrackBtn, false);
     if (logTempBtn) logTempBtn.disabled = false;
     if (logEnvTempBtn) logEnvTempBtn.disabled = false;
     if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
@@ -1499,8 +1531,8 @@ function stopRoast() {
     if (markDryEndBtn) markDryEndBtn.disabled = true;
     markFirstCrackBtn.disabled = true;
     markSecondCrackBtn.disabled = true;
-    if (undoFirstCrackBtn) undoFirstCrackBtn.disabled = true;
-    if (undoSecondCrackBtn) undoSecondCrackBtn.disabled = true;
+    showClearCrackBtn(undoFirstCrackBtn, false);
+    showClearCrackBtn(undoSecondCrackBtn, false);
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);

@@ -16,6 +16,7 @@ import { initBlends } from './js/blends.js';
 import { initRoasterPanel } from './js/roaster-panel.js';
 import { initReceipts } from './js/receipts.js';
 import { initSwipe } from './js/swipe.js';
+import { initDevMode } from './js/devmode.js';
 
 // Cloud sync is OPT-IN and pulls in Firebase (~660 KB). Load that chunk only on real
 // intent — the user clicks the sync button, OR they have a persisted session to resume.
@@ -92,6 +93,7 @@ function init() {
     initHints();
     initCustomise();
     initSwipe();
+    initDevMode();   // owner-only Dev mode; must run after initAudioSystem so the capture lock finds its toggles
     initSyncLazy();
 }
 
