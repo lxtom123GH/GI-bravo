@@ -335,3 +335,38 @@ The snapshot above is preserved as-written, but two items moved the same day it 
 
 - **AGENTS.md rename — ✅ DONE** (PR #110, merged 2026-07-01). The adoption table's "❌ Never done" and the pending-list `[ ]` were accurate when written that morning; the rename (`CLAUDE.md` → `AGENTS.md` + a `@AGENTS.md` shim) shipped that evening. So the "indefinite deferral" pattern this retro flagged was actually closed within hours of being named — the naming worked.
 - The other two pending items (`fallbackModel` config, Antigravity doc sweep) remain open for Retro #2.
+
+---
+
+## 2026-07-06 — Radar #4
+
+### Claude Code: background agents auto-commit/push/open draft PR — **Adopt**
+- Background agents running in worktrees now auto-commit, push, and open a **draft PR** when they finish code work, instead of stopping to ask. Workers killed by a daemon restart are also auto-resumed from where they left off.
+- **Here:** our `AGENTS.md` rule says "commit/push only when asked" — that governs *interactive* sessions (human decides when to land work); background/scheduled agents benefit from the auto-PR behaviour. No conflict; the rules address different modes.
+- **Action:** for multi-file features, lean into the worktree + background-agent pattern; auto-resume means interrupted overnight runs recover automatically.
+- Source: [Claude Code July 2026 changelog](https://releasebot.io/updates/anthropic/claude-code)
+
+### Claude Code: `Manual` is the new default permission mode — **Watch** (affects scheduled runs)
+- A new `Manual` default permission mode was added alongside reliability fixes. For interactive use this is mostly transparent. For **scheduled / headless runs** (like this radar routine), it may mean tool calls block waiting for approval unless `auto` mode is explicitly set.
+- **Here:** this routine runs unattended — confirm that the session/harness launches with `--permission-mode auto` (or the equivalent config) so it doesn't silently stall.
+- **Action:** owner to verify the scheduled-run launch flags; no code change needed.
+- Source: [Claude Code July 2026 changelog](https://releasebot.io/updates/anthropic/claude-code)
+
+### Antigravity 2.0: Manager surface — structured plan before code — **Watch**
+- Announced at Google I/O 2026 (May 19). The platform split into four surfaces (IDE, desktop, CLI, SDK) sharing one agent harness. The new **Agent Manager** generates a Task List + Implementation Plan for human review *before* any code is written — structurally enforcing the "spec-driven by feature size" rule already adopted in Radar #3.
+- **Here:** using Antigravity CLI for planning (Manager output as the spec) then handing to Claude Code for implementation would align with the Radar #1 Claude/Gemini division-of-labour split.
+- **Action:** trial on the next large GI-bravo feature (e.g. the Firebase hub rollout); keep Watch until tried.
+- Source: [Antigravity 2.0 developer guide](https://www.analyticsvidhya.com/blog/2026/05/google-antigravity-2-0/)
+
+### Firebase Spark free tier — **Adopt** (closes Retro #1 search topic)
+- Spark (free) caps at **50K reads / 20K writes / 20K deletes per day** and **1 GB stored**. For a solo coffee tracker with occasional auth/sync across a handful of users, these limits are very generous — we are nowhere near the ceiling.
+- **Action:** stay on Spark; no upgrade needed. Revisit only if multi-user adoption grows (add a simple read/write counter log if the app goes public beyond household use).
+- Source: [Firebase pricing docs](https://firebase.google.com/pricing)
+
+### Retro #1 pending items — status update
+- **`fallbackModel` config** — still unverified by owner; remains open.
+- **Antigravity doc sweep** ("Gemini CLI" → "Antigravity CLI" in docs) — still open; low urgency, do on next doc touch.
+
+### Ignore (for now)
+- Antigravity SDK (Python custom-agent builder) — no use case in this vanilla-JS portfolio yet.
+- Claude apps gateway / enterprise SSO — org-scale only.
