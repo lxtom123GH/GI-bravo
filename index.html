@@ -70,6 +70,23 @@
             <!-- Post-roast summary: filled by js/stage.js when a roast is saved. -->
             <div id="postRoastCard" class="card" style="display: none;"></div>
 
+            <!-- Batch progress strip: shown by js/session.js only while a batch session is active. -->
+            <div id="sessionStrip" hidden style="margin-bottom: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border-color);"></div>
+
+            <!-- Plan a batch (opt-in): several sequential roasts in one sitting. js/session.js. -->
+            <details id="batchPlanner" class="tier-moderate stage-pre" style="margin-bottom: 15px;">
+                <summary style="cursor: pointer;" data-hint="Roasting several batches back-to-back? Plan them here so each roast's bean and weight are ready in turn, the app auto-advances when you drop, and it tracks which is cooling. A single roast doesn't need this.">🗓 Plan a batch — several roasts in one sitting</summary>
+                <div style="padding: 12px 5px 5px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0;">Add each roast in the order you'll do them (easiest-to-pour first). Pick the bean and weight; the tin label is optional and just powers the hand-off reminder after each drop.</p>
+                    <div id="batchItems"></div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                        <button type="button" id="batchAddItem" class="secondary" style="font-size: 0.85rem; padding: 5px 12px;" data-hint="Add another roast to today's batch.">＋ Add roast</button>
+                        <button type="button" id="batchClear" class="secondary" style="font-size: 0.85rem; padding: 5px 12px;" data-hint="Clear all the rows and start the plan over.">Clear</button>
+                        <button type="button" id="batchStart" style="font-size: 0.85rem; padding: 5px 12px;" data-hint="Lock in the plan and pre-fill the first roast. From here just tap Start Roast for each one — the app advances through the batch.">Start batch →</button>
+                    </div>
+                </div>
+            </details>
+
             <details id="customisePanel" class="stage-pre" style="margin-bottom: 15px;">
                 <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">⚙️ Customise this screen — hide things you don't use</summary>
                 <div id="customiseOptions" style="padding: 10px 5px 0; display: flex; flex-direction: column; gap: 8px;"></div>
@@ -606,6 +623,26 @@
                     <li>Tap <strong>Stop Roast</strong> to drop — it's saved to history automatically, and a <strong>Roast saved</strong> card shows your times, lets you <strong>enter the roasted weight right there</strong>, and jumps to notes/photos.</li>
                 </ol>
                 <p style="color: var(--text-muted); font-size: 0.9rem;">📱 The app <strong>keeps your screen awake</strong> during a roast so crack detection keeps running. Leave it on this screen — if you manually lock the phone or switch to another app, listening pauses until you come back.</p>
+            </div>
+
+            <div class="card">
+                <h3>🗓 Roasting several batches in a row</h3>
+                <p>Doing three or four roasts back-to-back? On <strong>Active Roast</strong>, open
+                <strong>🗓 Plan a batch</strong> and add each roast in the order you'll do them
+                (easiest-to-pour tin first): pick the bean and weight, and optionally a
+                <strong>tin label</strong>. Tap <strong>Start batch</strong> and it fills in the first
+                roast for you.</p>
+                <ul>
+                    <li>Roast as normal. When you <strong>Stop</strong>, the saved card shows what's
+                        <strong>cooling</strong> and a <strong>Set up next roast</strong> button that
+                        fills in the next one — so you can start it while the last batch cools.</li>
+                    <li>A little strip tracks the batch: <strong>✓</strong> done · <strong>♨</strong>
+                        cooling · <strong>▶</strong> roasting · <strong>⏳</strong> waiting.</li>
+                    <li>If you added tin labels, it reminds you of the swap: <em>"Roasted Ethiopia →
+                        Tin A; Tin A is free, load Brazil."</em></li>
+                </ul>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Just doing one roast? Ignore
+                all of this — nothing changes for a single roast.</p>
             </div>
 
             <div class="card">

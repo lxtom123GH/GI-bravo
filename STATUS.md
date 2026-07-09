@@ -51,6 +51,15 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
   weight; a **★ default for this bean** button saves the current grams onto the pantry bean itself
   (so it rides along in backup/sync). Falls back to the global last-weight when a bean has none
   (`js/roast.js`).
+- **🗓 Batch roast sessions (D2, opt-in).** Plan several sequential roasts in one sitting
+  (`js/session.js` + `roastSessions` collection). Add each roast's bean + weight (+ optional tin
+  label) in order; the app **pre-fills each roast in turn, auto-advances on drop** (a progress strip
+  shows ✓/♨/▶/⏳), tracks a light **"cooling" status** so you can start the next roast while the last
+  cools, and — with tin labels — shows the **hand-off hint** ("Roasted Ethiopia → Tin A; Tin A is
+  free, load Brazil"). Each roast is tagged with its `sessionId`. A single roast never creates a
+  session, so the everyday path is untouched. Pure state logic unit-tested (`session.test.js`),
+  backed up via `exportAllData`. **(Container tracking = light labels; cooling = status not a
+  checklist, per owner.)**
 
 **Beans, pantry & history**
 - Bean pantry with **green lots** (dated/priced, weighted-avg cost, FEFO drawdown — `js/lots.js`),
@@ -169,6 +178,11 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
     so cracks get louder; the detector should expect a level shift rather than treat it as new cracks.
   - **Two-device beep guard** — one device's alarm being heard by another's mic (same-device is already
     handled via the `isNotifying` deaf-window).
+- **Batch sessions — D5 (remaining).** History doesn't yet *group* a session's roasts (each roast
+  carries its `sessionId`, but History renders them individually); a "Batch of 3 · 6 Jul" grouping
+  header + an end-of-batch summary card are the next step. Optional passive cool-down timer parked
+  pending owner interest. The D2 flow also needs a **live-browser pass** (couldn't run here — Chrome
+  extension not connected) before it's called done.
 - See `FUTURE_FEATURES.md` for the full backlog and the "deliberately not built" rationale.
 
 ---
