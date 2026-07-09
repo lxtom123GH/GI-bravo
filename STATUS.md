@@ -47,6 +47,10 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
   now appear only *after* that crack is recorded (hidden, not just disabled — calmer live screen,
   unmissable when needed); the **"snaps to confirm a crack"** range now goes **1–10** (was 1–6) so
   chatter/knocks can be tuned out; and green weight has a **±5 g stepper** (seeds 420 g from empty).
+- **Per-bean default weight (D1 of the batch-session work).** Picking a bean fills its usual roast
+  weight; a **★ default for this bean** button saves the current grams onto the pantry bean itself
+  (so it rides along in backup/sync). Falls back to the global last-weight when a bean has none
+  (`js/roast.js`).
 
 **Beans, pantry & history**
 - Bean pantry with **green lots** (dated/priced, weighted-avg cost, FEFO drawdown — `js/lots.js`),

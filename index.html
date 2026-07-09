@@ -98,6 +98,7 @@
                             <input type="number" id="greenWeightInput" min="0" step="1" placeholder="e.g. 420" style="flex: 1; margin-bottom: 0;">
                             <button type="button" id="greenWeightPlus" class="secondary" style="font-size: 1rem; padding: 6px 12px; margin-bottom: 0; min-width: 44px;" data-hint="Tap up 5 g at a time to reach your exact roast weight. From empty it seeds your usual weight (420 g) so you can nudge from there.">+5</button>
                         </div>
+                        <button type="button" id="setBeanDefaultWeightBtn" class="secondary" hidden style="font-size: 0.75rem; padding: 3px 8px; margin-top: 6px;" data-hint="Save this weight as the usual roast size for the selected bean — pick that bean again later and the weight fills in automatically.">★ Make this the default for this bean</button>
                     </div>
                 </div>
 
@@ -595,7 +596,7 @@
             <div class="card">
                 <h3>Doing a roast</h3>
                 <ol>
-                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings. For the <strong>green weight</strong>, type it in or tap <strong>−5 / +5</strong> to nudge to the exact grams (from empty the first tap seeds your usual weight, e.g. 420 g).</li>
+                    <li>On <strong>Active Roast</strong>, choose the beans and roaster settings. For the <strong>green weight</strong>, type it in or tap <strong>−5 / +5</strong> to nudge to the exact grams (from empty the first tap seeds your usual weight, e.g. 420 g). Tap <strong>★ Make this the default for this bean</strong> to remember it — pick that bean again and the weight fills in for you.</li>
                     <li>Optional: pick a <strong>Follow reference roast</strong> to overlay a past curve with pre-crack cues.</li>
                     <li>Tap <strong>Start Roast &amp; Listening</strong> and <strong>allow the microphone</strong> — cracks are detected automatically (beep + timeline), and you can also press <strong>Manual: Mark</strong> and log power changes (P5 → P3) during the roast. If the mic won't work, tap <strong>Start (no mic)</strong> to run the timer and mark everything yourself.</li>
                     <li><strong>On iPhone/iPad:</strong> open the app in <strong>Safari</strong> (the browser) and allow the microphone when asked. Mic access can be unreliable when launched from a home-screen icon — if Start can't get the mic, the status bar tells you why, and <strong>Start (no mic)</strong> always works.</li>
