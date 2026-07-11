@@ -615,6 +615,39 @@ export function deletePrepBatch(id) {
     savePrepBatches(getPrepBatches().filter(b => b.id !== id));
 }
 
+// --- Roast sessions (batch roasting: several sequential roasts in one sitting) ---
+// A session is an ordered plan of roasts done back-to-back on one machine. Each item:
+// { id, beanId, beanName, weightG, isDecaf?, container?, status:'queued'|'roasting'|
+//   'cooling'|'done', roastId? }. Session: { id, date, roasterId, status:'planning'|
+//   'active'|'done', items:[...] }. At most one is non-'done' (the active one). Optional —
+// single roasts never create a session, so the everyday path is unaffected.
+
+export function getRoastSessions() {
+    const s = localStorage.getItem('roastSessions');
+    return s ? JSON.parse(s) : [];
+}
+
+export function saveRoastSessions(list) {
+    localStorage.setItem('roastSessions', JSON.stringify(list));
+}
+
+export function upsertRoastSession(session) {
+    const list = getRoastSessions();
+    const i = list.findIndex(s => s.id === session.id);
+    if (i >= 0) list[i] = session; else list.push(session);
+    saveRoastSessions(list);
+    return session;
+}
+
+/** The one in-flight session (status not 'done'), or null. */
+export function getActiveRoastSession() {
+    return getRoastSessions().find(s => s.status && s.status !== 'done') || null;
+}
+
+export function deleteRoastSession(id) {
+    saveRoastSessions(getRoastSessions().filter(s => s.id !== id));
+}
+
 // --- Purchases (receipt/invoice quick-add) ---
 // Each: { id, date, total, items: [{ name, grams, costPerKg }], note }. An optional receipt
 // photo is stored in IndexedDB under photo id `purchase-<id>` (js/photos.js).
@@ -684,6 +717,7 @@ export function exportAllData() {
         colorTargets: getColorTargets(),
         roastLabSessions: getRoastLabSessions(),
         prepBatches: getPrepBatches(),
+        roastSessions: getRoastSessions(),
         purchases: getPurchases(),
         blends: getBlends(),
         roasters: getRoasters(),
@@ -741,6 +775,9 @@ export function importAllData(data) {
     }
     if (Array.isArray(data.prepBatches)) {
         savePrepBatches(data.prepBatches);
+    }
+    if (Array.isArray(data.roastSessions)) {
+        saveRoastSessions(data.roastSessions);
     }
     if (Array.isArray(data.purchases)) {
         savePurchases(data.purchases);

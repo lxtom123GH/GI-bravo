@@ -1,4 +1,4 @@
-import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight, getLastGreenWeight, saveLastGreenWeight, getActiveRoaster } from './storage.js';
+import { getPantry, getWeightUnit, saveWeightUnit, getDefaultWeight, saveDefaultWeight, getLastGreenWeight, saveLastGreenWeight, getActiveRoaster, updateBean } from './storage.js';
 import { BEHMOR_GRAMS, weightLabel } from './metrics.js';
 
 // Notify other modules (audio.js) that the Behmor roaster/profile/weight changed,
@@ -78,6 +78,39 @@ export function initRoastDashboard() {
         if (plusBtn) plusBtn.addEventListener('click', () => stepWeight(WEIGHT_STEP));
     }
 
+    // Per-bean default weight — picking a bean fills its usual roast size, and you can save
+    // the current weight as that bean's default. Stored on the pantry bean itself (so it rides
+    // along in backup/sync for free); falls back to the global last-weight when a bean has none.
+    const beanSelectEl = document.getElementById('beanSelect');
+    const setBeanDefaultBtn = document.getElementById('setBeanDefaultWeightBtn');
+    const currentBean = () => getPantry().find(b => b.id === (beanSelectEl && beanSelectEl.value));
+    const syncBeanDefaultUI = () => {
+        if (setBeanDefaultBtn) setBeanDefaultBtn.hidden = !(beanSelectEl && beanSelectEl.value);
+    };
+    if (beanSelectEl) {
+        beanSelectEl.addEventListener('change', () => {
+            const bean = currentBean();
+            if (bean && bean.defaultWeightG > 0 && greenWeightInput) {
+                greenWeightInput.value = bean.defaultWeightG;
+                saveLastGreenWeight(bean.defaultWeightG);
+                notifyConfigChanged();
+            }
+            syncBeanDefaultUI();
+        });
+    }
+    if (setBeanDefaultBtn) {
+        setBeanDefaultBtn.addEventListener('click', () => {
+            const bean = currentBean();
+            const g = parseFloat(greenWeightInput && greenWeightInput.value);
+            if (!bean || !(g > 0)) return;
+            updateBean(bean.id, { defaultWeightG: g });
+            setBeanDefaultBtn.textContent = `✓ ${g} g is ${bean.name}'s default`;
+            setTimeout(() => { setBeanDefaultBtn.textContent = '★ Make this the default for this bean'; }, 1800);
+        });
+    }
+    window.addEventListener('pantryUpdated', syncBeanDefaultUI);
+    syncBeanDefaultUI();
+
     weightBtns.forEach(btn => {
         btn.addEventListener('click', () => { selectWeight(btn.dataset.weight); notifyConfigChanged(); });
     });
@@ -122,6 +155,7 @@ export function initRoastDashboard() {
         const beanSelect = document.getElementById('beanSelect');
         if (beanSelect && roast.beanId && [...beanSelect.options].some(o => o.value === roast.beanId)) {
             beanSelect.value = roast.beanId;
+            syncBeanDefaultUI();
         }
         if (greenWeightInput && roast.greenWeightG) greenWeightInput.value = roast.greenWeightG;
         if (roast.roaster === 'behmor' && roast.settings) {

@@ -270,6 +270,38 @@ Sources: JASA *Coffee roasting acoustics* (pubs.aip.org/asa/jasa/article/135/6/E
 origins*; Cropster *6 roasters on one Brazilian*; ROEST *First crack detection v2*; Mill City *How to
 vent a roaster*. Ties into the [B — detector tuning] captures and the batch-session work below.
 
+### Batch roast sessions (from the 2026-07-06 test roast; D1–D2 shipped)
+
+The owner's real roast day is **several sequential roasts in one sitting** (3 caffeinated ~420 g +
+an optional decaf at the end), on one Behmor, with a preheat/cool cycle and a green-bean→chamber→
+roasted-bean **cake-tin hand-off** that got frantic during the cool-down. The single-roast model had
+no concept of this. Design decisions (owner, 2026-07-06):
+
+- **Opt-in, frictionless default:** a single roast never creates a session; the everyday path is
+  untouched. Batch UI lives behind a "🗓 Plan a batch" disclosure (Moderate tier+).
+- **Container tracking = light labels**, not a full container model. Each item has an optional tin
+  label; the app surfaces the hand-off text after each drop. No enforced container state machine.
+- **Cooling = a status, not a checklist.** The owner (the roaster) knows *how* to cool — a nanny
+  checklist would patronise. So "cooling" is just an item status that drives the board and lets the
+  next roast start while the last cools. (Optional passive cool-down timer parked pending interest.)
+- **Local-first** storage for v1 (`roastSessions`), like Roast Lab captures; cross-device sync later.
+
+**Shipped:**
+- **D1 — per-bean default weight.** Stored on the pantry bean (`defaultWeightG`); picking a bean fills
+  it, and a "★ default for this bean" button saves the current grams. Backup/sync for free.
+- **D2 — session engine + UI** (`js/session.js`). `roastSessions` collection; pure state helpers
+  (`sessionProgress`, `nextQueuedIndex`, `setItemStatus`, `isSessionComplete`, `handoffHint`) are
+  unit-tested. Plan builder (bean + weight + optional tin + decaf per row), a progress strip
+  (✓/♨/▶/⏳), auto-advance (`roastStarted` → item roasting; `roastSaved` → item cooling + the roast
+  tagged with `sessionId` + a "Set up next roast" block injected into the post-roast card), and the
+  container hand-off hint. Absorbed the "light containers" (D4) and "cooling status" (D3) ideas.
+
+**Remaining:**
+- **D5 — history grouping + batch summary.** Roasts carry `sessionId` but History still lists them
+  individually; add a "Batch of N · date" grouping header and an end-of-batch summary (totals, times,
+  links to each roast). Then reconsider syncing `roastSessions` across devices.
+- **Live-browser verification** of the D2 flow (start→advance→cooling→next) before it's "done".
+
 ## Refactor candidates (tech debt, not user-facing)
 
 - **Split `audio.js`'s init/UI-wiring blob.** Surfaced by the graphify trial (2026-06-30): `audio.js`

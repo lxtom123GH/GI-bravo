@@ -17,6 +17,7 @@ import { initRoasterPanel } from './js/roaster-panel.js';
 import { initReceipts } from './js/receipts.js';
 import { initSwipe } from './js/swipe.js';
 import { initDevMode } from './js/devmode.js';
+import { initSession } from './js/session.js';
 
 // Cloud sync is OPT-IN and pulls in Firebase (~660 KB). Load that chunk only on real
 // intent — the user clicks the sync button, OR they have a persisted session to resume.
@@ -80,6 +81,7 @@ function init() {
     initStage();
     initRoasters();
     initRoastDashboard();
+    initSession();   // batch roast sessions (opt-in); after the dashboard so its controls exist
     initRoasterPanel();
     initAudioSystem();
     initPantry();
