@@ -370,3 +370,40 @@ The snapshot above is preserved as-written, but two items moved the same day it 
 ### Ignore (for now)
 - Antigravity SDK (Python custom-agent builder) — no use case in this vanilla-JS portfolio yet.
 - Claude apps gateway / enterprise SSO — org-scale only.
+
+---
+
+## 2026-07-13 — Radar #5
+
+### Claude Code desktop: built-in browser (v2.1.206, July 10) — **Adopt**
+- Claude now opens a sandboxed in-app browser, takes screenshots, inspects the DOM, clicks elements, and reads console errors — without switching to a separate window. When working on a web app it can spin up the dev server and drive the UI from within the coding environment.
+- **Here:** directly useful for a browser-only PWA. This replaces the manual "launch Chrome, look at the screen, describe what you see" loop: the desktop Claude Code can verify GI-bravo's own UI. **Desktop app only** (v2.1.206+); not available in the web-based/remote sessions.
+- **Action:** on the next significant UI feature, prefer the Claude Code desktop app for the verify step rather than `vite preview` + manual description.
+- Source: [Claude Code desktop](https://code.claude.com/docs/en/desktop), [ProgressiveRobot write-up](https://www.progressiverobot.com/2026/07/10/anthropic-claude-code-built-in-web-browser/)
+
+### Gemini 3.5 Flash is now the flagship — update division of labour — **Adopt**
+- Radar #1 named **Gemini 3.1 Pro** as the large-context / Firebase choice. As of Google I/O (May 2026), **Gemini 3.5 Flash** now beats 3.1 Pro on coding, agentic, and tool-use tasks, runs at ~289 tokens/sec (4× faster), keeps the 1M-token context, and retains Search grounding + file ops.
+- **Update the mental model:** drop "3.1 Pro"; use **Gemini 3.5 Flash** for Antigravity CLI sessions — it is the new default flagship, not the Flash tier of a weaker generation.
+- Source: [Gemini 3.5 Flash guide](https://agentpedia.codes/blog/gemini-3-5-flash-developer-guide), [Dev.to review](https://dev.to/kaushikcoderpy/gemini-35-flash-google-antigravity-20-a-real-world-performance-analysis-337a)
+
+### Antigravity 2.0: real-world gaps — **Watch** (tempers Radar #4 trial)
+- Radar #4 flagged the Manager surface as worth trialling on the Firebase hub rollout. July 2026 independent reviews find Antigravity 2.0 still lacks explicit planning mode, autonomy controls, goal tracking, and limit visibility — gaps the marketing doesn't surface.
+- **Action:** hold off on prioritising the Antigravity trial until these stabilise. Division of labour from Radar #1 still stands.
+- Source: [Thomas Wiegold review](https://thomas-wiegold.com/blog/google-antigravity-review-i-tested-gemini-3-5-flash/)
+
+### Claude Code: short-lived MCP scoped tokens — **Watch**
+- Emerging 2026 best practice: when opening code or databases via MCP, use scoped tokens with 15–30 min lifespans, scoped to only the specific files/tables the current task needs. Limits blast radius of a runaway agent session.
+- **Here:** GI-bravo has no MCP connections today. File this for when the Firebase hub wires a Firestore MCP.
+- Source: [Claude Code 65 capabilities guide](https://toolsbase.dev/en/reference/claude-code-features)
+
+### Claude Code Artifacts — **Ignore**
+- Beta since June 18, 2026; turns a session into a shareable live HTML page (PR walkthroughs, dashboards, release checklists). **Team/Enterprise plans only** — not available on Free/Pro. No action for a solo personal plan.
+- Source: [Artifacts docs](https://code.claude.com/docs/en/artifacts)
+
+### Retro #1 pending items — still open
+- **`fallbackModel` config** — still unverified by owner; 3-line addition to `~/.claude/settings.json`.
+- **Antigravity doc sweep** — "Gemini CLI" → "Antigravity CLI" and "Gemini 3.1 Pro" → "Gemini 3.5 Flash" in docs, on next touch.
+
+### Ignore (for now)
+- vite-plugin-pwa — no material changes since Radar #2; Workbox v7.4.1 current, maintained; hold.
+- AGENTS.md spec research — nothing materially new this week; the ≤150-line guideline (Radar #2) and "write it yourself" rule (Radar #2) remain current with a new data point: >150 lines increases inference costs 20–23% per a 2,500-repo study. Our `AGENTS.md` is ~60 lines — well inside the safe zone.
