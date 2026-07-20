@@ -370,3 +370,35 @@ The snapshot above is preserved as-written, but two items moved the same day it 
 ### Ignore (for now)
 - Antigravity SDK (Python custom-agent builder) — no use case in this vanilla-JS portfolio yet.
 - Claude apps gateway / enterprise SSO — org-scale only.
+
+---
+
+## 2026-07-20 — Radar #5
+
+### Claude Code `/fork` — split conversation to background without losing context — **Adopt**
+- v2.1.207 added `/fork`, which copies the current session into a new **background session** while the original stays open and active. Directly upgrades the Radar #2 Writer/Reviewer pattern: instead of `/clear` (loses context) or opening a new terminal window, `/fork` hands the session to a reviewer agent mid-flow with full history intact.
+- **Here:** use `/fork` any time you want an independent review pass or want to try a different approach without committing — the fork diverges and the original is still there.
+- **Action:** prefer `/fork` over `/clear` when switching into review mode; use `/clear` only for genuine context hygiene.
+- Source: [Claude Code July 2026 changelog](https://releasebot.io/updates/anthropic/claude-code)
+
+### Claude Code: session-wide WebSearch cap + hardened Bash/subagent safeguards — **Watch**
+- Builds from v2.1.207+ added a session-wide limit on WebSearch calls and tighter permission checks on Bash execution and subagent spawns. For normal interactive work this is transparent. For **search-heavy scheduled runs** (like this radar), hitting the per-session WebSearch ceiling would silently drop later searches.
+- **Here:** this radar batches 4–6 searches per run — well within the limit. Watch if the routine ever fans out into many parallel search agents.
+- **Action:** keep searches batched as-is; no change needed yet.
+- Source: [Claude Code July 2026 changelog](https://releasebot.io/updates/anthropic/claude-code)
+
+### SW cache versioning: version-prefix the cache name now, not just at vite-plugin-pwa migration — **Adopt**
+- Radar #1 flagged `roast-tracker-v1` as a staleness risk and filed it as Watch pending the `vite-plugin-pwa` migration. The lighter-weight fix — available right now, no migration needed — is to prefix the cache name with the `package.json` version: `roast-tracker-v${pkg.version}` (read in at build time via Vite's `define` or `import.meta.env`). On every version bump the old cache is automatically abandoned on activation.
+- **Here:** our `public/sw.js` uses a hard-coded `roast-tracker-v1`; a one-line change to the cache name and a matching `CACHE_VERSION` constant in the SW file closes the risk.
+- **Action:** next SW touch: replace the hard-coded cache name with a version-stamped one. If migrating to `vite-plugin-pwa`, the precache manifest handles this automatically.
+- Source: [VitePWA plugin docs](https://vite-pwa-org.netlify.app/guide/), [AuditBuffet pattern AB-002028](https://auditbuffet.com/patterns/ab-002028)
+
+### Pending items — status check (Retro #1 + Radar #4)
+- **`fallbackModel` config** — still unverified by owner (open since Radar #2); flagged again here. 3-line addition to `~/.claude/settings.json`.
+- **Antigravity doc sweep** ("Gemini CLI" → "Antigravity CLI" in docs) — still open; do on next doc touch.
+- **Antigravity Manager surface trial** (Radar #4 Watch) — no large GI-bravo feature has triggered the trial yet; remains Watch.
+
+### Ignore (for now)
+- Claude Code artifacts live MCP data — published artifacts can now call MCP connectors on each view; not relevant for GI-bravo (standalone offline-first PWA, not a hosted artifact).
+- Antigravity parallel sub-agents at scale — orchestration overhead still not justified for a single small PWA; revisit when/if managing multiple apps in one session.
+- iOS Safari push-notification limitations — no push feature in GI-bravo yet; revisit if/when added.
