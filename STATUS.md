@@ -47,6 +47,28 @@ https://gi-bravo.vercel.app. Local-first (localStorage + IndexedDB) with an **op
   now appear only *after* that crack is recorded (hidden, not just disabled — calmer live screen,
   unmissable when needed); the **"snaps to confirm a crack"** range now goes **1–10** (was 1–6) so
   chatter/knocks can be tuned out; and green weight has a **±5 g stepper** (seeds 420 g from empty).
+- **Detection intelligence from that test roast (2026-07-23, research-grounded — design notes in
+  `FUTURE_FEATURES.md`):** all four gaps built as a pure, unit-tested module (`js/crack-intel.js`)
+  wired into `js/audio.js`:
+  - **"Still 1st crack" continuity** — 1C is treated as a tapering *period*: after 1C the detector
+    watches a **wide 2C window** (research default ~2–7 min) instead of the old fixed 20 s timer;
+    2C calls are gated on **crack rate + band energy** (never raw loudness), demand extra pitch
+    evidence *before* the window opens, and are never blocked after it closes. A **⏳ Still 1st
+    crack** button (appears between 1C and 2C) holds off the 2C call for 45 s and feeds the learner.
+  - **Per-bean 1C→2C gap** — learned from **the user's own roast history** for the selected bean
+    (median of the last 8 gaps, widened ×0.6–×1.6; needs ≥2 roasts). Deliberately **no origin
+    lookup table** (heat application dominates; origin only predisposes). No new persisted store —
+    it derives from `roastHistory`, so backup/sync already cover it.
+  - **Door-"burp" guard** — a mid-roast quiet-frame floor tracker re-baselines the noise floor when
+    the sustained level **steps up** (door opened → shielding gone) and raises the confidence bar
+    ~1.5 s so door/fan/chaff transients don't read as cracks.
+  - **Two-device beep guard** — built as a **known-alarm-tone spectral notch**: another device's
+    alarm is narrowband at this app's own tone frequencies (+ harmonics); cracks are broadband. A
+    spike whose energy concentrates in those bands is ignored. Works best for Chime/Beep/Bell
+    (the sawtooth Buzzer is too harmonic-dense to notch); Help also recommends one-listener setups.
+  - Also: the learner (`js/detector-learning.js`) gained a **2C-pitch lever** ('still1c' raises the
+    2C pitch gate, a missed 2C walks it back), and an **optional "Earliest 1st crack"** time gate
+    (ROEST-style prior, default off) in Detection Settings.
 
 **Beans, pantry & history**
 - Bean pantry with **green lots** (dated/priced, weighted-avg cost, FEFO drawdown — `js/lots.js`),
@@ -153,18 +175,15 @@ Design rationale: `PORTFOLIO_AUTH_SYNC.md`. As-built + go-live record: `GO_LIVE_
   validation, then wire the grader into an in-app **"Test paint chips" lab** and ship the validated
   per-brand picks as starter presets.
 - **Detection intelligence — from the 2026-07-06 test roast (research in `FUTURE_FEATURES.md`).**
-  Data-gathering is now automatic in Dev mode; the tuning work sits on top of the captures:
+  The four logic gaps (**still-1C continuity, per-bean gap, door-burp guard, two-device beep
+  guard**) are ✅ **built** — see Shipped above. Remaining from this thread:
   - **Tune the defaults** from captured shadow-bank data (likely a higher cracks-required + threshold
-    to reject talking / a phone set on the bench).
-  - **"Still 1st crack" continuity** — model first crack as a *sustained* period (it can run 30–60 s+),
-    so late snaps aren't misread as 2nd crack; likely a manual "still 1st crack" marker that also
-    teaches the detector.
-  - **Bean-origin transition priors** — some coffees roll straight 1C→2C, others pause; let the
-    expected gap depend on the selected bean (origin/density/process) instead of a fixed rule.
-  - **Door-"burp" awareness** — opening the roaster door between 1C and 2C removes acoustic shielding,
-    so cracks get louder; the detector should expect a level shift rather than treat it as new cracks.
-  - **Two-device beep guard** — one device's alarm being heard by another's mic (same-device is already
-    handled via the `isNotifying` deaf-window).
+    to reject talking / a phone set on the bench). Blocked on real captures landing in `roast-logs/`
+    (the folder is currently empty); Dev mode auto-captures every owner roast, so this unblocks
+    itself as test roasts happen.
+  - **Validate the new logic on real roast audio** — the still-1C window length (45 s), burp-guard
+    step thresholds and the alarm-notch share (0.75) were set conservatively from the research, not
+    from data; revisit once captures exist.
 - See `FUTURE_FEATURES.md` for the full backlog and the "deliberately not built" rationale.
 
 ---

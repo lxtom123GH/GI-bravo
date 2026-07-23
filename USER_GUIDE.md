@@ -60,6 +60,15 @@ A simple, step-by-step guide to using the app. No technical knowledge needed.
    - It **automatically detects first and second crack** and logs them. You'll
      hear a beep and see a note in the timeline.
    - If it misses one, tap **Manual: Mark 1st Crack** / **2nd Crack** yourself.
+   - **First crack is a rolling period**, not a single pop — it can taper on for a
+     minute or two. Once 1st crack is recorded, a **⏳ Still 1st crack** button
+     appears: tap it if the pops you're hearing are clearly still 1st crack, so the
+     app doesn't call 2nd crack too early (with Auto-tune on, it also learns from
+     the tap). The app watches a **wide window for 2nd crack** — typically 2–7 min
+     after 1st — and narrows it **per bean** from your own roast history.
+   - **Opening the door mid-roast is fine** — the app expects the sudden loudness
+     jump (the door removes the roaster's sound shielding) and re-baselines its
+     hearing instead of calling false cracks.
    - Watch the **live timer** and, after first crack, the **DTR** (development ratio).
    - *(Expert)* Type bean temperatures into **Log Temp** as you read them — the app
      works out the Rate of Rise. Or connect a Bluetooth probe to do it automatically.
@@ -243,7 +252,10 @@ an official Agtron number.
 | --- | --- |
 | Mic / "allow permissions" error | Use Chrome or Edge, and the `https://` link (not a saved file). Allow the mic when asked. |
 | Too many / too few cracks detected | **Detection Settings** → lower/raise **sensitivity**; auto-calibration sets the noise floor while you set up (or tap **Calibrate now** there); reduce background noise. |
-| Second crack not detected | It needs higher-pitched, faster cracking ~20 s+ after first crack — or mark it manually. |
+| Second crack not detected | It needs **faster, higher-pitched** cracking after first crack (the app watches a ~2–7 min window, learned per bean) — or mark it manually; that also teaches Auto-tune. |
+| Second crack called too early | Those late pops were probably still 1st crack — tap **⏳ Still 1st crack** (appears after 1st crack); if a wrong 2nd crack is already recorded, **✗ Clear 2nd crack** first. |
+| False first crack from early clatter | Set **Detection Settings → Earliest 1st crack** — crack-like sounds before that many minutes are ignored. |
+| Two devices — one hears the other's alarm | The app ignores its own alarm tones (best with **Chime/Beep/Bell**); simplest is one device listening, the second silent (e.g. capture-only). |
 | My data disappeared | It's per-browser/device and is cleared if you wipe browser data — keep **backups**, or **sign in** (sidebar → ☁️) to sync it to the cloud. |
 | "…has no account yet" when sharing | Ask that person to **sign in once** first (so they can be found by email), then share again. |
 | Bluetooth probe won't connect | Chrome/Edge only; make sure the probe is powered on (see `HARDWARE_GUIDE.md`). |

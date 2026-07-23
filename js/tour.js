@@ -7,6 +7,7 @@ const STEPS = [
     { sel: '#sidebarPrefs', sidebar: true, title: 'Preferences', text: 'Choose how much detail you want — Easy, Moderate or Expert Mode — and turn on 💡 hints for tap-to-explain badges. Change them any time.' },
     { sel: '#roasterControl', tab: 'dashboard', title: 'Your roaster', text: 'This is your machine. Most people use one (no setup needed); tap “Manage roasters” if you use more than one (yours, a friend’s, a different model).' },
     { sel: '#startBtn', tab: 'dashboard', title: 'Start a roast', text: 'Tap to begin — the app listens through your mic and detects first & second crack automatically.' },
+    { sel: '#markFirstCrackBtn', tab: 'dashboard', title: 'Crack controls', text: 'Cracks are detected for you — these are your overrides: mark one the app missed, ✗ clear a false alarm, and “⏳ Still 1st crack” (appears after 1st crack) tells it late pops aren’t 2nd crack yet. Your taps quietly teach the detector.' },
     { sel: '#dashboard .demo-btn', tab: 'dashboard', title: 'Try a demo', text: 'New here? Watch a simulated roast — no microphone needed.' },
     { sel: '#roastCurve', tab: 'dashboard', title: 'Live roast curve', text: 'Your roast is drawn here in real time, with crack markers.' },
     { sel: '.nav-links li[data-target="history"]', sidebar: true, title: 'After the roast', text: 'Open Roast History to log the roasted weight, add tasting notes, and take a colour-corrected photo to track how dark each batch is. See Help → “Roast-colour photos”.' },

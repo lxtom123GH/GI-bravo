@@ -68,7 +68,12 @@ function runDemo() {
         if (timer) timer.textContent = fmt(vt);
 
         if (!de && vt >= DRY_MS) { de = vt; cap(`>>> <b>Dry end</b> (beans yellowing) at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — Maillard'; }
-        if (!fc && vt >= FC_MS) { fc = vt; cap(`>>> <b>FIRST CRACK detected</b> at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — First Crack'; }
+        if (!fc && vt >= FC_MS) {
+            fc = vt;
+            cap(`>>> <b>FIRST CRACK detected</b> at ${fmt(vt)}`);
+            cap('First crack is a rolling period — pops taper off for a minute or two. In a real roast a <b>⏳ Still 1st crack</b> button appears here, so a late pop is never mistaken for 2nd crack.');
+            if (status) status.textContent = 'Status: Demo — First Crack';
+        }
         if (!sc && vt >= SC_MS) { sc = vt; cap(`>>> <b>SECOND CRACK detected</b> at ${fmt(vt)}`); if (status) status.textContent = 'Status: Demo — Second Crack'; }
 
         drawRoastCurve(canvas, curve, { dryEndMs: de, firstCrackMs: fc, secondCrackMs: sc, totalMs: vt });
