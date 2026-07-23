@@ -184,7 +184,8 @@ js/
   roaster-panel.js  Roaster control panel — Behmor button guide + KKTO heat/airflow guide
   audio.js          Mic capture, crack detection, roast curve, RoR, alarms, reference follow, probe
   calibration.js    Rolling pre-roast noise-floor estimator for auto-calibration (pure)
-  detector-learning.js  Opt-in auto-tune — learns each roaster's sensitivity from your ✗/Mark corrections (pure)
+  detector-learning.js  Opt-in auto-tune — learns each roaster's sensitivity + 2C pitch from your ✗/Mark/⏳ corrections (pure)
+  crack-intel.js    Detection intelligence — per-bean 2C watch window, still-1C continuity, door-burp guard, alarm-tone notch (pure)
   mfcc.js           Experimental MFCC feature extraction (FFT/mel/DCT, pure) — opt-in, no effect on detection yet
   roastlab.js       Roast Lab — capture/summarise/export a per-roast feature timeline (pure) — opt-in, observational
   shadow.js         Shadow detector bank — parallel, differently-tuned crack detectors (pure) — LOG-ONLY, rides on Roast Lab

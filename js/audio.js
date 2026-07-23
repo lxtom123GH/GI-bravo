@@ -4,6 +4,11 @@ import { createSession, addFrame, addEvent, summariseRoastLab, formatRoastLabJso
 import { createShadowBank, stepShadowBank, summariseShadowBank } from './shadow.js';
 import { applyAdjust, nudgeAdjust, describeAdjust, DEFAULT_ADJUST } from './detector-learning.js';
 import { createNoiseFloor } from './calibration.js';
+import {
+    DEFAULT_GAP_WINDOW, gapWindowFromHistory, describeGapWindow, shouldCall2C,
+    createBurpGuard, BURP_GUARD_MS, BURP_GUARD_FACTOR,
+    alarmToneTargets, alarmNarrowbandShare, isAlarmLike,
+} from './crack-intel.js';
 import { drawRoastCurve, drawRoastCurves, drawRoastCurveDual } from './chart.js';
 import { computeRoastMetrics, formatMs, formatDtr, computeRoRPoints, formatRoR, weightLabel } from './metrics.js';
 import { connectRoaster, disconnectRoaster } from './bluetooth.js';
@@ -52,6 +57,7 @@ const markFirstCrackBtn = document.getElementById('markFirstCrackBtn');
 const markSecondCrackBtn = document.getElementById('markSecondCrackBtn');
 const undoFirstCrackBtn = document.getElementById('undoFirstCrackBtn');
 const undoSecondCrackBtn = document.getElementById('undoSecondCrackBtn');
+const stillFirstCrackBtn = document.getElementById('stillFirstCrackBtn');
 const ackAlarmBtn = document.getElementById('ackAlarmBtn');
 const alarmToneSelect = document.getElementById('alarmToneSelect');
 const testAlarmBtn = document.getElementById('testAlarmBtn');
@@ -127,9 +133,27 @@ const HIGHPASS_HZ = 500;
 const LOW_BAND = [800, 3000];     // first-crack-dominant band (Hz)
 const HIGH_BAND = [3000, 8000];   // second-crack-dominant band (Hz)
 const RATIO_WINDOW = 8;           // number of recent snaps averaged for the signature
-const SECOND_CRACK_MIN_GAP_MS = 20000; // earliest 2C can follow 1C
 let freqArray;
 let recentRatios = [];            // high-band share of recent snaps
+
+// --- Detection intelligence (2026-07; see js/crack-intel.js + FUTURE_FEATURES.md) ---
+// 1C is a tapering PERIOD, not an event: after declaring 1C we watch a wide,
+// per-bean window for 2C (learned from this bean's own roast history; research
+// default ~2–7 min) instead of the old fixed 20 s timer, gate 2C on crack RATE +
+// band energy, and let the user say "still 1st crack" to hold off a premature call.
+const STILL_1C_HOLD_MS = 45000;   // how long one "still 1st crack" tap suppresses 2C calls
+const SNAP_TIMES_MAX = 40;        // recent counted snaps kept for the rate gate
+let crackGapWindow = { ...DEFAULT_GAP_WINDOW }; // recomputed per roast for the selected bean
+let stillFirstCrackUntil = 0;     // epoch ms: 2C calls held off until then
+let snapTimes = [];               // epoch ms of recent counted snaps (rate gate)
+// Door-"burp" guard: opening the door removes acoustic shielding → the sustained
+// floor steps up. Track it on quiet frames, re-baseline on a step, and briefly
+// demand extra confidence so door/fan/chaff transients don't read as cracks.
+let burpGuard = null;
+let burpGuardUntil = 0;
+// Two-device beep guard: the frequencies (fundamental + harmonics) of this app's
+// own alarm tones — another device's alarm is narrowband there; cracks are broadband.
+let alarmGuardFreqs = null;       // computed lazily from ALARM_TONES below
 
 // User-tunable detection settings (persisted), loaded on init.
 let detectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
@@ -218,6 +242,7 @@ export function initAudioSystem() {
     markSecondCrackBtn.addEventListener('click', () => markPhase('Second Crack (Manual)', 'secondCrackTime'));
     if (undoFirstCrackBtn) undoFirstCrackBtn.addEventListener('click', () => clearCrack('firstCrackTime'));
     if (undoSecondCrackBtn) undoSecondCrackBtn.addEventListener('click', () => clearCrack('secondCrackTime'));
+    if (stillFirstCrackBtn) stillFirstCrackBtn.addEventListener('click', markStillFirstCrack);
 
     // Alarm: tone selection (persisted), test preview, and acknowledge.
     if (alarmToneSelect) {
@@ -258,22 +283,28 @@ function initDetectionSettingsUI() {
     const cracksInput = document.getElementById('cracksSetting');
     const pitchInput = document.getElementById('pitchSetting');
     const calibInput = document.getElementById('calibSetting');
+    const min1cInput = document.getElementById('min1cSetting');
     const threshVal = document.getElementById('thresholdValue');
     const cracksVal = document.getElementById('cracksValue');
     const pitchVal = document.getElementById('pitchValue');
     const calibVal = document.getElementById('calibValue');
+    const min1cVal = document.getElementById('min1cValue');
     const resetBtn = document.getElementById('resetDetectionBtn');
     if (!threshInput || !cracksInput) return;
+
+    const min1cLabel = (v) => (v > 0 ? v + ' min' : 'off');
 
     const render = () => {
         threshInput.value = detectionSettings.thresholdMultiplier;
         cracksInput.value = detectionSettings.cracksRequired;
         if (pitchInput) pitchInput.value = detectionSettings.secondCrackPitch;
         if (calibInput) calibInput.value = detectionSettings.calibrationSeconds;
+        if (min1cInput) min1cInput.value = detectionSettings.min1cMinutes || 0;
         if (threshVal) threshVal.textContent = Number(detectionSettings.thresholdMultiplier).toFixed(1) + '×';
         if (cracksVal) cracksVal.textContent = detectionSettings.cracksRequired;
         if (pitchVal) pitchVal.textContent = Math.round(detectionSettings.secondCrackPitch * 100) + '%';
         if (calibVal) calibVal.textContent = (detectionSettings.calibrationSeconds || 8) + 's';
+        if (min1cVal) min1cVal.textContent = min1cLabel(detectionSettings.min1cMinutes || 0);
     };
 
     const persist = () => { saveDetectionSettings(detectionSettings); recomputeEffectiveDetection(); };
@@ -302,6 +333,14 @@ function initDetectionSettingsUI() {
         calibInput.addEventListener('input', () => {
             detectionSettings.calibrationSeconds = parseInt(calibInput.value, 10);
             if (calibVal) calibVal.textContent = detectionSettings.calibrationSeconds + 's';
+            persist();
+        });
+    }
+
+    if (min1cInput) {
+        min1cInput.addEventListener('input', () => {
+            detectionSettings.min1cMinutes = parseFloat(min1cInput.value) || 0;
+            if (min1cVal) min1cVal.textContent = min1cLabel(detectionSettings.min1cMinutes);
             persist();
         });
     }
@@ -385,6 +424,33 @@ function showClearCrackBtn(btn, show) {
     if (!btn) return;
     btn.hidden = !show;
     btn.disabled = !show;
+}
+
+// "⏳ Still 1st crack" is only meaningful between 1C being recorded and 2C: it says
+// "these pops are still first crack — don't call 2nd crack yet". Hidden otherwise,
+// same calm-screen rule as the ✗ Clear buttons.
+function showStillFirstCrackBtn(show) {
+    if (!stillFirstCrackBtn) return;
+    stillFirstCrackBtn.hidden = !show;
+    stillFirstCrackBtn.disabled = !show;
+}
+
+// The user says the current pops are still first crack (1C is a tapering ~1–2 min
+// cluster — late pops are NOT second crack). Holds off auto-2C for a while, drops
+// the pitch evidence gathered so far (it was 1C tail, not 2C), records the marker
+// on the roast timeline, and teaches the learner that 2C must sound clearly
+// higher-pitched on this roaster.
+function markStillFirstCrack() {
+    if (!isRecording || !roastState.firstCrackTime || roastState.secondCrackTime) return;
+    const now = Date.now();
+    stillFirstCrackUntil = now + STILL_1C_HOLD_MS;
+    recentRatios = [];
+    if (!Array.isArray(roastState.stillFirstCrackMarks)) roastState.stillFirstCrackMarks = [];
+    roastState.stillFirstCrackMarks.push(now - roastState.startTime);
+    if (!roastState.manualMode) applyLearningSignal('still1c');
+    logMessage(`⏳ <b>Still 1st crack</b> — holding off 2nd-crack calls for ${Math.round(STILL_1C_HOLD_MS / 1000)}s.`);
+    updateStatus('Still 1st crack — watching for the real 2nd crack.');
+    logRoastLabEvent('still1c', 'Still 1st crack', false); // capture (no-op when off)
 }
 
 // --- Dev/Test mode capture lock (owner-only; driven by js/devmode.js) --------
@@ -654,7 +720,9 @@ function applyLearningSignal(signal) {
     saveDetectionAdjustFor(roasterId, next);
     recomputeEffectiveDetection();
     const how = signal === 'falsePositive' ? 'less sensitive'
-        : signal === 'missed' ? 'more sensitive' : 'noted';
+        : (signal === 'missed' || signal === 'missedSecond') ? 'more sensitive'
+        : signal === 'still1c' ? 'expecting 2nd crack to sound clearly higher-pitched'
+        : 'noted';
     logMessage(`🎯 Auto-tuned: detection is now ${how} for this roaster.`);
     updateLearningReadout();
 }
@@ -864,6 +932,11 @@ function syncSettingsInputs() {
     if (cal) cal.value = detectionSettings.calibrationSeconds || 8;
     if (calv) calv.textContent = (detectionSettings.calibrationSeconds || 8) + 's';
 
+    const m1 = document.getElementById('min1cSetting');
+    const m1v = document.getElementById('min1cValue');
+    if (m1) m1.value = detectionSettings.min1cMinutes || 0;
+    if (m1v) m1v.textContent = (detectionSettings.min1cMinutes || 0) > 0 ? detectionSettings.min1cMinutes + ' min' : 'off';
+
     const tt = document.getElementById('targetTotalSetting');
     if (tt) tt.value = roastTargets.totalMinutes || '';
     const td = document.getElementById('targetDtrSetting');
@@ -923,15 +996,25 @@ function markPhase(phaseName, stateKey) {
     if (stateKey === 'firstCrackTime') roastState.firstCrackAuto = isAuto;
     if (stateKey === 'secondCrackTime') roastState.secondCrackAuto = isAuto;
     // A MANUAL crack mark during a mic roast means the detector hadn't caught it
-    // (missed) → nudge more sensitive for this roaster.
+    // (missed) → nudge more sensitive for this roaster. A missed SECOND crack also
+    // relaxes any learned "still 1C" pitch strictness (the gate was too strict).
     if (!isAuto && !roastState.manualMode &&
         (stateKey === 'firstCrackTime' || stateKey === 'secondCrackTime')) {
-        applyLearningSignal('missed');
+        applyLearningSignal(stateKey === 'secondCrackTime' ? 'missedSecond' : 'missed');
     }
     // Reveal the matching "clear" (false-positive) button now that a crack is recorded —
     // before this there's nothing to clear, so it stays hidden to keep the live screen calm.
-    if (stateKey === 'firstCrackTime') showClearCrackBtn(undoFirstCrackBtn, true);
-    if (stateKey === 'secondCrackTime') showClearCrackBtn(undoSecondCrackBtn, true);
+    if (stateKey === 'firstCrackTime') {
+        showClearCrackBtn(undoFirstCrackBtn, true);
+        // 1C is a tapering period: open the per-bean 2C watch window and offer the
+        // "still 1st crack" marker until 2C is recorded.
+        showStillFirstCrackBtn(true);
+        if (!roastState.manualMode) logMessage(`🧠 Watching for 2nd crack ${describeGapWindow(crackGapWindow)}.`);
+    }
+    if (stateKey === 'secondCrackTime') {
+        showClearCrackBtn(undoSecondCrackBtn, true);
+        showStillFirstCrackBtn(false); // 2C recorded — the marker's moment has passed
+    }
     logMessage(`>>> <b>${phaseName.toUpperCase()} RECORDED</b> <<<`);
     updateStatus(`Listening - Phase: ${phaseName}`);
     notifyUser(`${phaseName} recorded!`);
@@ -952,12 +1035,15 @@ function clearCrack(stateKey) {
         roastState.secondCrackTime = null;
         showClearCrackBtn(undoSecondCrackBtn, false);
         showClearCrackBtn(undoFirstCrackBtn, false);
+        showStillFirstCrackBtn(false); // no 1C on record → nothing to be "still in"
     } else {
         showClearCrackBtn(undoSecondCrackBtn, false);
+        showStillFirstCrackBtn(true); // back between 1C and 2C — the marker applies again
     }
     // Reset detection so the real crack can still be found.
     transientClusterCount = 0;
     recentRatios = [];
+    snapTimes = []; // rate evidence too — the cleared burst must not re-trigger instantly
     stopCrackAlarm(); // silence any ongoing first-crack alarm
     logMessage(`✗ ${label} cleared (false alarm). Still listening.`);
     updateStatus(`${label} cleared — watching again.`);
@@ -1413,6 +1499,7 @@ async function startRoast(manual = false) {
         manualMode: manual,
         firstCrackAuto: false,
         secondCrackAuto: false,
+        stillFirstCrackMarks: [],
         logs: [],
         curve: [],
         temps: [],
@@ -1425,6 +1512,14 @@ async function startRoast(manual = false) {
     transientClusterCount = 0;
     lastTransientTime = 0;
     recentRatios = [];
+    // Detection intelligence: per-bean 2C watch window (learned from this bean's own
+    // roast history — no origin lookup table, heat application varies too much),
+    // plus fresh still-1C / rate / door-burp state for the run.
+    crackGapWindow = gapWindowFromHistory(getRoastHistory(), document.getElementById('beanSelect')?.value);
+    stillFirstCrackUntil = 0;
+    snapTimes = [];
+    burpGuard = manual ? null : createBurpGuard();
+    burpGuardUntil = 0;
     lastCurveSampleTime = 0;
     lastProbeLog = 0;
     alarmFired = { total: false, dtr: false };
@@ -1458,6 +1553,7 @@ async function startRoast(manual = false) {
     markSecondCrackBtn.disabled = false;
     showClearCrackBtn(undoFirstCrackBtn, false);  // nothing to clear yet — hidden until a crack is recorded
     showClearCrackBtn(undoSecondCrackBtn, false);
+    showStillFirstCrackBtn(false); // appears once 1st crack is recorded
     if (logTempBtn) logTempBtn.disabled = false;
     if (logEnvTempBtn) logEnvTempBtn.disabled = false;
     if (liveRorDiv) liveRorDiv.textContent = 'RoR --';
@@ -1533,6 +1629,7 @@ function stopRoast() {
     markSecondCrackBtn.disabled = true;
     showClearCrackBtn(undoFirstCrackBtn, false);
     showClearCrackBtn(undoSecondCrackBtn, false);
+    showStillFirstCrackBtn(false);
     if (logTempBtn) logTempBtn.disabled = true;
     if (logEnvTempBtn) logEnvTempBtn.disabled = true;
     manualPowerBtns.forEach(b => b.disabled = true);
@@ -1633,6 +1730,16 @@ function avgRatio() {
     return recentRatios.reduce((a, b) => a + b, 0) / recentRatios.length;
 }
 
+// Share of this frame's spectral energy sitting in the narrow bands of the app's
+// own alarm tones (see crack-intel.js). High share = another device's crack alarm,
+// not a crack — cracks are broadband. Computed only on spike frames (cheap).
+function spectralAlarmShare() {
+    if (!freqArray || !analyser || !audioContext) return 0;
+    if (!alarmGuardFreqs) alarmGuardFreqs = alarmToneTargets(ALARM_TONES);
+    analyser.getByteFrequencyData(freqArray);
+    return alarmNarrowbandShare(freqArray, audioContext.sampleRate / analyser.fftSize, alarmGuardFreqs);
+}
+
 function detectTransient(rms) {
     const now = Date.now();
 
@@ -1641,12 +1748,38 @@ function detectTransient(rms) {
 
     // A transient is a sudden spike well above the baseline and recent history.
     const recentAvg = recentRMSHistory.reduce((a, b) => a + b, 0) / recentRMSHistory.length;
-    const spikeThreshold = Math.max(baselineNoiseRMS * effectiveDetection.thresholdMultiplier, recentAvg * 2, 0.05);
+    let spikeThreshold = Math.max(baselineNoiseRMS * effectiveDetection.thresholdMultiplier, recentAvg * 2, 0.05);
+    // Just after a detected door/airflow step-change, demand extra confidence —
+    // the room got louder, so borderline spikes are probably not cracks.
+    if (now < burpGuardUntil) spikeThreshold *= BURP_GUARD_FACTOR;
 
-    if (rms <= spikeThreshold || (now - lastTransientTime <= TRANSIENT_COOLDOWN_MS)) return;
+    if (rms <= spikeThreshold || (now - lastTransientTime <= TRANSIENT_COOLDOWN_MS)) {
+        // Door-"burp" awareness: feed sub-threshold frames to the mid-roast floor
+        // tracker. A SUSTAINED step-up (door open → shielding gone, fan/airflow
+        // change) re-baselines the noise floor instead of reading as new cracks.
+        if (burpGuard && rms <= spikeThreshold) {
+            const res = burpGuard.step(now, rms);
+            if (res.stepped) {
+                baselineNoiseRMS = Math.max(baselineNoiseRMS, res.baseline);
+                burpGuardUntil = now + BURP_GUARD_MS;
+                logMessage(`🚪 Room got suddenly louder (door / airflow?) — noise floor re-baselined to ${baselineNoiseRMS.toFixed(3)}; being extra careful for a moment.`);
+            }
+        }
+        return;
+    }
+
+    // Two-device beep guard: another device running this app can alarm into our
+    // mic. Its tones are narrowband at known frequencies; cracks are broadband.
+    // (Same-device alarms are already suppressed via the isNotifying deaf-window.)
+    if (isAlarmLike(spectralAlarmShare())) {
+        lastTransientTime = now; // reuse the snap cooldown so a ringing alarm isn't re-tested every frame
+        return;
+    }
 
     lastTransientTime = now;
     transientClusterCount++;
+    snapTimes.push(now);
+    if (snapTimes.length > SNAP_TIMES_MAX) snapTimes.shift();
 
     // Capture the spectral signature of this snap.
     recentRatios.push(spectralHighRatio());
@@ -1663,21 +1796,43 @@ function detectTransient(rms) {
     const ratio = avgRatio();
 
     if (!roastState.firstCrackTime) {
-        // The first sustained burst of cracking is first crack.
-        if (transientClusterCount >= detectionSettings.cracksRequired) {
+        // The first sustained burst of cracking is first crack — optionally gated
+        // behind a ROEST-style time prior ("ignore cracks before N minutes").
+        const min1cMs = (effectiveDetection.min1cMinutes || 0) * 60000;
+        if (transientClusterCount >= effectiveDetection.cracksRequired) {
+            if (now - roastState.startTime < min1cMs) {
+                if (!roastState.early1cSuppressed) {
+                    roastState.early1cSuppressed = true;
+                    logMessage(`⏱️ Crack-like sounds before ${effectiveDetection.min1cMinutes} min are ignored (your “earliest 1st crack” setting).`);
+                }
+                return;
+            }
             markPhase('First Crack (Auto)', 'firstCrackTime');
             startCrackAlarm(); // repeats until acknowledged so it isn't missed
-            const pitch = ratio >= detectionSettings.secondCrackPitch ? 'higher-pitched' : 'lower-pitched';
+            const pitch = ratio >= effectiveDetection.secondCrackPitch ? 'higher-pitched' : 'lower-pitched';
             logMessage(`Auto-detected ${pitch} cracking (high-band ${(ratio * 100).toFixed(0)}%).`);
         }
-    } else if (!roastState.secondCrackTime &&
-               now - roastState.firstCrackTime > SECOND_CRACK_MIN_GAP_MS &&
-               recentRatios.length >= detectionSettings.cracksRequired &&
-               ratio >= detectionSettings.secondCrackPitch) {
-        // Faster, higher-pitched cracking after first crack reads as second crack.
-        markPhase('Second Crack (Auto)', 'secondCrackTime');
-        startCrackAlarm(); // repeats until acknowledged
-        logMessage(`Higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%).`);
+    } else if (!roastState.secondCrackTime) {
+        // 1C is a tapering period, not an event: the 2C call is a windowed decision
+        // (per-bean watch window + crack RATE + band energy + still-1C hold + door
+        // guard), not a fixed timer — see shouldCall2C in js/crack-intel.js.
+        const verdict = shouldCall2C({
+            now,
+            firstCrackAt: roastState.firstCrackTime,
+            stillFirstCrackUntil,
+            burpGuardUntil,
+            window: crackGapWindow,
+            ratios: recentRatios,
+            snapTimes,
+            basePitch: effectiveDetection.secondCrackPitch,
+            cracksRequired: effectiveDetection.cracksRequired,
+        });
+        if (verdict.call) {
+            markPhase('Second Crack (Auto)', 'secondCrackTime');
+            startCrackAlarm(); // repeats until acknowledged
+            const early = verdict.reason === 'early-strong-evidence' ? ' (early, but the evidence was strong)' : '';
+            logMessage(`Faster, higher-pitched cracking detected (high-band ${(ratio * 100).toFixed(0)}%)${early}.`);
+        }
     }
 }
 

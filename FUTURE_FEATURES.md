@@ -231,6 +231,11 @@ continual on-device audio classification; GitHub *RoastLearner*.
 
 ### Detection intelligence — from the first real test roast (2026-07-06; research-grounded)
 
+> **✅ Built 2026-07-23** as `js/crack-intel.js` (pure, unit-tested) wired into `js/audio.js` —
+> headline status in `STATUS.md`. Per-item as-built notes and deviations are inlined below as
+> **[as built]** tags; the numbers below remain the design rationale. Still open: tuning the
+> *defaults* from captured shadow-bank data (no captures in `roast-logs/` yet).
+
 The owner's first live Behmor session (3 caffeinated batches ~420 g) surfaced four detection gaps.
 Dev mode now auto-captures every roast, so the *data* to build these is being collected; the notes
 below are the design. **Web research (2026-07-06) corrected some folk assumptions — see numbers.**
@@ -241,6 +246,13 @@ below are the design. **Web research (2026-07-06) corrected some folk assumption
    open a **wide ~2–7 min watch window** for 2C rather than a fixed timer. Add a manual **"still 1st
    crack"** marker so the user can say "these pops are still 1C" — which both suppresses a premature
    2C call and feeds the learner (`js/detector-learning.js`).
+   **[as built]** 2C is now a windowed decision (`shouldCall2C`): per-bean watch window (default
+   2–7 min), a crack-RATE gate (≥ cracksRequired snaps in the last 10 s — 2C pops ~5× faster),
+   extra pitch evidence demanded *before* the window opens (+0.15 gate), never blocked after it
+   closes. The **⏳ Still 1st crack** button holds off 2C for 45 s, drops accumulated pitch
+   evidence, records the marker on the roast timeline (`stillFirstCrackMarks`) + Roast Lab, and
+   sends a `'still1c'` learning signal that raises the per-roaster 2C pitch gate (+5%/tap, cap
+   +25%); a missed 2C walks it back.
 2. **Bean-origin transition priors — but fix the folk model.** The owner's guess (Ethiopian pauses /
    Brazilian rolls straight through) is **essentially backwards**. Density (which tracks altitude)
    drives it: **dense high-grown beans (Ethiopia washed, Kenya) hold a *longer*, stretchable 1C→2C
@@ -249,6 +261,11 @@ below are the design. **Web research (2026-07-06) corrected some folk assumption
    heat application / RoR matters *more* than origin — origin only predisposes. So don't hard-code an
    origin lookup; prefer a **self-calibrating per-bean gap learned from the user's own logs**, with
    origin/density only as a weak prior.
+   **[as built]** `gapWindowFromHistory` derives the window from the selected bean's own
+   `roastHistory` gaps (median of the last 8, widened ×0.6–×1.6, needs ≥2 roasts, sane-clamped) —
+   no origin table at all, and no new persisted store (history is already backed up + synced).
+   Even the density field the pantry already has is *not* used as a prior yet — deliberate: with
+   zero real data, wiring a weak prior risks encoding the folk model this research just corrected.
 3. **Door-"burp" awareness.** Opening the Behmor door between 1C and 2C (to slow the roast / shed
    heat / vent smoke) **removes acoustic shielding → cracks read louder**, and injects door/fan/chaff
    transients + a real RoR shift. This is a classic false-trigger for a naive amplitude threshold.
@@ -257,10 +274,25 @@ below are the design. **Web research (2026-07-06) corrected some folk assumption
    mid-roast** when it steps up (extend the existing auto-calibration beyond setup); (c) optional
    **time/temp prior** (ROEST ships a 5-crack + 185 °C gate before it will call 1C); (d) briefly
    **raise the confidence threshold for ~1–2 s** after a detected door/airflow step-change.
+   **[as built]** all four defences: (a) is the 2C rate+band gate above; (b) `createBurpGuard` —
+   dual-EMA quiet-frame floor tracker (step = fast > slow×1.8 and +0.02 RMS absolute, sustained
+   600 ms → re-baseline `baselineNoiseRMS` upward, 🚪 log line); (c) an optional **"Earliest 1st
+   crack"** minutes gate in Detection Settings (time only — no temp gate, most roasts here are
+   probe-less; default 0/off so live behaviour is unchanged); (d) spike threshold ×1.5 for 1.5 s
+   after a step, during which 2C calls are also held.
 4. **Two-device beep guard.** Same-device beep can't self-trigger (the `isNotifying` deaf-window in
    `js/audio.js`), but on the weekend one device's alarm was heard by another's mic. Options: a
    distinctive/ultrasonic-ish alarm signature the detector can notch out, a shared "someone is
    alarming" flag over the sync channel, or simply recommend one listening device + one silent.
+   **[as built]** option 1, adapted: no new ultrasonic tone needed — the other device runs *this
+   app*, so its alarm frequencies are already known (`ALARM_TONES` fundamentals + harmonics).
+   `alarmNarrowbandShare` scores each spike's narrowband concentration at those frequencies
+   (target-bin avg vs rest-of-band avg ≥ 3:1 → ignored as an alarm, not a crack). Zero
+   infrastructure, works offline/signed-out — which is why the sync-flag option was rejected
+   (needs both devices signed in + realtime latency during the exact second that matters).
+   Limitation: the sawtooth **Buzzer** tone is too harmonic-dense to notch reliably; Help
+   recommends Chime/Beep/Bell for two-device setups plus the one-listener setup (option 3 shipped
+   as documentation).
 
 Acoustics are well-sourced (peer-reviewed): 1C is low-frequency (~800 Hz), ~15% higher peak pressure
 than 2C; 2C is higher-pitched at ~5× the pop rate; and "other roasting noise does not impact the use

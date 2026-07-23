@@ -4,6 +4,58 @@ Context bridge for continuing this project in a local Claude Code CLI session
 (the web session's chat history doesn't transfer; the repo + docs are the
 source of truth). _Written 2026-06-27; updated 2026-06-29._
 
+## ▶️ Detection-intelligence PR (2026-07-23, unattended run) — awaiting owner review
+
+One coherent PR (branch `feat/detection-intelligence`, based on `main`) building the **four
+detection gaps** from the 2026-07-06 test roast (spec: `FUTURE_FEATURES.md` "Detection
+intelligence"; headline: `STATUS.md`). Full DoD: unit tests (262 green, +40), build green,
+browser-verified UI, hints/Help/tour/demo/docs updated. **Not merged — owner reviews.**
+**Safe to merge now** (no follow-up push planned on this branch).
+
+What shipped (all four; none deferred):
+1. **Still-1C continuity** — 2C is a windowed decision (`shouldCall2C` in the new pure
+   `js/crack-intel.js`): wide per-bean watch window (default 2–7 min) replaces the fixed 20 s
+   timer, gated on crack **rate** (≥ cracksRequired snaps / 10 s) + band energy, stricter pitch
+   before the window opens, never blocked after it closes. New **⏳ Still 1st crack** button
+   (between 1C and 2C) holds 2C off 45 s, drops stale pitch evidence, marks the timeline
+   (`stillFirstCrackMarks`, saved with the roast) and feeds the learner.
+2. **Per-bean gap** — `gapWindowFromHistory` learns the 1C→2C window from the bean's own
+   `roastHistory` (median of last 8 gaps, ×0.6–×1.6, needs ≥2 roasts). **No origin lookup table**
+   per the spec's caveat; no new persisted store (derives from history → backup/sync already
+   cover it — that's why `exportAllData` needed no change).
+3. **Door-burp guard** — `createBurpGuard` (dual-EMA quiet-frame floor tracker) re-baselines the
+   noise floor on a sustained step-up and raises the spike threshold ×1.5 for 1.5 s (2C calls
+   also held during the guard). Plus the optional ROEST-style **Earliest 1st crack** minutes
+   gate (default 0 = off, so live behaviour is unchanged unless opted in).
+4. **Two-device beep guard** — chose the **known-tone spectral notch** (option 1, adapted): the
+   other device runs this app, so its alarm frequencies are known (`ALARM_TONES` + harmonics);
+   spikes whose narrowband concentration at those frequencies is ≥3:1 vs the rest of the band
+   are ignored (`alarmNarrowbandShare`, threshold 0.75). Rejected the sync-flag option (needs
+   both devices signed in + realtime latency at exactly the wrong moment) and shipped the
+   one-listener recommendation as Help/USER_GUIDE text as well.
+
+**Judgment calls the owner may want to redirect** (all conservative, none data-fitted — there
+are still no captures in `roast-logs/`):
+- Still-1C hold = **45 s** per tap (re-tappable). Alternative was 60–120 s; chose shorter so a
+  real fast-rolling 2C can't be muted for long.
+- Learned window needs **≥2 gaps** and widens ×0.6–×1.6 around the median; ties break toward
+  the research default. The pantry's density field is deliberately **not** used as a prior yet
+  (zero data + the folk model this research corrected = too easy to encode a wrong prior).
+- Early-2C calls are **penalised (+0.15 pitch), not blocked** — a soft-bean roast that genuinely
+  runs 1C→2C in under 2 min still gets called if the evidence is unmistakable.
+- Burp guard: step = fast-EMA > slow×1.8 **and** +0.02 RMS absolute, sustained 600 ms; only ever
+  raises the floor. The learner is NOT fed by door events (they're environment, not detector
+  error).
+- Alarm notch works for Chime/Beep/Bell; the sawtooth **Buzzer is too harmonic-dense to notch**
+  — documented in Help instead. If the owner wants Buzzer covered, the clean fix is replacing it
+  with a less harmonic tone, not widening the notch.
+- `detector-learning.js` gained a `pitchDelta` lever ('still1c' +5%, missed-2C −5%, cap +25%);
+  stored adjusts from v1 upgrade transparently (missing field = 0). Manual 2C marks now send
+  'missedSecond' (threshold down + pitch strictness down) instead of plain 'missed'.
+
+**Explicitly not done:** tuning detector defaults from shadow-bank captures (`roast-logs/` is
+empty on this machine — no real audio data existed to tune against; STATUS.md tracks it).
+
 ## ▶️ Overnight autonomous PRs (2026-06-29) — awaiting owner review
 
 Pantry depth (Track B, **#80**) and the DIY colour-target groundwork (**#81**) are **merged**.

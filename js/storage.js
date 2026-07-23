@@ -186,7 +186,8 @@ export const DEFAULT_DETECTION_SETTINGS = {
     cracksRequired: 3,        // snaps within the cluster window needed to confirm a crack phase
     secondCrackPitch: 0.5,    // high-band energy share above which cracking reads as second crack
     calibrationSeconds: 8,    // how long Calibrate Noise samples the room (longer catches intermittent talking)
-    autoCalibrate: true       // rolling pre-roast noise floor (only runs once the mic is already permitted)
+    autoCalibrate: true,      // rolling pre-roast noise floor (only runs once the mic is already permitted)
+    min1cMinutes: 0           // optional ROEST-style time prior: ignore crack-like sounds before N minutes (0 = off)
 };
 
 export function getDetectionSettings() {
